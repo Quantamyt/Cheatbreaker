@@ -3,6 +3,11 @@ package com.cheatbreaker.client.module.impl.staff;
 import com.cheatbreaker.client.module.AbstractModule;
 import com.cheatbreaker.client.module.data.Setting;
 
+/**
+ * @see AbstractModule
+ *
+ * This Object defines the staff module variant of the com.cheatbreaker.client.module.AbstractModule Object.
+ */
 public class StaffMod extends AbstractModule {
     private final Setting keybind = new Setting(this, "Keybind").setValue(0);
 

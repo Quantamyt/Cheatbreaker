@@ -2,131 +2,125 @@ package net.minecraft.network.play.client;
 
 import java.io.IOException;
 import net.minecraft.entity.player.PlayerCapabilities;
-import net.minecraft.network.INetHandler;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayServer;
 
-public class C13PacketPlayerAbilities extends Packet {
-    private boolean field_149500_a;
-    private boolean field_149498_b;
-    private boolean field_149499_c;
-    private boolean field_149496_d;
-    private float field_149497_e;
-    private float field_149495_f;
+public class C13PacketPlayerAbilities implements Packet<INetHandlerPlayServer>
+{
+    private boolean invulnerable;
+    private boolean flying;
+    private boolean allowFlying;
+    private boolean creativeMode;
+    private float flySpeed;
+    private float walkSpeed;
 
-
-    public C13PacketPlayerAbilities() {}
-
-    public C13PacketPlayerAbilities(PlayerCapabilities p_i45257_1_) {
-        this.func_149490_a(p_i45257_1_.disableDamage);
-        this.func_149483_b(p_i45257_1_.isFlying);
-        this.func_149491_c(p_i45257_1_.allowFlying);
-        this.func_149493_d(p_i45257_1_.isCreativeMode);
-        this.func_149485_a(p_i45257_1_.getFlySpeed());
-        this.func_149492_b(p_i45257_1_.getWalkSpeed());
+    public C13PacketPlayerAbilities()
+    {
     }
 
-    /**
-     * Reads the raw packet data from the data stream.
-     */
-    public void readPacketData(PacketBuffer p_148837_1_) throws IOException {
-        byte var2 = p_148837_1_.readByte();
-        this.func_149490_a((var2 & 1) > 0);
-        this.func_149483_b((var2 & 2) > 0);
-        this.func_149491_c((var2 & 4) > 0);
-        this.func_149493_d((var2 & 8) > 0);
-        this.func_149485_a(p_148837_1_.readFloat());
-        this.func_149492_b(p_148837_1_.readFloat());
+    public C13PacketPlayerAbilities(PlayerCapabilities capabilities)
+    {
+        this.setInvulnerable(capabilities.disableDamage);
+        this.setFlying(capabilities.isFlying);
+        this.setAllowFlying(capabilities.allowFlying);
+        this.setCreativeMode(capabilities.isCreativeMode);
+        this.setFlySpeed(capabilities.getFlySpeed());
+        this.setWalkSpeed(capabilities.getWalkSpeed());
     }
 
-    /**
-     * Writes the raw packet data to the data stream.
-     */
-    public void writePacketData(PacketBuffer p_148840_1_) throws IOException {
-        byte var2 = 0;
+    public void readPacketData(PacketBuffer buf) throws IOException
+    {
+        byte b0 = buf.readByte();
+        this.setInvulnerable((b0 & 1) > 0);
+        this.setFlying((b0 & 2) > 0);
+        this.setAllowFlying((b0 & 4) > 0);
+        this.setCreativeMode((b0 & 8) > 0);
+        this.setFlySpeed(buf.readFloat());
+        this.setWalkSpeed(buf.readFloat());
+    }
 
-        if (this.func_149494_c()) {
-            var2 = (byte)(var2 | 1);
+    public void writePacketData(PacketBuffer buf) throws IOException
+    {
+        byte b0 = 0;
+
+        if (this.isInvulnerable())
+        {
+            b0 = (byte)(b0 | 1);
         }
 
-        if (this.func_149488_d()) {
-            var2 = (byte)(var2 | 2);
+        if (this.isFlying())
+        {
+            b0 = (byte)(b0 | 2);
         }
 
-        if (this.func_149486_e()) {
-            var2 = (byte)(var2 | 4);
+        if (this.isAllowFlying())
+        {
+            b0 = (byte)(b0 | 4);
         }
 
-        if (this.func_149484_f()) {
-            var2 = (byte)(var2 | 8);
+        if (this.isCreativeMode())
+        {
+            b0 = (byte)(b0 | 8);
         }
 
-        p_148840_1_.writeByte(var2);
-        p_148840_1_.writeFloat(this.field_149497_e);
-        p_148840_1_.writeFloat(this.field_149495_f);
+        buf.writeByte(b0);
+        buf.writeFloat(this.flySpeed);
+        buf.writeFloat(this.walkSpeed);
     }
 
-    public void processPacket(INetHandlerPlayServer p_148833_1_) {
-        p_148833_1_.processPlayerAbilities(this);
+    public void processPacket(INetHandlerPlayServer handler)
+    {
+        handler.processPlayerAbilities(this);
     }
 
-    /**
-     * Returns a string formatted as comma separated [field]=[value] values. Used by Minecraft for logging purposes.
-     */
-    public String serialize() {
-        return String.format("invuln=%b, flying=%b, canfly=%b, instabuild=%b, flyspeed=%.4f, walkspped=%.4f", Boolean.valueOf(this.func_149494_c()), Boolean.valueOf(this.func_149488_d()), Boolean.valueOf(this.func_149486_e()), Boolean.valueOf(this.func_149484_f()), Float.valueOf(this.func_149482_g()), Float.valueOf(this.func_149489_h()));
+    public boolean isInvulnerable()
+    {
+        return this.invulnerable;
     }
 
-    public boolean func_149494_c() {
-        return this.field_149500_a;
+    public void setInvulnerable(boolean isInvulnerable)
+    {
+        this.invulnerable = isInvulnerable;
     }
 
-    public void func_149490_a(boolean p_149490_1_) {
-        this.field_149500_a = p_149490_1_;
+    public boolean isFlying()
+    {
+        return this.flying;
     }
 
-    public boolean func_149488_d() {
-        return this.field_149498_b;
+    public void setFlying(boolean isFlying)
+    {
+        this.flying = isFlying;
     }
 
-    public void func_149483_b(boolean p_149483_1_) {
-        this.field_149498_b = p_149483_1_;
+    public boolean isAllowFlying()
+    {
+        return this.allowFlying;
     }
 
-    public boolean func_149486_e() {
-        return this.field_149499_c;
+    public void setAllowFlying(boolean isAllowFlying)
+    {
+        this.allowFlying = isAllowFlying;
     }
 
-    public void func_149491_c(boolean p_149491_1_) {
-        this.field_149499_c = p_149491_1_;
+    public boolean isCreativeMode()
+    {
+        return this.creativeMode;
     }
 
-    public boolean func_149484_f() {
-        return this.field_149496_d;
+    public void setCreativeMode(boolean isCreativeMode)
+    {
+        this.creativeMode = isCreativeMode;
     }
 
-    public void func_149493_d(boolean p_149493_1_) {
-        this.field_149496_d = p_149493_1_;
+    public void setFlySpeed(float flySpeedIn)
+    {
+        this.flySpeed = flySpeedIn;
     }
 
-    public float func_149482_g() {
-        return this.field_149497_e;
-    }
-
-    public void func_149485_a(float p_149485_1_) {
-        this.field_149497_e = p_149485_1_;
-    }
-
-    public float func_149489_h() {
-        return this.field_149495_f;
-    }
-
-    public void func_149492_b(float p_149492_1_) {
-        this.field_149495_f = p_149492_1_;
-    }
-
-    public void processPacket(INetHandler p_148833_1_) {
-        this.processPacket((INetHandlerPlayServer)p_148833_1_);
+    public void setWalkSpeed(float walkSpeedIn)
+    {
+        this.walkSpeed = walkSpeedIn;
     }
 }

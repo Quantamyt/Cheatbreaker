@@ -1,82 +1,99 @@
 package net.minecraft.network.play.server;
 
 import java.io.IOException;
-import net.minecraft.network.INetHandler;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayClient;
 import net.minecraft.scoreboard.Score;
+import net.minecraft.scoreboard.ScoreObjective;
 
-public class S3CPacketUpdateScore extends Packet {
-    private String field_149329_a = "";
-    private String field_149327_b = "";
-    private int field_149328_c;
-    private int field_149326_d;
+public class S3CPacketUpdateScore implements Packet<INetHandlerPlayClient>
+{
+    private String name = "";
+    private String objective = "";
+    private int value;
+    private S3CPacketUpdateScore.Action action;
 
-
-    public S3CPacketUpdateScore() {}
-
-    public S3CPacketUpdateScore(Score p_i45227_1_, int p_i45227_2_) {
-        this.field_149329_a = p_i45227_1_.getPlayerName();
-        this.field_149327_b = p_i45227_1_.func_96645_d().getName();
-        this.field_149328_c = p_i45227_1_.getScorePoints();
-        this.field_149326_d = p_i45227_2_;
+    public S3CPacketUpdateScore()
+    {
     }
 
-    public S3CPacketUpdateScore(String p_i45228_1_) {
-        this.field_149329_a = p_i45228_1_;
-        this.field_149327_b = "";
-        this.field_149328_c = 0;
-        this.field_149326_d = 1;
+    public S3CPacketUpdateScore(Score scoreIn)
+    {
+        this.name = scoreIn.getPlayerName();
+        this.objective = scoreIn.getObjective().getName();
+        this.value = scoreIn.getScorePoints();
+        this.action = S3CPacketUpdateScore.Action.CHANGE;
     }
 
-    /**
-     * Reads the raw packet data from the data stream.
-     */
-    public void readPacketData(PacketBuffer p_148837_1_) throws IOException {
-        this.field_149329_a = p_148837_1_.readStringFromBuffer(16);
-        this.field_149326_d = p_148837_1_.readByte();
+    public S3CPacketUpdateScore(String nameIn)
+    {
+        this.name = nameIn;
+        this.objective = "";
+        this.value = 0;
+        this.action = S3CPacketUpdateScore.Action.REMOVE;
+    }
 
-        if (this.field_149326_d != 1) {
-            this.field_149327_b = p_148837_1_.readStringFromBuffer(16);
-            this.field_149328_c = p_148837_1_.readInt();
+    public S3CPacketUpdateScore(String nameIn, ScoreObjective objectiveIn)
+    {
+        this.name = nameIn;
+        this.objective = objectiveIn.getName();
+        this.value = 0;
+        this.action = S3CPacketUpdateScore.Action.REMOVE;
+    }
+
+    public void readPacketData(PacketBuffer buf) throws IOException
+    {
+        this.name = buf.readStringFromBuffer(40);
+        this.action = (S3CPacketUpdateScore.Action)buf.readEnumValue(S3CPacketUpdateScore.Action.class);
+        this.objective = buf.readStringFromBuffer(16);
+
+        if (this.action != S3CPacketUpdateScore.Action.REMOVE)
+        {
+            this.value = buf.readVarIntFromBuffer();
         }
     }
 
-    /**
-     * Writes the raw packet data to the data stream.
-     */
-    public void writePacketData(PacketBuffer p_148840_1_) throws IOException {
-        p_148840_1_.writeStringToBuffer(this.field_149329_a);
-        p_148840_1_.writeByte(this.field_149326_d);
+    public void writePacketData(PacketBuffer buf) throws IOException
+    {
+        buf.writeString(this.name);
+        buf.writeEnumValue(this.action);
+        buf.writeString(this.objective);
 
-        if (this.field_149326_d != 1) {
-            p_148840_1_.writeStringToBuffer(this.field_149327_b);
-            p_148840_1_.writeInt(this.field_149328_c);
+        if (this.action != S3CPacketUpdateScore.Action.REMOVE)
+        {
+            buf.writeVarIntToBuffer(this.value);
         }
     }
 
-    public void processPacket(INetHandlerPlayClient p_148833_1_) {
-        p_148833_1_.handleUpdateScore(this);
+    public void processPacket(INetHandlerPlayClient handler)
+    {
+        handler.handleUpdateScore(this);
     }
 
-    public String func_149324_c() {
-        return this.field_149329_a;
+    public String getPlayerName()
+    {
+        return this.name;
     }
 
-    public String func_149321_d() {
-        return this.field_149327_b;
+    public String getObjectiveName()
+    {
+        return this.objective;
     }
 
-    public int func_149323_e() {
-        return this.field_149328_c;
+    public int getScoreValue()
+    {
+        return this.value;
     }
 
-    public int func_149322_f() {
-        return this.field_149326_d;
+    public S3CPacketUpdateScore.Action getScoreAction()
+    {
+        return this.action;
     }
 
-    public void processPacket(INetHandler p_148833_1_) {
-        this.processPacket((INetHandlerPlayClient)p_148833_1_);
+    public static enum Action
+    {
+        CHANGE,
+        REMOVE;
     }
 }

@@ -36,16 +36,16 @@ public abstract class GuiResourcePacksList extends GuiScrollingList {
                 entry.bindTexturePackIcon(this.mc.getTextureManager());
                 Gui.drawModalRectWithCustomSizedTexture(this.left + 2, top + 1, 0.0f, 0.0f, 32, 32, 32.0f, 32.0f);
             }
-            this.mc.fontRenderer.drawString(GuiUtils.trimString(entry.getResourcePackName(),
-                    this.listWidth - 46), (float)this.left + (showPackIcons ? 36.0f : 2.0f), (float)top + 2.0f, -1, true);
+            this.mc.fontRendererObj.drawString(GuiUtils.trimString(entry.getResourcePackName(),
+                    this.listWidth - 46), (float) this.left + (showPackIcons ? 36.0f : 2.0f), (float) top + 2.0f, -1, true);
             if ((Boolean) CheatBreaker.getInstance().getGlobalSettings().packDescriptions.getValue()) {
-                List<String> lines = this.mc.fontRenderer.listFormattedStringToWidth(entry.getTexturePackDescription(), this.listWidth - 46);
+                List<String> lines = this.mc.fontRendererObj.listFormattedStringToWidth(entry.getTexturePackDescription(), this.listWidth - 46);
                 for (int i = 0; i < lines.size(); ++i) {
                     String text = lines.get(i);
                     if (i == 1 && lines.size() > 2) {
                         text = GuiUtils.trimString(text, this.listWidth - 46);
                     }
-                    this.mc.fontRenderer.drawString(text, (float)this.left + (showPackIcons ? 36.0f : 2.0f), (float)top + 13.0f + 10.0f * (float)i, -5592406, true);
+                    this.mc.fontRendererObj.drawString(text, (float) this.left + (showPackIcons ? 36.0f : 2.0f), (float) top + 13.0f + 10.0f * (float) i, -5592406, true);
                     if (i == 1) break;
                 }
             }

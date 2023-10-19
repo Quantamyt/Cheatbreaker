@@ -1,23 +1,24 @@
 package com.cheatbreaker.client.module.impl.normal.hud.simple;
 
 import com.cheatbreaker.client.CheatBreaker;
-import com.cheatbreaker.client.event.impl.GuiDrawEvent;
-import com.cheatbreaker.client.event.impl.PreviewDrawEvent;
+import com.cheatbreaker.client.event.impl.render.GuiDrawEvent;
+import com.cheatbreaker.client.event.impl.render.PreviewDrawEvent;
 import com.cheatbreaker.client.module.AbstractModule;
 import com.cheatbreaker.client.module.data.CustomizationLevel;
 import com.cheatbreaker.client.module.data.Setting;
-import com.cheatbreaker.client.module.impl.normal.hud.simple.data.SimpleHudModExclusionRange;
-import com.cheatbreaker.client.module.impl.normal.hud.simple.data.SimpleHudModSize;
 import com.cheatbreaker.client.ui.module.GuiAnchor;
 import com.cheatbreaker.client.ui.module.HudLayoutEditorGui;
 import com.cheatbreaker.client.ui.util.RenderUtil;
 import net.minecraft.client.gui.Gui;
+import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.util.ResourceLocation;
 import org.lwjgl.opengl.GL11;
 
 /**
- * Defines the necessary options and rendering for all Simple Modules.
+ * @SimpleModule - AbstractSimpleHudModule
  * @see AbstractModule
+ *
+ * This abstract class defines the simple class simple HUD modules use.
  */
 public abstract class AbstractSimpleHudModule extends AbstractModule {
 
@@ -25,6 +26,7 @@ public abstract class AbstractSimpleHudModule extends AbstractModule {
     protected Setting staticBackgroundWidth;
     protected Setting textOverflow;
     protected Setting padding;
+//    protected Setting backgroundCurvature;
     protected Setting backgroundWidth;
     protected Setting backgroundHeight;
     protected Setting border;
@@ -35,12 +37,9 @@ public abstract class AbstractSimpleHudModule extends AbstractModule {
     protected Setting textShadowBackground;
     protected Setting textShadowNoBackground;
 
-    public Setting hideValue;
-    public Setting hiddenValue;
-
     protected Setting textColor;
     protected Setting backgroundColor;
-    private Setting icon;
+    public Setting icon = null;
     protected ResourceLocation iconTexture;
     protected Setting customString;
     protected Setting customStringNoBackground;
@@ -63,45 +62,46 @@ public abstract class AbstractSimpleHudModule extends AbstractModule {
         this.background = new Setting(this, "Show Background", "Draw a background.").setValue(showBackground).setCustomizationLevel(CustomizationLevel.SIMPLE);
         this.staticBackgroundWidth = new Setting(this, "Static Background Width",
                 "§2Enabled:§r Background width is set by a slider.\n" +
-                        "§4Disabled:§r Background width is set by the text size.").setValue(true).setCustomizationLevel(CustomizationLevel.MEDIUM).setCondition(() -> (boolean) this.background.getValue() || (boolean) this.alwaysCenter.getValue());
+                        "§4Disabled:§r Background width is set by the text size.").setValue(true).setCustomizationLevel(CustomizationLevel.MEDIUM).setCondition(() -> this.background.getBooleanValue() || this.alwaysCenter.getBooleanValue());
         this.textOverflow = new Setting(this, "Text Overflow",
                 "What the mod will do if the text overflows from the background" +
-                        "\n§bExtend Width:§r Increases the background width." +
-                        "\n§bScale Text:§r Scales the text down." +
-                        "\n§bDo Nothing:§r Does no action.")
+                "\n§bExtend Width:§r Increases the background width." +
+                "\n§bScale Text:§r Scales the text down." +
+                "\n§bDo Nothing:§r Does no action.")
                 .setValue("Extend Width").acceptedStringValues("Extend Width", "Scale Text", "Do Nothing").setCondition(() -> (this.background.getBooleanValue() || this.alwaysCenter.getBooleanValue()) && this.staticBackgroundWidth.getBooleanValue()).setCustomizationLevel(CustomizationLevel.ADVANCED);
-        this.border = new Setting(this, "Show Border", "Draw a border around the background.").setValue(false).setCondition(() -> (boolean) this.background.getValue()).setCustomizationLevel(CustomizationLevel.SIMPLE);
+        this.border = new Setting(this, "Show Border", "Draw a border around the background.").setValue(false).setCondition(this.background::getBooleanValue).setCustomizationLevel(CustomizationLevel.SIMPLE);
         this.padding = new Setting(this, "Background Width Padding", "Change how spaced the background width is from the text.").setValue(6.0F).setMinMax(0.0F, 10.0F).setUnit("px")
-                .setCondition(() -> ((boolean) this.background.getValue() || (boolean) this.alwaysCenter.getValue()) && (!(boolean) this.staticBackgroundWidth.getValue() || this.textOverflow.getValue().equals("Extend Background")))
+                .setCondition(() -> (this.background.getBooleanValue() || this.alwaysCenter.getBooleanValue()) && (!this.staticBackgroundWidth.getBooleanValue() || !this.textOverflow.getValue().equals("Do Nothing")))
                 .setCustomizationLevel(CustomizationLevel.MEDIUM);
-        this.backgroundWidth = new Setting(this, "Background Width", "Change the width of the background.").setValue(this.backgroundDimensionValues().getDefWidth()).setMinMax(this.backgroundDimensionValues().getMinWidth(), this.backgroundDimensionValues().getMaxWidth()).setUnit("px").setCustomizationLevel(CustomizationLevel.MEDIUM).setCondition(() -> ((boolean) this.background.getValue() || (boolean) this.alwaysCenter.getValue()) && (boolean) this.staticBackgroundWidth.getValue());
-        this.backgroundHeight = new Setting(this, "Background Height", "Change the height of the background.").setValue(this.backgroundDimensionValues().getDefHeight()).setMinMax(this.backgroundDimensionValues().getMinHeight(), this.backgroundDimensionValues().getMaxHeight()).setUnit("px").setCustomizationLevel(CustomizationLevel.MEDIUM).setCondition(() -> (boolean) this.background.getValue() || (boolean) this.alwaysCenter.getValue());
-        this.borderThickness = new Setting(this, "Border Thickness", "Change the thickness of the border.").setValue(1.0F).setMinMax(0.25F, 3.0F).setUnit("px").setCustomizationLevel(CustomizationLevel.MEDIUM).setCondition(() -> (boolean) this.background.getValue() && (boolean) this.border.getValue());
+
+//        this.backgroundCurvature = new Setting(this, "Background Curvature", "Change the roundness of the background corners.").setValue(0F).setMinMax(0F, 12F).setUnit("px").setCustomizationLevel(CustomizationLevel.MEDIUM).setCondition(() -> ((boolean) this.background.getValue()));
+        this.backgroundWidth = new Setting(this, "Background Width", "Change the width of the background.").setValue(this.backgroundDimensionValues().getDefaultWidth()).setMinMax(this.backgroundDimensionValues().getMinWidth(), this.backgroundDimensionValues().getMaxWidth()).setUnit("px").setCustomizationLevel(CustomizationLevel.MEDIUM).setCondition(() -> (this.background.getBooleanValue() || this.alwaysCenter.getBooleanValue()) && this.staticBackgroundWidth.getBooleanValue());
+        this.backgroundHeight = new Setting(this, "Background Height", "Change the height of the background.").setValue(this.backgroundDimensionValues().getDefaultHeight()).setMinMax(this.backgroundDimensionValues().getMinHeight(), this.backgroundDimensionValues().getMaxHeight()).setUnit("px").setCustomizationLevel(CustomizationLevel.MEDIUM).setCondition(() -> this.background.getBooleanValue() || this.alwaysCenter.getBooleanValue());
+        this.borderThickness = new Setting(this, "Border Thickness", "Change the thickness of the border.").setValue(1.0F).setMinMax(0.25F, 3.0F).setUnit("px").setCustomizationLevel(CustomizationLevel.MEDIUM).setCondition(() -> this.background.getBooleanValue() && this.border.getBooleanValue());
 
         new Setting(this, "label").setValue("General Options").setCustomizationLevel(CustomizationLevel.SIMPLE);
         this.showWhileTyping = new Setting(this, "Show While Typing", "Show the mod when opening chat.").setValue(true).setCustomizationLevel(CustomizationLevel.ADVANCED);
         this.alwaysCenter = new Setting(this, "Always Center", "Force the text to be centered in the mod's placement.").setValue(alwaysCenter).setCondition(() -> !this.background.getBooleanValue()).setCustomizationLevel(CustomizationLevel.MEDIUM);
-        this.icon = new Setting(this, "Show icon", "Show an icon corresponding to the mod.").setValue(true).setCustomizationLevel(CustomizationLevel.SIMPLE).setCondition(() -> this.iconTexture != null);
-        this.hideValue = new Setting(this, "Hide when value is").setValue("OFF").acceptedStringValues(this.excludeOptions).setCustomizationLevel(CustomizationLevel.MEDIUM).setCondition(() -> this.iconTexture == null && !name.equals("Clock"));
-        this.hiddenValue = new Setting(this, "Hidden value(s)").setValue(this.exclusionRange().getDefValue()).setMinMax(this.exclusionRange().getMinValue(), this.exclusionRange().getMaxValue()).setCustomizationLevel(CustomizationLevel.MEDIUM).setCondition(() -> !this.hideValue.getValue().equals("OFF") && this.iconTexture == null && !name.equals("Clock"));
+        if (includeIcon()) icon = new Setting(this, "Show icon", "Show an icon corresponding to the mod.").setValue(true).setCustomizationLevel(CustomizationLevel.SIMPLE);
         this.getExtraSettings();
         new Setting(this, "label").setValue("Format Options").setCustomizationLevel(CustomizationLevel.MEDIUM);
         this.textShadowBackground = new Setting(this, "Text Shadow (Background)", "Add a text shadow when the background is enabled.").setValue(false).setCondition(() -> this.background.getBooleanValue()).setCustomizationLevel(CustomizationLevel.SIMPLE);
         this.textShadowNoBackground = new Setting(this, "Text Shadow (No background)", "Add a text shadow when the background is disabled.").setValue(true).setCondition(() -> !this.background.getBooleanValue()).setCustomizationLevel(CustomizationLevel.SIMPLE);
         this.getExtraFormatSettings();
-        this.customString = new Setting(this, "Format (Background)").setValue(getDefaultFormatString()).setCondition(() -> (boolean) this.background.getValue()).setCustomizationLevel(CustomizationLevel.ADVANCED);
-        if (isBracketsEnabledByDefault()) {
-            this.customStringNoBackground = new Setting(this, "Format (No Background)").setValue("[" + getDefaultFormatString() + "]").setCondition(() -> !(boolean) this.background.getValue()).setCustomizationLevel(CustomizationLevel.ADVANCED);
+        this.customString = new Setting(this, "Format (Background)").setValue(customString()).setCondition(this.background::getBooleanValue).setCustomizationLevel(CustomizationLevel.ADVANCED);
+
+        if (showBrackets()) {
+            this.customStringNoBackground = new Setting(this, "Format (No Background)").setValue("[" + customString() + "]").setCondition(() -> !this.background.getBooleanValue()).setCustomizationLevel(CustomizationLevel.ADVANCED);
         } else {
-            this.customStringNoBackground = new Setting(this, "Format (No Background)").setValue(getDefaultFormatString()).setCondition(() -> !(boolean) this.background.getValue()).setCustomizationLevel(CustomizationLevel.ADVANCED);
+            this.customStringNoBackground = new Setting(this, "Format (No Background)").setValue(customString()).setCondition(() -> !this.background.getBooleanValue()).setCustomizationLevel(CustomizationLevel.ADVANCED);
         }
 
 
         new Setting(this, "label").setValue("Color Options").setCustomizationLevel(CustomizationLevel.SIMPLE);
-        this.textColor = new Setting(this, "Text Color", "Sets the color for the text.").setValue(-1).setMinMax(Integer.MIN_VALUE, Integer.MAX_VALUE).setCustomizationLevel(CustomizationLevel.SIMPLE).setCondition(() -> !(name.equals("Ping") && (Boolean) CheatBreaker.getInstance().getModuleManager().pingMod.dynamicColorRange.getValue()) && !(name.equals("Saturation") && (Boolean) CheatBreaker.getInstance().getModuleManager().saturationMod.amountColors.getValue()));
+        this.textColor = new Setting(this, "Text Color", "Sets the color for the text.").setValue(-1).setMinMax(Integer.MIN_VALUE, Integer.MAX_VALUE).setCustomizationLevel(CustomizationLevel.SIMPLE).setCondition(() -> !(name.equals("Ping") && CheatBreaker.getInstance().getModuleManager().pingMod.dynamicColorRange.getBooleanValue()) && !(name.equals("Saturation") && CheatBreaker.getInstance().getModuleManager().saturationMod.amountColors.getBooleanValue()));
         this.getExtraColorSettings();
-        this.backgroundColor = new Setting(this, "Background Color", "Sets the color for the background.").setValue(1862270976).setMinMax(Integer.MIN_VALUE, Integer.MAX_VALUE).setCustomizationLevel(CustomizationLevel.SIMPLE).setCondition(() -> (boolean) this.background.getValue());
-        this.borderColor = new Setting(this, "Border Color", "Sets the color for the border.").setValue(-1627389952).setMinMax(Integer.MIN_VALUE, Integer.MAX_VALUE).setCustomizationLevel(CustomizationLevel.SIMPLE).setCondition(() -> (boolean) this.background.getValue() && (boolean) this.border.getValue());
+        this.backgroundColor = new Setting(this, "Background Color", "Sets the color for the background.").setValue(1862270976).setMinMax(Integer.MIN_VALUE, Integer.MAX_VALUE).setCustomizationLevel(CustomizationLevel.SIMPLE).setCondition(this.background::getBooleanValue);
+        this.borderColor = new Setting(this, "Border Color", "Sets the color for the border.").setValue(-1627389952).setMinMax(Integer.MIN_VALUE, Integer.MAX_VALUE).setCustomizationLevel(CustomizationLevel.SIMPLE).setCondition(() -> this.background.getBooleanValue() && this.border.getBooleanValue());
         this.setPreviewLabel(previewString, previewScale);
         this.addEvent(PreviewDrawEvent.class, this::onPreviewDraw);
         this.addEvent(GuiDrawEvent.class, this::onGuiDraw);
@@ -123,27 +123,20 @@ public abstract class AbstractSimpleHudModule extends AbstractModule {
      * Returns the default background dimension values.
      */
     public SimpleHudModSize backgroundDimensionValues() {
+        if (includeIcon()) {
+            return new SimpleHudModSize(10, 16, 64, 40, 56, 80);
+        }
         return new SimpleHudModSize(10, 13, 24, 40, 56, 80);
+
     }
 
     /**
-     * Returns the default exclusion range values.
-     */
-    public SimpleHudModExclusionRange exclusionRange() {
-        return new SimpleHudModExclusionRange(0, 0, 30);
-    }
-
-    /**
-     * Sets the abstract value string.
-     * <p>
-     * The actual modules will return the intended value(s).
+     * Returns the value string.
      */
     public abstract String getValueString();
 
     /**
-     * Sets the abstract label string.
-     * <p>
-     * The actual modules will return the intended label.
+     * Returns the label string.
      */
     public abstract String getLabelString();
 
@@ -155,10 +148,18 @@ public abstract class AbstractSimpleHudModule extends AbstractModule {
     }
 
     /**
-     * Returns the default simple mod format.
+     * Returns the default format the mod's string.
      */
-    public String getDefaultFormatString() {
+    public String customString() {
         return "%VALUE% %LABEL%";
+    }
+
+    /**
+     * Returns if the mod should include an icon.
+     * Simple Mods will need to set a path to set up an image to utilize this feature.
+     */
+    public boolean includeIcon() {
+        return false;
     }
 
     /**
@@ -171,7 +172,7 @@ public abstract class AbstractSimpleHudModule extends AbstractModule {
     /**
      * Returns true if a mod should include brackets in the No Background mode by default.
      */
-    public boolean isBracketsEnabledByDefault() {
+    public boolean showBrackets() {
         return true;
     }
 
@@ -186,7 +187,7 @@ public abstract class AbstractSimpleHudModule extends AbstractModule {
      * Returns the active color.
      */
     public int getColor() {
-        return this.textColor.getColorValue();
+        return textColor.getColorValue();
     }
 
     /**
@@ -208,7 +209,7 @@ public abstract class AbstractSimpleHudModule extends AbstractModule {
      */
     private void onGuiDraw(GuiDrawEvent event) {
         String value = this.getValueString();
-        if (value != null && (!this.mc.ingameGUI.getChatGUI().getChatOpen() || (Boolean) this.showWhileTyping.getValue())) {
+        if (value != null && (!this.mc.ingameGUI.getChatGUI().getChatOpen() || this.showWhileTyping.getBooleanValue())) {
             if (this.isRenderHud() && (!this.hiddenFromHud || (this.mc.currentScreen instanceof HudLayoutEditorGui))) {
                 GL11.glPushMatrix();
                 this.scaleAndTranslate(event.getScaledResolution());
@@ -225,7 +226,7 @@ public abstract class AbstractSimpleHudModule extends AbstractModule {
      * Actually calls the necessary methods to render the mod.
      */
     public void render(String value) {
-        boolean showIcon = this.icon.getBooleanValue() && iconTexture != null;
+        boolean showIcon = includeIcon() && this.icon.getBooleanValue() && iconTexture != null;
         String label = this.getLabelString();
         if (label == null || label.isEmpty()) {
             label = "";
@@ -235,7 +236,7 @@ public abstract class AbstractSimpleHudModule extends AbstractModule {
         if (getWaitingMessage() != null && getValueString() != null) {
             counter = getWaitingMessage();
         } else if (!label.equals("")) {
-            if (!showIcon && !(Boolean)this.background.getValue()) {
+            if (!showIcon && !this.background.getBooleanValue()) {
                 counter = this.customStringNoBackground.getValue().toString().replaceAll("%LABEL%", label).replaceAll("%VALUE%", value);
             } else {
                 counter = this.customString.getValue().toString().replaceAll("%LABEL%", label).replaceAll("%VALUE%", value);
@@ -244,47 +245,49 @@ public abstract class AbstractSimpleHudModule extends AbstractModule {
             counter = value;
         }
 
-
-
         iconTexture = getIconTexture();
-        float width = (float)mc.fontRenderer.getStringWidth(counter);
-        float bHeight = (Float) this.backgroundHeight.getValue();
+        float width = (float) mc.fontRendererObj.getStringWidth(counter);
+        float bHeight = this.backgroundHeight.getFloatValue();
         float extraX = showIcon ? bHeight : 0.0F;
-        float bWidth = !(Boolean) staticBackgroundWidth.getValue() ? width + (float)padding.getValue() + extraX : (Float) this.backgroundWidth.getValue();
+        float bWidth = !this.staticBackgroundWidth.getBooleanValue() ? width + this.padding.getFloatValue() + extraX : this.backgroundWidth.getFloatValue();
 
-        if (this.textOverflow.getValue().equals("Extend Width") && (Boolean) this.staticBackgroundWidth.getValue()) {
-            bWidth = Math.max((Float) this.backgroundWidth.getValue(), width + (float) padding.getValue() + extraX);
+        if (this.textOverflow.getValue().equals("Extend Width") && this.staticBackgroundWidth.getBooleanValue()) {
+            bWidth = Math.max(this.backgroundWidth.getFloatValue(), width + this.padding.getFloatValue() + extraX);
         }
 
-        if ((Boolean) this.background.getValue() || showIcon || (Boolean) this.alwaysCenter.getValue()) {
+        if (this.background.getBooleanValue() || showIcon || this.alwaysCenter.getBooleanValue()) {
             this.setDimensions(bWidth, bHeight);
-            if ((Boolean)this.background.getValue()) {
+            if (this.background.getBooleanValue()) {
+
                 Gui.drawRect(0.0F, 0.0F, bWidth, bHeight, this.backgroundColor.getColorValue());
-                if ((Boolean) this.border.getValue()) {
-                    float borderThickness = (Float) this.borderThickness.getValue();
+
+                if (this.border.getBooleanValue()) {
+                    float borderThickness = this.borderThickness.getFloatValue();
                     Gui.drawOutline(-borderThickness, -borderThickness, bWidth + borderThickness, bHeight + borderThickness, borderThickness, this.borderColor.getColorValue());
                 }
             }
 
             if (showIcon) {
-                GL11.glColor3f(1.0F,1.0F,1.0F);
+                GL11.glColor3f(1.0F, 1.0F, 1.0F);
                 RenderUtil.renderEIcon(iconTexture, bHeight / 2.0f, 0, 0);
             }
-            GL11.glEnable(GL11.GL_BLEND);
+
+            GlStateManager.enableBlend();
             float scale = 1.0F;
-            if (this.mc.fontRenderer.getStringWidth(counter) > bWidth - this.padding.getFloatValue() - extraX && this.textOverflow.getValue().equals("Scale Text")) {
-                scale = (bWidth - this.padding.getFloatValue() - extraX) / this.mc.fontRenderer.getStringWidth(counter);
-                GL11.glScalef(scale, scale, 1.0F);
-                scale = this.mc.fontRenderer.getStringWidth(counter) / (bWidth - this.padding.getFloatValue() - extraX);
+            if (this.mc.fontRendererObj.getStringWidth(counter) > bWidth - this.padding.getFloatValue() - extraX && this.textOverflow.getValue().equals("Scale Text")) {
+                scale = (bWidth - this.padding.getFloatValue() - extraX) / this.mc.fontRendererObj.getStringWidth(counter);
+                GlStateManager.scale(scale, scale, 1.0F);
+                scale = this.mc.fontRendererObj.getStringWidth(counter) / (bWidth - this.padding.getFloatValue() - extraX);
             }
-            this.mc.fontRenderer.drawString(counter, this.width / 2.0F * scale - (float) (this.mc.fontRenderer.getStringWidth(counter) / 2) + extraX * scale / 2.0F + 0.6F, bHeight / 2.0F * scale - 3.49F, getColor(), (Boolean) this.background.getValue() ? (Boolean) this.textShadowBackground.getValue() : (Boolean) this.textShadowNoBackground.getValue());
-            if (this.mc.fontRenderer.getStringWidth(counter) > bWidth) {
-                GL11.glScalef(scale, scale, 1.0F);
+            this.mc.fontRendererObj.drawString(counter, this.width / 2.0F * scale - (float) (this.mc.fontRendererObj.getStringWidth(counter) / 2) + extraX * scale / 2.0F + 0.6F, bHeight / 2.0F * scale - 3.49F, getColor(), this.background.getBooleanValue() ? this.textShadowBackground.getBooleanValue() : this.textShadowNoBackground.getBooleanValue());
+            if (this.mc.fontRendererObj.getStringWidth(counter) > bWidth) {
+                GlStateManager.scale(scale, scale, 1.0F);
             }
         } else {
-            GL11.glEnable(GL11.GL_BLEND);
-            this.setDimensions((float)this.mc.fontRenderer.drawString(counter, 0.0F, 0.0F, getColor(), (Boolean) this.textShadowNoBackground.getValue()), mc.fontRenderer.FONT_HEIGHT);
+            GlStateManager.disableBlend();
+            this.setDimensions((float) this.mc.fontRendererObj.drawString(counter, 0.0F, 0.0F, getColor(), this.textShadowNoBackground.getBooleanValue()), mc.fontRendererObj.FONT_HEIGHT);
         }
-        GL11.glDisable(GL11.GL_BLEND);
+
+        GlStateManager.disableBlend();
     }
 }

@@ -2,9 +2,9 @@ package com.cheatbreaker.client.ui.mainmenu.cosmetics.element;
 
 
 import com.cheatbreaker.client.CheatBreaker;
+import com.cheatbreaker.client.cosmetic.Cosmetic;
 import com.cheatbreaker.client.ui.element.AbstractModulesGuiElement;
 import com.cheatbreaker.client.ui.util.RenderUtil;
-import com.cheatbreaker.client.cosmetic.Cosmetic;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.PositionedSoundRecord;
 import net.minecraft.client.gui.Gui;
@@ -13,7 +13,6 @@ import org.lwjgl.opengl.GL11;
 
 public class CosmeticElement extends AbstractModulesGuiElement {
     private final Cosmetic cosmetic;
-    private final ResourceLocation checkMark = new ResourceLocation("client/icons/checkmark-32.png");
 
     public CosmeticElement(Cosmetic var1, float var2) {
         super(var2);
@@ -23,9 +22,8 @@ public class CosmeticElement extends AbstractModulesGuiElement {
 
     @Override
     public void handleDrawElement(int mouseX, int var2, float partialTicks) {
-        boolean var4;
-        boolean bl = var4 = mouseX > this.x && mouseX < this.x + this.width && var2 > this.y && var2 < this.y + this.height;
-        if (var4) {
+        boolean hovered = mouseX > this.x && mouseX < this.x + this.width && var2 > this.y && var2 < this.y + this.height;
+        if (hovered) {
             Gui.drawRect(this.x, this.y, this.x + this.width, this.y + this.height, 0x2F000000);
         }
 
@@ -38,22 +36,26 @@ public class CosmeticElement extends AbstractModulesGuiElement {
             RenderUtil.drawTexturedModalRect(0.0f, 0.0f, 2.0f, 7.0f, 44, 120);
             GL11.glPopMatrix();
         } else {
-            RenderUtil.renderIcon(this.cosmetic.getPreviewLocation(), 8.0f, (float) (this.x + 20), (float) (this.y + 7));
+            try {
+                RenderUtil.renderIcon(this.cosmetic.getPreviewLocation(), 8.0f, (float) (this.x + 20), (float) (this.y + 7));
+            } catch (Exception ignored) {}
         }
+
         CheatBreaker.getInstance().playRegular16px.drawString(this.cosmetic.getName().replace("_", " "), this.x + 42, (float) (this.y + this.height / 2 - 5), -1342177281);
         if (this.cosmetic.isEquipped()) {
             GL11.glColor4f(0.0f, 0.8f, 0.0f, 0.45f);
         } else {
             GL11.glColor4f(0.0f, 0.0f, 0.0f, 0.25f);
         }
-        RenderUtil.drawCircle(this.x + 8, this.y + this.height / 2, 3.0);
+
+        RenderUtil.drawCircle(this.x + 8, this.y + this.height / 2F, 3.0);
     }
 
     @Override
     public void handleMouseClick(int mouseX, int mouseY, int button) {
         boolean mouseHovered = mouseX > this.x && mouseX < this.x + this.width && mouseY > this.y && mouseY < this.y + this.height;
         if (mouseHovered) {
-            Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.func_147674_a(new ResourceLocation("gui.button.press"), 1.0f));
+            Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("gui.button.press"), 1.0f));
             if (this.cosmetic.isEquipped()) {
                 this.cosmetic.setEquipped(false);
             } else if (this.cosmetic.getType() == Cosmetic.CosmeticType.CAPE) {
@@ -72,7 +74,7 @@ public class CosmeticElement extends AbstractModulesGuiElement {
                 this.cosmetic.setEquipped(true);
             }
 
-            CheatBreaker.getInstance().getWSNetHandler().sendClientCosmetics();
+            CheatBreaker.getInstance().getWsNetHandler().sendClientCosmetics();
         }
     }
 }

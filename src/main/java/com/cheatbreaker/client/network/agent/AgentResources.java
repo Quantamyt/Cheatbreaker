@@ -1,5 +1,8 @@
 package com.cheatbreaker.client.network.agent;
 
+/**
+ * Contains things related for the CBAgent to pull from.
+ */
 public class AgentResources {
     @AgentByteArrayReference
     public static native byte[] getBytesNative(String var0);

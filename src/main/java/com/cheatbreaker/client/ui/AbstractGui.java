@@ -1,55 +1,58 @@
 package com.cheatbreaker.client.ui;
 
+import com.cheatbreaker.client.ui.mainmenu.AbstractElement;
+import lombok.Getter;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiScreen;
+import net.minecraft.client.gui.ScaledResolution;
+import org.lwjgl.opengl.GL11;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import com.cheatbreaker.client.ui.mainmenu.AbstractElement;
-import lombok.Getter;
-import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.ScaledResolution;
-import org.lwjgl.opengl.GL11;
-
 public abstract class AbstractGui extends GuiScreen {
-    @Getter private float scaledWidth;
-    @Getter private float scaledHeight;
+    @Getter
+    private float scaledWidth;
+    @Getter
+    private float scaledHeight;
     protected List<AbstractElement> selectedButton;
     protected List<AbstractElement> eventButton;
-    @Getter public ScaledResolution scaledResolution;
+    @Getter
+    public ScaledResolution scaledResolution;
     protected int lastMouseEvent = 0;
 
     @Override
     public void setWorldAndResolution(Minecraft mc, int width, int height) {
         this.mc = mc;
-        this.fontRendererObj = mc.fontRenderer;
+        this.fontRendererObj = mc.fontRendererObj;
         this.width = width;
         this.height = height;
         this.buttonList.clear();
-        this.scaledResolution = new ScaledResolution(this.mc, this.mc.displayWidth, this.mc.displayHeight);
+        this.scaledResolution = new ScaledResolution(this.mc);
         float scaleFactory = this.getScaleFactor();
-        this.scaledWidth = (float)width / scaleFactory;
-        this.scaledHeight = (float)height / scaleFactory;
+        this.scaledWidth = (float) width / scaleFactory;
+        this.scaledHeight = (float) height / scaleFactory;
         this.initGui();
     }
 
-    protected void setElements(AbstractElement ... var1) {
+    protected void setElements(AbstractElement... var1) {
         this.selectedButton = new ArrayList<>();
         this.selectedButton.addAll(Arrays.asList(var1));
         this.lastMouseEvent = this.selectedButton.size();
     }
 
-    public void addElement(AbstractElement ... var1) {
+    public void addElement(AbstractElement... var1) {
         this.selectedButton.addAll(Arrays.asList(var1));
         this.initGui();
     }
 
-    public void removeElement(AbstractElement ... var1) {
+    public void removeElement(AbstractElement... var1) {
         this.selectedButton.removeAll(Arrays.asList(var1));
         this.initGui();
     }
 
-    protected void addElements(AbstractElement ... var1) {
+    protected void addElements(AbstractElement... var1) {
         this.eventButton = new ArrayList<>();
         this.eventButton.addAll(Arrays.asList(var1));
     }
@@ -66,13 +69,13 @@ public abstract class AbstractGui extends GuiScreen {
     @Override
     protected void mouseClicked(int mouseX, int mouseY, int mouseButton) {
         float var4 = this.getScaleFactor();
-        this.mouseClicked((float)mouseX / var4, (float) mouseY / var4, mouseButton);
+        this.mouseClicked((float) mouseX / var4, (float) mouseY / var4, mouseButton);
     }
 
-    @Override
-    protected void mouseMovedOrUp(int var1, int var2, int var3) {
+    @Override // Previously known as mouseMovedOrUp()
+    protected void mouseReleased(int var1, int var2, int var3) {
         float var4 = this.getScaleFactor();
-        this.mouseMovedOrUp((float)var1 / var4, (float)var2 / var4, var3);
+        this.mouseMovedOrUp((float) var1 / var4, (float) var2 / var4, var3);
     }
 
     public abstract void drawMenu(float var1, float var2);
@@ -82,23 +85,7 @@ public abstract class AbstractGui extends GuiScreen {
     public abstract void mouseMovedOrUp(float var1, float var2, int var3);
 
     public float getScaleFactor() {
-        float scale;
-        switch (this.scaledResolution.getScaleFactor()) {
-            case 1:
-                scale = 0.5f;
-                break;
-            case 2:
-                scale = 1.0f;
-                break;
-            case 3:
-                scale = 1.5f;
-                break;
-            case 4:
-                scale = 2.0f;
-                break;
-            default: scale = 1.0f;
-        }
-        return 1.0f / scale;
+        return 1.0f / (this.scaledResolution.getScaleFactor() / 2.0f);
     }
 
     protected void closeElements() {
@@ -119,7 +106,7 @@ public abstract class AbstractGui extends GuiScreen {
         this.selectedButton.forEach(AbstractElement::handleElementMouse);
     }
 
-    protected void drawElementHover(float var1, float var2, AbstractElement ... var3) {
+    protected void drawElementHover(float var1, float var2, AbstractElement... var3) {
         List<AbstractElement> var4 = Arrays.asList(var3);
         for (AbstractElement var6 : this.selectedButton) {
             if (var4.contains(var6)) continue;
@@ -128,15 +115,16 @@ public abstract class AbstractGui extends GuiScreen {
     }
 
     protected void onMouseMoved(float var1, float var2, int var3) {
-        for(AbstractElement element : selectedButton) {
-            if(element.isMouseInside(var1, var2)) {
+        for (AbstractElement element : selectedButton) {
+            if (element.isMouseInside(var1, var2)) {
                 element.onMouseMoved(var1, var2, var3, this.mouseClicked(element, var1, var2));
             }
         }
     }
 
-    protected void swapElement(float var1, float var2, int var3, AbstractElement ... var4) {
-        block4: {
+    protected void swapElement(float var1, float var2, int var3, AbstractElement... var4) {
+        block4:
+        {
             List<AbstractElement> var5 = Arrays.asList(var4);
             AbstractElement var6 = null;
             boolean var7 = false;
@@ -145,7 +133,8 @@ public abstract class AbstractGui extends GuiScreen {
                 if (!this.eventButton.contains(var9)) {
                     var6 = var9;
                 }
-                if (!var9.handleElementMouseClicked(var1, var2, var3, this.mouseClicked(var9, var1, var2, var4))) continue;
+                if (!var9.handleElementMouseClicked(var1, var2, var3, this.mouseClicked(var9, var1, var2, var4)))
+                    continue;
                 var7 = true;
                 break;
             }
@@ -159,7 +148,7 @@ public abstract class AbstractGui extends GuiScreen {
         }
     }
 
-    protected boolean mouseClicked(AbstractElement var1, float var2, float var3, AbstractElement ... var4) {
+    protected boolean mouseClicked(AbstractElement var1, float var2, float var3, AbstractElement... var4) {
         AbstractElement var8;
         List<AbstractElement> var5 = Arrays.asList(var4);
         boolean var6 = true;

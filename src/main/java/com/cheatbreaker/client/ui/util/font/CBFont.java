@@ -23,10 +23,10 @@ public class CBFont {
     public CBFont(ResourceLocation resourceLocation, float size) {
         Font font;
         try {
-            InputStream inputStream = Minecraft.getMinecraft() == null || Minecraft.getMinecraft().getResourceManager() == null ? Minecraft.getMinecraft().getDefaultResourcePack().getResourceStream(resourceLocation) : Minecraft.getMinecraft().getResourceManager().getResource(resourceLocation).getInputStream();
+            InputStream inputStream = Minecraft.getMinecraft() == null || Minecraft.getMinecraft().getResourceManager() == null ? Minecraft.getMinecraft().getMcDefaultResourcePack().getResourceStream(resourceLocation) : Minecraft.getMinecraft().getResourceManager().getResource(resourceLocation).getInputStream();
             font = Font.createFont(0, inputStream).deriveFont(size);
         } catch (Exception exception) {
-            font = new Font("Arial", 0, (int)size);
+            font = new Font("Arial", 0, (int) size);
         }
         this.font = font;
         this.antiAlias = true;
@@ -45,9 +45,9 @@ public class CBFont {
     }
 
     private BufferedImage generateFontImage(Font font, boolean bl, boolean bl2, CharData[] arrcharData) {
-        int n = (int)this.imgSize;
+        int n = (int) this.imgSize;
         BufferedImage bufferedImage = new BufferedImage(n, n, 2);
-        Graphics2D graphics2D = (Graphics2D)bufferedImage.getGraphics();
+        Graphics2D graphics2D = (Graphics2D) bufferedImage.getGraphics();
         graphics2D.setFont(font);
         graphics2D.setColor(new Color(255, 255, 255, 0));
         graphics2D.fillRect(0, 0, n, n);
@@ -60,7 +60,7 @@ public class CBFont {
         int n3 = 0;
         int n4 = 1;
         for (int i = 0; i < arrcharData.length; ++i) {
-            char c = (char)i;
+            char c = (char) i;
             CharData charData = new CharData(this);
             Rectangle2D rectangle2D = fontMetrics.getStringBounds(String.valueOf(c), graphics2D);
             charData.width = rectangle2D.getBounds().width + 8;

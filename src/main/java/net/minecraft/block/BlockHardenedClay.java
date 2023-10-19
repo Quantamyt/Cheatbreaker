@@ -2,17 +2,19 @@ package net.minecraft.block;
 
 import net.minecraft.block.material.MapColor;
 import net.minecraft.block.material.Material;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.creativetab.CreativeTabs;
 
-public class BlockHardenedClay extends Block {
-
-
-    public BlockHardenedClay() {
+public class BlockHardenedClay extends Block
+{
+    public BlockHardenedClay()
+    {
         super(Material.rock);
         this.setCreativeTab(CreativeTabs.tabBlock);
     }
 
-    public MapColor getMapColor(int p_149728_1_) {
-        return MapColor.field_151676_q;
+    public MapColor getMapColor(IBlockState state)
+    {
+        return MapColor.adobeColor;
     }
 }

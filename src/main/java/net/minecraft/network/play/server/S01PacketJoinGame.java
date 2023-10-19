@@ -1,7 +1,6 @@
 package net.minecraft.network.play.server;
 
 import java.io.IOException;
-import net.minecraft.network.INetHandler;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayClient;
@@ -9,105 +8,113 @@ import net.minecraft.world.EnumDifficulty;
 import net.minecraft.world.WorldSettings;
 import net.minecraft.world.WorldType;
 
-public class S01PacketJoinGame extends Packet {
-    private int field_149206_a;
-    private boolean field_149204_b;
-    private WorldSettings.GameType field_149205_c;
-    private int field_149202_d;
-    private EnumDifficulty field_149203_e;
-    private int field_149200_f;
-    private WorldType field_149201_g;
+public class S01PacketJoinGame implements Packet<INetHandlerPlayClient>
+{
+    private int entityId;
+    private boolean hardcoreMode;
+    private WorldSettings.GameType gameType;
+    private int dimension;
+    private EnumDifficulty difficulty;
+    private int maxPlayers;
+    private WorldType worldType;
+    private boolean reducedDebugInfo;
 
-
-    public S01PacketJoinGame() {}
-
-    public S01PacketJoinGame(int p_i45201_1_, WorldSettings.GameType p_i45201_2_, boolean p_i45201_3_, int p_i45201_4_, EnumDifficulty p_i45201_5_, int p_i45201_6_, WorldType p_i45201_7_) {
-        this.field_149206_a = p_i45201_1_;
-        this.field_149202_d = p_i45201_4_;
-        this.field_149203_e = p_i45201_5_;
-        this.field_149205_c = p_i45201_2_;
-        this.field_149200_f = p_i45201_6_;
-        this.field_149204_b = p_i45201_3_;
-        this.field_149201_g = p_i45201_7_;
+    public S01PacketJoinGame()
+    {
     }
 
-    /**
-     * Reads the raw packet data from the data stream.
-     */
-    public void readPacketData(PacketBuffer p_148837_1_) throws IOException {
-        this.field_149206_a = p_148837_1_.readInt();
-        short var2 = p_148837_1_.readUnsignedByte();
-        this.field_149204_b = (var2 & 8) == 8;
-        int var3 = var2 & -9;
-        this.field_149205_c = WorldSettings.GameType.getByID(var3);
-        this.field_149202_d = p_148837_1_.readByte();
-        this.field_149203_e = EnumDifficulty.getDifficultyEnum(p_148837_1_.readUnsignedByte());
-        this.field_149200_f = p_148837_1_.readUnsignedByte();
-        this.field_149201_g = WorldType.parseWorldType(p_148837_1_.readStringFromBuffer(16));
-
-        if (this.field_149201_g == null) {
-            this.field_149201_g = WorldType.DEFAULT;
-        }
+    public S01PacketJoinGame(int entityIdIn, WorldSettings.GameType gameTypeIn, boolean hardcoreModeIn, int dimensionIn, EnumDifficulty difficultyIn, int maxPlayersIn, WorldType worldTypeIn, boolean reducedDebugInfoIn)
+    {
+        this.entityId = entityIdIn;
+        this.dimension = dimensionIn;
+        this.difficulty = difficultyIn;
+        this.gameType = gameTypeIn;
+        this.maxPlayers = maxPlayersIn;
+        this.hardcoreMode = hardcoreModeIn;
+        this.worldType = worldTypeIn;
+        this.reducedDebugInfo = reducedDebugInfoIn;
     }
 
-    /**
-     * Writes the raw packet data to the data stream.
-     */
-    public void writePacketData(PacketBuffer p_148840_1_) throws IOException {
-        p_148840_1_.writeInt(this.field_149206_a);
-        int var2 = this.field_149205_c.getID();
+    public void readPacketData(PacketBuffer buf) throws IOException
+    {
+        this.entityId = buf.readInt();
+        int i = buf.readUnsignedByte();
+        this.hardcoreMode = (i & 8) == 8;
+        i = i & -9;
+        this.gameType = WorldSettings.GameType.getByID(i);
+        this.dimension = buf.readByte();
+        this.difficulty = EnumDifficulty.getDifficultyEnum(buf.readUnsignedByte());
+        this.maxPlayers = buf.readUnsignedByte();
+        this.worldType = WorldType.parseWorldType(buf.readStringFromBuffer(16));
 
-        if (this.field_149204_b) {
-            var2 |= 8;
+        if (this.worldType == null)
+        {
+            this.worldType = WorldType.DEFAULT;
         }
 
-        p_148840_1_.writeByte(var2);
-        p_148840_1_.writeByte(this.field_149202_d);
-        p_148840_1_.writeByte(this.field_149203_e.getDifficultyId());
-        p_148840_1_.writeByte(this.field_149200_f);
-        p_148840_1_.writeStringToBuffer(this.field_149201_g.getWorldTypeName());
+        this.reducedDebugInfo = buf.readBoolean();
     }
 
-    public void processPacket(INetHandlerPlayClient p_148833_1_) {
-        p_148833_1_.handleJoinGame(this);
+    public void writePacketData(PacketBuffer buf) throws IOException
+    {
+        buf.writeInt(this.entityId);
+        int i = this.gameType.getID();
+
+        if (this.hardcoreMode)
+        {
+            i |= 8;
+        }
+
+        buf.writeByte(i);
+        buf.writeByte(this.dimension);
+        buf.writeByte(this.difficulty.getDifficultyId());
+        buf.writeByte(this.maxPlayers);
+        buf.writeString(this.worldType.getWorldTypeName());
+        buf.writeBoolean(this.reducedDebugInfo);
     }
 
-    /**
-     * Returns a string formatted as comma separated [field]=[value] values. Used by Minecraft for logging purposes.
-     */
-    public String serialize() {
-        return String.format("eid=%d, gameType=%d, hardcore=%b, dimension=%d, difficulty=%s, maxplayers=%d", Integer.valueOf(this.field_149206_a), Integer.valueOf(this.field_149205_c.getID()), Boolean.valueOf(this.field_149204_b), Integer.valueOf(this.field_149202_d), this.field_149203_e, Integer.valueOf(this.field_149200_f));
+    public void processPacket(INetHandlerPlayClient handler)
+    {
+        handler.handleJoinGame(this);
     }
 
-    public int func_149197_c() {
-        return this.field_149206_a;
+    public int getEntityId()
+    {
+        return this.entityId;
     }
 
-    public boolean func_149195_d() {
-        return this.field_149204_b;
+    public boolean isHardcoreMode()
+    {
+        return this.hardcoreMode;
     }
 
-    public WorldSettings.GameType func_149198_e() {
-        return this.field_149205_c;
+    public WorldSettings.GameType getGameType()
+    {
+        return this.gameType;
     }
 
-    public int func_149194_f() {
-        return this.field_149202_d;
+    public int getDimension()
+    {
+        return this.dimension;
     }
 
-    public EnumDifficulty func_149192_g() {
-        return this.field_149203_e;
+    public EnumDifficulty getDifficulty()
+    {
+        return this.difficulty;
     }
 
-    public int func_149193_h() {
-        return this.field_149200_f;
+    public int getMaxPlayers()
+    {
+        return this.maxPlayers;
     }
 
-    public WorldType func_149196_i() {
-        return this.field_149201_g;
+    public WorldType getWorldType()
+    {
+        return this.worldType;
     }
 
-    public void processPacket(INetHandler p_148833_1_) {
-        this.processPacket((INetHandlerPlayClient)p_148833_1_);
+    public boolean isReducedDebugInfo()
+    {
+        return this.reducedDebugInfo;
     }
 }

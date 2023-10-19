@@ -31,21 +31,21 @@ public class GlobalSettingsElement extends AbstractModulesGuiElement {
         float f2 = HudLayoutEditorGui.getFPSTransitionSpeed(790);
         if (bl) {
             if (this.progressiveRect < n3) {
-                this.progressiveRect = (int)((float)this.progressiveRect + f2);
+                this.progressiveRect = (int) ((float) this.progressiveRect + f2);
                 if (this.progressiveRect > n3) {
                     this.progressiveRect = n3;
                 }
             }
         } else if (this.progressiveRect > 0) {
-            this.progressiveRect = (float)this.progressiveRect - f2 < 0.0f ? 0 : (int)((float)this.progressiveRect - f2);
+            this.progressiveRect = (float) this.progressiveRect - f2 < 0.0f ? 0 : (int) ((float) this.progressiveRect - f2);
         }
         if (this.progressiveRect > 0) {
-            float f3 = (float)this.progressiveRect / (float)n3 * 100.0F;
-            Gui.drawRect(this.x, (int)((float)this.y + ((float)this.height - (float)this.height * f3 / (float)100)), this.x + this.width, this.y + this.height, this.highlightColor);
+            float f3 = (float) this.progressiveRect / (float) n3 * 100.0F;
+            Gui.drawRect(this.x, (int) ((float) this.y + ((float) this.height - (float) this.height * f3 / (float) 100)), this.x + this.width, this.y + this.height, this.highlightColor);
         }
         float darkOrLight = GlobalSettings.darkMode.getBooleanValue() ? 1.0F : 0.0F;
         GL11.glColor4f(darkOrLight, darkOrLight, darkOrLight, 1.4666667f * 0.23863636f);
-        RenderUtil.renderIcon(this.arrowIcon, 2.2f * 1.1363636f, (float)(this.x + 6), (float)this.y + (float)6);
+        RenderUtil.renderIcon(this.arrowIcon, 2.2f * 1.1363636f, (float) (this.x + 6), (float) this.y + (float) 6);
         CheatBreaker.getInstance().playBold18px.drawString("CheatBreaker Settings".toUpperCase(), (float)this.x + 14.0F, (float)this.y + 3.0F, GlobalSettings.darkMode.getBooleanValue() ? CBTheme.darkDullTextColor2 : CBTheme.lightDullTextColor2);
     }
 

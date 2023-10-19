@@ -1,13 +1,17 @@
 package net.minecraft.client.multiplayer;
 
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import com.cheatbreaker.client.CheatBreaker;
-import com.cheatbreaker.client.event.impl.ConnectEvent;
+import com.cheatbreaker.client.event.impl.network.ConnectEvent;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiDisconnected;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.network.NetHandlerLoginClient;
-import net.minecraft.client.network.OldServerPinger;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.network.EnumConnectionState;
 import net.minecraft.network.NetworkManager;
@@ -18,139 +22,139 @@ import net.minecraft.util.ChatComponentTranslation;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.concurrent.atomic.AtomicInteger;
-
-public class GuiConnecting extends GuiScreen {
-    private static final AtomicInteger field_146372_a = new AtomicInteger(0);
+public class GuiConnecting extends GuiScreen
+{
+    private static final AtomicInteger CONNECTION_ID = new AtomicInteger(0);
     private static final Logger logger = LogManager.getLogger();
-    private NetworkManager field_146371_g;
-    private boolean field_146373_h;
-    private final GuiScreen field_146374_i;
-    private static OldServerPinger serverPinger = new OldServerPinger();
+    private NetworkManager networkManager;
+    private boolean cancel;
+    private final GuiScreen previousGuiScreen;
 
-
-    public GuiConnecting(GuiScreen p_i1181_1_, Minecraft p_i1181_2_, ServerData p_i1181_3_) {
-        this.mc = p_i1181_2_;
-        this.field_146374_i = p_i1181_1_;
-        ServerAddress var4 = ServerAddress.func_78860_a(p_i1181_3_.serverIP);
-        p_i1181_2_.loadWorld(null);
-        p_i1181_2_.setServerData(p_i1181_3_);
-        this.func_146367_a(var4.getIP(), var4.getPort());
+    public GuiConnecting(GuiScreen p_i1181_1_, Minecraft mcIn, ServerData p_i1181_3_)
+    {
+        this.mc = mcIn;
+        this.previousGuiScreen = p_i1181_1_;
+        ServerAddress serveraddress = ServerAddress.fromString(p_i1181_3_.serverIP);
+        mcIn.loadWorld((WorldClient)null);
+        mcIn.setServerData(p_i1181_3_);
+        this.connect(serveraddress.getIP(), serveraddress.getPort());
     }
 
-    public GuiConnecting(GuiScreen p_i1182_1_, Minecraft p_i1182_2_, String p_i1182_3_, int p_i1182_4_) {
-        this.mc = p_i1182_2_;
-        this.field_146374_i = p_i1182_1_;
-        p_i1182_2_.loadWorld(null);
-        this.func_146367_a(p_i1182_3_, p_i1182_4_);
+    public GuiConnecting(GuiScreen p_i1182_1_, Minecraft mcIn, String hostName, int port)
+    {
+        this.mc = mcIn;
+        this.previousGuiScreen = p_i1182_1_;
+        mcIn.loadWorld((WorldClient)null);
+        this.connect(hostName, port);
     }
 
-    private void func_146367_a(final String p_146367_1_, final int p_146367_2_) {
-        logger.info("Connecting to " + p_146367_1_ + ", " + p_146367_2_);
-        (new Thread("Server Connector #" + field_146372_a.incrementAndGet()) {
+    private void connect(final String ip, final int port)
+    {
+        logger.info("Connecting to " + ip + ", " + port);
+        (new Thread("Server Connector #" + CONNECTION_ID.incrementAndGet())
+        {
+            public void run()
+            {
+                InetAddress inetaddress = null;
 
-            public void run() {
-                InetAddress var1 = null;
-
-                try {
-                    if (GuiConnecting.this.field_146373_h) {
+                try
+                {
+                    if (GuiConnecting.this.cancel)
+                    {
                         return;
-                    }
-
-                    var1 = InetAddress.getByName(p_146367_1_);
-                    Minecraft.getMinecraft().currentServerData.domain = var1.getHostAddress();
-                    Minecraft.getMinecraft().currentServerData.port = p_146367_2_;
-                    GuiConnecting.serverPinger.func_147224_a(Minecraft.getMinecraft().currentServerData);
-                    while (!Minecraft.getMinecraft().currentServerData.pinged) {
-                        try {
-                            Thread.sleep(100L);
-                        } catch (Exception exception) {
-                            exception.printStackTrace();
-                        }
                     }
                     CheatBreaker.getInstance().getEventBus().handleEvent(new ConnectEvent());
-                    GuiConnecting.this.field_146371_g = NetworkManager.provideLanClient(var1, p_146367_2_);
-                    GuiConnecting.this.field_146371_g.setNetHandler(new NetHandlerLoginClient(GuiConnecting.this.field_146371_g, GuiConnecting.this.mc, GuiConnecting.this.field_146374_i));
-                    GuiConnecting.this.field_146371_g.scheduleOutboundPacket(new C00Handshake(Minecraft.getMinecraft().currentServerData.version == -1332 ? -1332 : 5, p_146367_1_, p_146367_2_, EnumConnectionState.LOGIN));
-                    GuiConnecting.this.field_146371_g.scheduleOutboundPacket(new C00PacketLoginStart(GuiConnecting.this.mc.getSession().func_148256_e()));
-                } catch (UnknownHostException var5) {
-                    if (GuiConnecting.this.field_146373_h) {
+                    inetaddress = InetAddress.getByName(ip);
+                    GuiConnecting.this.networkManager = NetworkManager.createNetworkManagerAndConnect(inetaddress, port, GuiConnecting.this.mc.gameSettings.isUsingNativeTransport());
+                    GuiConnecting.this.networkManager.setNetHandler(new NetHandlerLoginClient(GuiConnecting.this.networkManager, GuiConnecting.this.mc, GuiConnecting.this.previousGuiScreen));
+                    GuiConnecting.this.networkManager.sendPacket(new C00Handshake(47, ip, port, EnumConnectionState.LOGIN));
+                    GuiConnecting.this.networkManager.sendPacket(new C00PacketLoginStart(GuiConnecting.this.mc.getSession().getProfile()));
+                }
+                catch (UnknownHostException unknownhostexception)
+                {
+                    if (GuiConnecting.this.cancel)
+                    {
                         return;
                     }
 
-                    GuiConnecting.logger.error("Couldn't connect to server", var5);
-                    GuiConnecting.this.mc.displayGuiScreen(new GuiDisconnected(GuiConnecting.this.field_146374_i, "connect.failed", new ChatComponentTranslation("disconnect.genericReason", "Unknown host")));
-                } catch (Exception var6) {
-                    if (GuiConnecting.this.field_146373_h) {
+                    GuiConnecting.logger.error((String)"Couldn\'t connect to server", (Throwable)unknownhostexception);
+                    GuiConnecting.this.mc.displayGuiScreen(new GuiDisconnected(GuiConnecting.this.previousGuiScreen, "connect.failed", new ChatComponentTranslation("disconnect.genericReason", new Object[] {"Unknown host"})));
+                }
+                catch (Exception exception)
+                {
+                    if (GuiConnecting.this.cancel)
+                    {
                         return;
                     }
 
-                    GuiConnecting.logger.error("Couldn't connect to server", var6);
-                    String var3 = var6.toString();
+                    GuiConnecting.logger.error((String)"Couldn\'t connect to server", (Throwable)exception);
+                    String s = exception.toString();
 
-                    if (var1 != null) {
-                        String var4 = var1 + ":" + p_146367_2_;
-                        var3 = var3.replaceAll(var4, "");
+                    if (inetaddress != null)
+                    {
+                        String s1 = inetaddress.toString() + ":" + port;
+                        s = s.replaceAll(s1, "");
                     }
 
-                    GuiConnecting.this.mc.displayGuiScreen(new GuiDisconnected(GuiConnecting.this.field_146374_i, "connect.failed", new ChatComponentTranslation("disconnect.genericReason", var3)));
+                    GuiConnecting.this.mc.displayGuiScreen(new GuiDisconnected(GuiConnecting.this.previousGuiScreen, "connect.failed", new ChatComponentTranslation("disconnect.genericReason", new Object[] {s})));
                 }
             }
         }).start();
     }
 
-    /**
-     * Called from the main game loop to update the screen.
-     */
-    public void updateScreen() {
-        if (this.field_146371_g != null) {
-            if (this.field_146371_g.isChannelOpen()) {
-                this.field_146371_g.processReceivedPackets();
-            } else if (this.field_146371_g.getExitMessage() != null) {
-                this.field_146371_g.getNetHandler().onDisconnect(this.field_146371_g.getExitMessage());
+    public void updateScreen()
+    {
+        if (this.networkManager != null)
+        {
+            if (this.networkManager.isChannelOpen())
+            {
+                this.networkManager.processReceivedPackets();
+            }
+            else
+            {
+                this.networkManager.checkDisconnected();
             }
         }
     }
 
-    /**
-     * Fired when a key is typed. This is the equivalent of KeyListener.keyTyped(KeyEvent e).
-     */
-    protected void keyTyped(char p_73869_1_, int p_73869_2_) {}
+    protected void keyTyped(char typedChar, int keyCode) throws IOException
+    {
+    }
 
-    /**
-     * Adds the buttons (and other controls) to the screen in question.
-     */
-    public void initGui() {
+    public void initGui()
+    {
         this.buttonList.clear();
-        this.buttonList.add(new GuiButton(0, this.width / 2 - 100, this.height / 2 + 50, I18n.format("gui.cancel")));
+        this.buttonList.add(new GuiButton(0, this.width / 2 - 100, this.height / 4 + 120 + 12, I18n.format("gui.cancel", new Object[0])));
     }
 
-    protected void actionPerformed(GuiButton p_146284_1_) {
-        if (p_146284_1_.id == 0) {
-            this.field_146373_h = true;
+    protected void actionPerformed(GuiButton button) throws IOException
+    {
+        if (button.id == 0)
+        {
+            this.cancel = true;
 
-            if (this.field_146371_g != null) {
-                this.field_146371_g.closeChannel(new ChatComponentText("Aborted"));
+            if (this.networkManager != null)
+            {
+                this.networkManager.closeChannel(new ChatComponentText("Aborted"));
             }
 
-            this.mc.displayGuiScreen(this.field_146374_i);
+            this.mc.displayGuiScreen(this.previousGuiScreen);
         }
     }
 
-    /**
-     * Draws the screen and all the components in it.
-     */
-    public void drawScreen(int p_73863_1_, int p_73863_2_, float p_73863_3_) {
+    public void drawScreen(int mouseX, int mouseY, float partialTicks)
+    {
         this.drawDefaultBackground();
 
-        if (this.field_146371_g == null) {
-            this.drawCenteredString(this.fontRendererObj, I18n.format("connect.connecting"), this.width / 2, this.height / 2 - 50, 16777215);
-        } else {
-            this.drawCenteredString(this.fontRendererObj, I18n.format("connect.authorizing"), this.width / 2, this.height / 2 - 50, 16777215);
+        if (this.networkManager == null)
+        {
+            this.drawCenteredString(this.fontRendererObj, I18n.format("connect.connecting", new Object[0]), this.width / 2, this.height / 2 - 50, 16777215);
+        }
+        else
+        {
+            this.drawCenteredString(this.fontRendererObj, I18n.format("connect.authorizing", new Object[0]), this.width / 2, this.height / 2 - 50, 16777215);
         }
 
-        super.drawScreen(p_73863_1_, p_73863_2_, p_73863_3_);
+        super.drawScreen(mouseX, mouseY, partialTicks);
     }
 }

@@ -5,6 +5,12 @@ import com.google.common.base.Stopwatch;
 
 import java.util.concurrent.TimeUnit;
 
+/**
+ * @Thread WSPacketClientSyncThread
+ * @see WSPacketClientSync
+ *
+ * This thread sends the com.cheatbreaker.client.network.websocket.client.WSPacketClientSync packet every so often.
+ */
 public class WSPacketClientSyncThread implements Runnable {
     private static final int lIIIIlIIllIIlIIlIIIlIIllI = "Lo6a$DMR".length() * "aAO20DQ6iIlP".length();
     private static final int lIIIIIIIIIlIllIIllIlIIlIl = lIIIIlIIllIIlIIlIIIlIIllI * "yh9bV53gfZv4tBa49MF2G".length() - 16;
@@ -55,30 +61,30 @@ public class WSPacketClientSyncThread implements Runnable {
     }
 
     private boolean lIIIIlIIllIIlIIlIIIlIIllI(int n, double d) {
-        if (CheatBreaker.getInstance() != null && CheatBreaker.getInstance().getWSNetHandler() != null) {
-            CheatBreaker.getInstance().getWSNetHandler().sendPacket(new WSPacketClientSync(n, d));
+        if (CheatBreaker.getInstance() != null && CheatBreaker.getInstance().getWsNetHandler() != null) {
+            CheatBreaker.getInstance().getWsNetHandler().sendPacket(new WSPacketClientSync(n, d));
             return true;
         }
         return false;
     }
 
     private boolean lIIIIlIIllIIlIIlIIIlIIllI() {
-        return IIIIllIlIIIllIlllIlllllIl != (double)lIIIIIIIIIlIllIIllIlIIlIl * (double)4;
+        return IIIIllIlIIIllIlllIlllllIl != (double) lIIIIIIIIIlIllIIllIlIIlIl * (double) 4;
     }
 
     private boolean isFancyStyling() {
-        return IIIIllIIllIIIIllIllIIIlIl != (double)(lIIIIlIIllIIlIIlIIIlIIllI >> 5);
+        return IIIIllIIllIIIIllIllIIIlIl != (double) (lIIIIlIIllIIlIIlIIIlIIllI >> 5);
     }
 
     private boolean onValidSurface() {
-        return IlIlIIIlllIIIlIlllIlIllIl != (double)(lIIIIlIIllIIlIIlIIIlIIllI >> 4);
+        return IlIlIIIlllIIIlIlllIlIllIl != (double) (lIIIIlIIllIIlIIlIIIlIIllI >> 4);
     }
 
     private boolean IIIIllIlIIIllIlllIlllllIl() {
-        return IIIllIllIlIlllllllIlIlIII != (double)(IlllIIIlIlllIllIlIIlllIlI * 2);
+        return IIIllIllIlIlllllllIlIlIII != (double) (IlllIIIlIlllIllIlIIlllIlI * 2);
     }
 
     private boolean IIIIllIIllIIIIllIllIIIlIl() {
-        return IllIIIIIIIlIlIllllIIllIII != (double)(IlllIIIlIlllIllIlIIlllIlI / 10);
+        return IllIIIIIIIlIlIllllIIllIII != (double) (IlllIIIlIlllIllIlIIlllIlI / 10);
     }
 }

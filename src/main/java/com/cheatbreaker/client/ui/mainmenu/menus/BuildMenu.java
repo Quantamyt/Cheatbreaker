@@ -3,7 +3,7 @@ package com.cheatbreaker.client.ui.mainmenu.menus;
 import com.cheatbreaker.client.CheatBreaker;
 import com.cheatbreaker.client.ui.mainmenu.GradientTextButton;
 import com.cheatbreaker.client.ui.mainmenu.MainMenuBase;
-import com.cheatbreaker.client.util.render.wordwrap.WordWrap;
+import com.cheatbreaker.client.util.lang.WordWrap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.PositionedSoundRecord;
 import net.minecraft.client.gui.Gui;
@@ -35,15 +35,12 @@ public class BuildMenu extends MainMenuBase {
             case "Preview":
                 buildInfo = "Preview builds are intended to become the next stable build. Bugs should be less prominent.";
                 break;
-            case "Special Edition":
-                buildInfo = "Special Edition builds are used for very special events. Treat them with care.";
-                break;
         }
         String buildType = CheatBreaker.getInstance().getGitBuildVersion().isEmpty() ? "Production" : CheatBreaker.getInstance().getGitBuildVersion();
         String wrapped = WordWrap.from(buildInfo).maxWidth(40).insertHyphens(false).wrap();
         String[] lines = wrapped.split("\n");
         int index = 0;
-        for(String line : lines) {
+        for (String line : lines) {
             CheatBreaker.getInstance().playRegular14px.drawCenteredString(line, this.getScaledWidth() / 2.0f, this.getScaledHeight() / 2.0f + 14.0f + (index * CheatBreaker.getInstance().playRegular14px.getFont().getSize() / 2.0f), 0xFFDDDDDD);
             index++;
         }
@@ -55,7 +52,7 @@ public class BuildMenu extends MainMenuBase {
     public void mouseClicked(float var1, float var2, int var3) {
         super.mouseClicked(var1, var2, var3);
         if (this.backButton.isMouseInside(var1, var2)) {
-            Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.func_147674_a(new ResourceLocation("gui.button.press"), 1.0f));
+            Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("gui.button.press"), 1.0f));
             this.mc.displayGuiScreen(new MainMenu());
         }
     }

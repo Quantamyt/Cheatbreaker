@@ -1,10 +1,10 @@
 package net.minecraft.item;
 
-public enum EnumAction {
-    none,
-    eat,
-    drink,
-    block,
-    bow
-
+public enum EnumAction
+{
+    NONE,
+    EAT,
+    DRINK,
+    BLOCK,
+    BOW;
 }

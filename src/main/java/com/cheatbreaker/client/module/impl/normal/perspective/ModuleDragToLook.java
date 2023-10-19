@@ -1,9 +1,16 @@
 package com.cheatbreaker.client.module.impl.normal.perspective;
 
 import com.cheatbreaker.client.CheatBreaker;
-import com.cheatbreaker.client.event.impl.TickEvent;
+import com.cheatbreaker.client.event.impl.tick.TickEvent;
+import com.cheatbreaker.client.module.AbstractModule;
 import net.minecraft.client.Minecraft;
 
+/**
+ * @Module - ModuleDragToLook
+ * @see AbstractModule
+ *
+ * This module is the first of its kind, now known as Freelook, or Perspective.
+ */
 public class ModuleDragToLook {
     private final Minecraft mc = Minecraft.getMinecraft();
     private final CheatBreaker cb = CheatBreaker.getInstance();
@@ -20,8 +27,8 @@ public class ModuleDragToLook {
                 if (this.enabled && this.cb.getGlobalSettings().keyBindDragToLook.isPressed()) {
                     this.tick();
                 }
-            } else{
-                if (this.enabled && !this.cb.getGlobalSettings().keyBindDragToLook.getIsKeyPressed()) {
+            } else {
+                if (this.enabled && !this.cb.getGlobalSettings().keyBindDragToLook.isKeyDown()) {
                     this.tick();
                 }
             }
@@ -55,20 +62,20 @@ public class ModuleDragToLook {
         this.enabled = false;
     }
 
-    public void setAngles(float x, float y) {
-        float pitch = this.rotationPitch;
-        float yaw = this.rotationYaw;
-        this.rotationYaw = (float)((double)this.rotationYaw + (this.cb.getModuleManager().perspectiveMod.invertYaw.getBooleanValue() ? (double)-x : (double)x) * 0.15);
-        this.rotationPitch = (float)((double)this.rotationPitch - (this.cb.getModuleManager().perspectiveMod.invertPitch.getBooleanValue() ? (double)-y : (double)y) * 0.15);
+    public void setAngles(float yaw, float pitch) {
+        float rotationPitch = this.rotationPitch;
+        float rotationYaw = this.rotationYaw;
+        this.rotationYaw = (float) ((double) this.rotationYaw + (this.cb.getModuleManager().perspectiveMod.invertYaw.getBooleanValue() ? (double) -yaw : (double) yaw) * 0.15);
+        this.rotationPitch = (float) ((double) this.rotationPitch - (this.cb.getModuleManager().perspectiveMod.invertPitch.getBooleanValue() ? (double) -pitch : (double) pitch) * 0.15);
         if (this.cb.getModuleManager().perspectiveMod.pitchLock.getBooleanValue()) {
-            if (this.rotationPitch < (float)-90) {
+            if (this.rotationPitch < (float) -90) {
                 this.rotationPitch = -90;
             }
-            if (this.rotationPitch > (float)90) {
+            if (this.rotationPitch > (float) 90) {
                 this.rotationPitch = 90;
             }
         }
-        this.prevRotationPitch += this.rotationPitch - pitch;
-        this.prevRotationYaw += this.rotationYaw - yaw;
+        this.prevRotationPitch += this.rotationPitch - rotationPitch;
+        this.prevRotationYaw += this.rotationYaw - rotationYaw;
     }
 }

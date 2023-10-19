@@ -2,11 +2,13 @@
     "targets": [
         "swap"
     ],
-    "passes": [ {
+    "passes": [
+        {
             "name": "scan_pincushion",
             "intarget": "minecraft:main",
             "outtarget": "swap"
-        }, {
+        },
+        {
             "name": "blit",
             "intarget": "swap",
             "outtarget": "minecraft:main"

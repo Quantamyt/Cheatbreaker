@@ -7,11 +7,12 @@ import com.cheatbreaker.client.ui.element.type.FlatButtonElement;
 import com.cheatbreaker.client.ui.element.type.InputFieldElement;
 import com.cheatbreaker.client.ui.element.type.ScrollableElement;
 import com.cheatbreaker.client.ui.util.RenderUtil;
-import com.cheatbreaker.client.util.MessageUtils;
+import com.cheatbreaker.client.util.chat.ChatHandler;
 import net.minecraft.client.audio.PositionedSoundRecord;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.ResourceLocation;
+import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.GL11;
 
 import java.net.URISyntaxException;
@@ -24,15 +25,15 @@ public class ConsoleElement extends DraggableElement {
     private int commandIndex = 0;
 
     private final InputFieldElement textInputBar;
-    private final ScrollableElement scrollBar;
     private final FlatButtonElement sendButton;
+    private final ScrollableElement scrollBar;
     private final FlatButtonElement closeButton;
 
     public ConsoleElement() {
         this.textInputBar = new InputFieldElement(CheatBreaker.getInstance().playRegular14px, "", 0x2FFFFFFF, 0x6FFFFFFF);
         this.textInputBar.setMaxStringLength(256);
-        this.scrollBar = new ScrollableElement(this);
         this.sendButton = new FlatButtonElement("SEND");
+        this.scrollBar = new ScrollableElement(this);
         this.closeButton = new FlatButtonElement("X");
     }
 
@@ -40,8 +41,8 @@ public class ConsoleElement extends DraggableElement {
     public void setElementSize(float x, float y, float width, float height) {
         super.setElementSize(x, y, width, height);
         this.textInputBar.setElementSize(x + 2.0f, y + height - 15.0f, width - 40.0f, 13.0f);
-        this.scrollBar.setElementSize(x + width - 6.0f, y + 12.0f + 3.0f, 4.0f, height - 32.0f);
         this.sendButton.setElementSize(x + width - 37.0f, y + height - 15.0f, 35.0f, 13.0f);
+        this.scrollBar.setElementSize(x + width - 6.0f, y + 12.0f + 3.0f, 4.0f, height - 32.0f);
         this.closeButton.setElementSize(x + width - 12.0f, y + 2.0f, 10.0f, 10.0f);
     }
 
@@ -52,17 +53,16 @@ public class ConsoleElement extends DraggableElement {
         GL11.glPushMatrix();
         Gui.drawRect(this.xPosition, this.yPosition - 0.5f, this.xPosition + this.width, this.yPosition, -1357572843);
         Gui.drawRect(this.xPosition, this.yPosition + this.height, this.xPosition + this.width, this.yPosition + this.height + 0.5f, -1357572843);
-
-        CheatBreaker.getInstance().playRegular14px.drawString("Console", this.xPosition + (float)4, this.yPosition + (float)3, -1);
+        CheatBreaker.getInstance().playRegular14px.drawString("Console", this.xPosition + (float) 4, this.yPosition + (float) 3, -1);
         GL11.glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-        Gui.drawRect(this.xPosition + 2.0f, this.yPosition + (float)12 + (float)3, this.xPosition + this.width - 2.0f, this.yPosition + this.height - (float)17, -1356783327);
+        Gui.drawRect(this.xPosition + 2.0f, this.yPosition + (float) 12 + (float) 3, this.xPosition + this.width - 2.0f, this.yPosition + this.height - (float) 17, -1356783327);
         this.scrollBar.onScroll(f, f2, bl);
         try {
             if (CheatBreaker.getInstance().isConsoleAccess()) {
                 GL11.glPushMatrix();
                 GL11.glEnable(3089);
                 OverlayGui overlayGui = OverlayGui.getInstance();
-                RenderUtil.startScissorBox((int)(this.xPosition + 2.0f), (int)(this.yPosition + (float)12 + (float)3), (int)(this.xPosition + this.width - 2.0f), (int)(this.yPosition + this.height - (float)17), (float)((int)((float)overlayGui.getScaledResolution().getScaleFactor() * overlayGui.getScaleFactor())), (int)overlayGui.getScaledHeight());
+                RenderUtil.startScissorBox((int) (this.xPosition + 2.0f), (int) (this.yPosition + (float) 12 + (float) 3), (int) (this.xPosition + this.width - 2.0f), (int) (this.yPosition + this.height - (float) 17), (float) ((int) ((float) overlayGui.getScaledResolution().getScaleFactor() * overlayGui.getScaleFactor())), (int) overlayGui.getScaledHeight());
                 List<String> list = CheatBreaker.getInstance().getConsoleLines();
                 int n = 0;
                 for (int i = list.size() - 1; i >= 0; --i) {
@@ -71,7 +71,7 @@ public class ConsoleElement extends DraggableElement {
                     n += arrstring.length * 10;
                     int n2 = 0;
                     for (String string2 : arrstring) {
-                        CheatBreaker.getInstance().playRegular14px.drawString(string2, this.xPosition + (float)6, this.yPosition + this.height - (float)19 - (float)n + (float)(n2 * 10), -1);
+                        CheatBreaker.getInstance().playRegular14px.drawString(string2, this.xPosition + (float) 6, this.yPosition + this.height - (float) 19 - (float) n + (float) (n2 * 10), -1);
                         ++n2;
                     }
                 }
@@ -112,18 +112,18 @@ public class ConsoleElement extends DraggableElement {
         }
 
         try {
-            if (this.textInputBar.isFocused() && n == 200 && this.sentCommands.size() != 0) {
+            if (this.textInputBar.isFocused() && n == Keyboard.KEY_DOWN && this.sentCommands.size() != 0) {
                 if (this.commandIndex != 0) this.commandIndex--;
                 this.textInputBar.setText(this.sentCommands.get(this.commandIndex));
-            } else if (this.textInputBar.isFocused() && n == 208 && this.sentCommands.size() != 0) {
+            } else if (this.textInputBar.isFocused() && n == Keyboard.KEY_UP && this.sentCommands.size() != 0) {
                 if (this.commandIndex != this.sentCommands.size() - 1) this.commandIndex++;
                 this.textInputBar.setText(this.sentCommands.get(this.commandIndex));
             }
         } catch (IndexOutOfBoundsException ignored) {
             /* Set it to the first one... */
+            this.textInputBar.setText("");
             this.commandIndex = 0;
         }
-
 
         this.textInputBar.keyTyped(c, n);
         this.sendButton.keyTyped(c, n);
@@ -151,11 +151,11 @@ public class ConsoleElement extends DraggableElement {
             this.handleElementKeyTyped();
         }
         this.sendButton.handleElementMouseClicked(f, f2, n, bl);
-        if (this.isMouseInside(f, f2) && f2 < this.yPosition + (float)12) {
+        if (this.isMouseInside(f, f2) && f2 < this.yPosition + (float) 12) {
             this.setPosition(f, f2);
         }
         if (this.closeButton.isMouseInside(f, f2)) {
-            this.mc.getSoundHandler().playSound(PositionedSoundRecord.func_147674_a(new ResourceLocation("gui.button.press"), 1.0f));
+            this.mc.getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("gui.button.press"), 1.0f));
             OverlayGui.getInstance().removeElement(this);
             return true;
         }
@@ -169,26 +169,37 @@ public class ConsoleElement extends DraggableElement {
 
     private void handleElementKeyTyped() {
         String consoleText = this.textInputBar.getText();
-        if (consoleText.equals("ban")) {
-            MessageUtils.sendBan("Test", 1);
-        } else if (consoleText.equals("clear") || consoleText.equals("cls")) {
+        if (consoleText.equals("clear") || consoleText.equals("cls")) {
             CheatBreaker.getInstance().getConsoleLines().clear();
             CheatBreaker.getInstance().getGlobalSettings().SHOW_MODIFIERS = false;
-        } else if (consoleText.equalsIgnoreCase("wsReconnect") && CheatBreaker.getInstance().getWSNetHandler().isClosed()) {
+        } else if (consoleText.equalsIgnoreCase("wsReconnect") && CheatBreaker.getInstance().getWsNetHandler().isClosed()) {
             try {
                 CheatBreaker.getInstance().connectToAssetServer();
             } catch (URISyntaxException e) {
                 CheatBreaker.getInstance().getConsoleLines().add("Invalid URL: " + e.getInput());
                 e.printStackTrace();
             }
+        } else if (consoleText.equalsIgnoreCase("banwave start")) {
+            String[] names = new String[]{"Tellinq", "Moose1301", "GoXLR", "98ping", "Serversided", "dollarsignjay", "AgentRKID"};
+
+            new Thread(() -> {
+                for (int i = 0; i < names.length + 1; i++) {
+                    try {
+                        ChatHandler.sendBrandedChatMessage(names[i] + " has been CheatBreaker Banned (#000" + (i + 1) + ")");
+                        Thread.sleep(500L);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }).start();
         } else {
             CheatBreaker.getInstance().getConsoleLines().add(EnumChatFormatting.GRAY + "> " + consoleText);
-            CheatBreaker.getInstance().getWSNetHandler().sendPacket(new WSPacketConsoleMessage(consoleText));
+            CheatBreaker.getInstance().getWsNetHandler().sendPacket(new WSPacketConsoleMessage(consoleText));
             this.sentCommands.add(consoleText);
             this.commandIndex = this.sentCommands.size();
         }
         this.textInputBar.setText("");
-        this.mc.getSoundHandler().playSound(PositionedSoundRecord.func_147674_a(new ResourceLocation("gui.button.press"), 1.0f));
+        this.mc.getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("gui.button.press"), 1.0f));
     }
 
     @Override

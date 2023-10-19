@@ -1,26 +1,31 @@
 package com.cheatbreaker.client.ui.mainmenu;
 
 import com.cheatbreaker.client.ui.AbstractGui;
-import com.cheatbreaker.client.ui.util.font.CBFontRenderer;
+import com.cheatbreaker.client.ui.fading.CosineFade;
 import com.cheatbreaker.client.ui.util.RenderUtil;
+import com.cheatbreaker.client.ui.util.font.CBFontRenderer;
 import lombok.Getter;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.ScaledResolution;
-import net.minecraft.client.shader.FrameBuffer;
+import net.minecraft.client.shader.Framebuffer;
 import net.minecraft.util.ResourceLocation;
 import org.lwjgl.opengl.GL11;
 
-public class LoadingScreen extends AbstractGui {//TODO: Finish mapping this class
+public class LoadingScreen extends AbstractGui {
+    private final ResourceLocation outerLogo = new ResourceLocation("client/logo_255_outer.png");
+    private final ResourceLocation innerLogo = new ResourceLocation("client/logo_108_inner.png");
+    CosineFade outerLogoRotationTime = new CosineFade(4000L);
+
     private final ResourceLocation logo = new ResourceLocation("client/logo_108.png");
     private final CBFontRenderer font = new CBFontRenderer(new ResourceLocation("client/font/Ubuntu-M.ttf"), 14.0f);
 
-    private final FrameBuffer framebuffer;
+    private final Framebuffer framebuffer;
 
     private String currentPhaseString;
 
     public int totalPhases;
-    @Getter private int currentPhase;
+    private int currentPhase;
 
     /**
      * Initial setup.
@@ -28,20 +33,24 @@ public class LoadingScreen extends AbstractGui {//TODO: Finish mapping this clas
     public LoadingScreen(int phases) {
         this.totalPhases = phases;
         this.mc = Minecraft.getMinecraft();
-        this.scaledResolution = new ScaledResolution(this.mc, this.mc.displayWidth, this.mc.displayHeight);
-        this.framebuffer = new FrameBuffer(this.scaledResolution.getScaledWidth() * this.scaledResolution.getScaleFactor(), this.scaledResolution.getScaledHeight() * this.scaledResolution.getScaleFactor(), true);
+        this.scaledResolution = new ScaledResolution(this.mc);
+        this.framebuffer = new Framebuffer(this.scaledResolution.getScaledWidth() * this.scaledResolution.getScaleFactor(), this.scaledResolution.getScaledHeight() * this.scaledResolution.getScaleFactor(), true);
     }
 
     /**
      * Updates the text and percentage bar.
-     */
+      */
     public void updatePhase(String phase) {
         this.currentPhaseString = phase;
-        this.addPhase();
+        ++this.currentPhase;
+        if (this.totalPhases <= this.currentPhase) {
+            this.totalPhases = this.currentPhase + 1;
+        }
+        this.drawMenu(0.0f, 0.0f);
     }
 
     /**
-     * Updates the percentage bar.
+     * Updates the text and percentage bar.
      */
     public void addPhase() {
         ++this.currentPhase;
@@ -53,13 +62,29 @@ public class LoadingScreen extends AbstractGui {//TODO: Finish mapping this clas
 
     /**
      * Draws the logo.
-     */
+      */
     private void drawLogo(float resWidth, float resHeight) {
         float size = 27.0f;
         float x = resWidth / 2.0f - size;
         float y = resHeight / 2.0f - size;
         GL11.glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
         RenderUtil.renderEIcon(this.logo, size, x, y);
+    }
+
+    private void drawRotatingLogo(float resWidth, float resHeight) {
+        float logoScale = 27.0f;
+        float x = resWidth / 2.0f - logoScale;
+        float y = resHeight / 2.0f - logoScale;
+
+        GL11.glPushMatrix();
+        GL11.glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+        GL11.glTranslatef(x, y, 1.0f);
+        GL11.glTranslatef(logoScale, logoScale, logoScale);
+        GL11.glRotatef(180.0F * this.outerLogoRotationTime.getFadeAmount(), 0.0f, 0.0f, 1.0f);
+        GL11.glTranslatef(-logoScale, -logoScale, -logoScale);
+        RenderUtil.renderEIcon(this.outerLogo, logoScale, 0.0f, 0.0f);
+        GL11.glPopMatrix();
+        RenderUtil.renderEIcon(this.innerLogo, logoScale, x, y);
     }
 
     /**
@@ -121,7 +146,7 @@ public class LoadingScreen extends AbstractGui {//TODO: Finish mapping this clas
 
         RenderUtil.drawRoundedRect(barX, barY, barX + Math.max(phaseBar, 8.0F), barY + 10.0f, 8.0, -2473389);
         this.initFrameBufferRenderer();
-        this.mc.func_147120_f();
+        this.mc.updateDisplay();
     }
 
     @Override

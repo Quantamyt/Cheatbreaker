@@ -1,14 +1,18 @@
 package com.cheatbreaker.client.network.websocket.client;
 
 import com.cheatbreaker.client.network.websocket.WSNetHandler;
+import com.cheatbreaker.client.network.websocket.WSPacket;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import net.minecraft.network.PacketBuffer;
-import com.cheatbreaker.client.network.websocket.WSPacket;
 
-import java.beans.ConstructorProperties;
-
+/**
+ * @WSPacket WSPacketClientSync
+ * @see WSPacket
+ *
+ * Unknown usage. Reads an Integer and a Double.
+ */
 @Getter @AllArgsConstructor @NoArgsConstructor
 public class WSPacketClientSync extends WSPacket {
     private int id;

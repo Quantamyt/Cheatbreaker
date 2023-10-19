@@ -2,137 +2,166 @@ package net.minecraft.block;
 
 import java.util.List;
 import net.minecraft.block.material.Material;
-import net.minecraft.client.renderer.texture.IIconRegister;
+import net.minecraft.block.properties.IProperty;
+import net.minecraft.block.properties.PropertyDirection;
+import net.minecraft.block.properties.PropertyInteger;
+import net.minecraft.block.state.BlockState;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.item.EntityFallingBlock;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.InventoryPlayer;
+import net.minecraft.init.Blocks;
+import net.minecraft.inventory.Container;
+import net.minecraft.inventory.ContainerRepair;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.IIcon;
-import net.minecraft.util.MathHelper;
+import net.minecraft.util.BlockPos;
+import net.minecraft.util.ChatComponentTranslation;
+import net.minecraft.util.EnumFacing;
+import net.minecraft.util.IChatComponent;
 import net.minecraft.world.IBlockAccess;
+import net.minecraft.world.IInteractionObject;
 import net.minecraft.world.World;
 
-public class BlockAnvil extends BlockFalling {
-    public static final String[] field_149834_a = new String[] {"intact", "slightlyDamaged", "veryDamaged"};
-    private static final String[] field_149835_N = new String[] {"anvil_top_damaged_0", "anvil_top_damaged_1", "anvil_top_damaged_2"};
-    public int field_149833_b;
-    private IIcon[] field_149836_O;
+public class BlockAnvil extends BlockFalling
+{
+    public static final PropertyDirection FACING = PropertyDirection.create("facing", EnumFacing.Plane.HORIZONTAL);
+    public static final PropertyInteger DAMAGE = PropertyInteger.create("damage", 0, 2);
 
-
-    protected BlockAnvil() {
+    protected BlockAnvil()
+    {
         super(Material.anvil);
+        this.setDefaultState(this.blockState.getBaseState().withProperty(FACING, EnumFacing.NORTH).withProperty(DAMAGE, Integer.valueOf(0)));
         this.setLightOpacity(0);
         this.setCreativeTab(CreativeTabs.tabDecorations);
     }
 
-    public boolean renderAsNormalBlock() {
+    public boolean isFullCube()
+    {
         return false;
     }
 
-    public boolean isOpaqueCube() {
+    public boolean isOpaqueCube()
+    {
         return false;
     }
 
-    /**
-     * Gets the block's texture. Args: side, meta
-     */
-    public IIcon getIcon(int p_149691_1_, int p_149691_2_) {
-        if (this.field_149833_b == 3 && p_149691_1_ == 1) {
-            int var3 = (p_149691_2_ >> 2) % this.field_149836_O.length;
-            return this.field_149836_O[var3];
-        } else {
-            return this.blockIcon;
-        }
+    public IBlockState onBlockPlaced(World worldIn, BlockPos pos, EnumFacing facing, float hitX, float hitY, float hitZ, int meta, EntityLivingBase placer)
+    {
+        EnumFacing enumfacing = placer.getHorizontalFacing().rotateY();
+        return super.onBlockPlaced(worldIn, pos, facing, hitX, hitY, hitZ, meta, placer).withProperty(FACING, enumfacing).withProperty(DAMAGE, Integer.valueOf(meta >> 2));
     }
 
-    public void registerBlockIcons(IIconRegister p_149651_1_) {
-        this.blockIcon = p_149651_1_.registerIcon("anvil_base");
-        this.field_149836_O = new IIcon[field_149835_N.length];
-
-        for (int var2 = 0; var2 < this.field_149836_O.length; ++var2) {
-            this.field_149836_O[var2] = p_149651_1_.registerIcon(field_149835_N[var2]);
+    public boolean onBlockActivated(World worldIn, BlockPos pos, IBlockState state, EntityPlayer playerIn, EnumFacing side, float hitX, float hitY, float hitZ)
+    {
+        if (!worldIn.isRemote)
+        {
+            playerIn.displayGui(new BlockAnvil.Anvil(worldIn, pos));
         }
+
+        return true;
     }
 
-    /**
-     * Called when the block is placed in the world.
-     */
-    public void onBlockPlacedBy(World p_149689_1_, int p_149689_2_, int p_149689_3_, int p_149689_4_, EntityLivingBase p_149689_5_, ItemStack p_149689_6_) {
-        int var7 = MathHelper.floor_double((double)(p_149689_5_.rotationYaw * 4.0F / 360.0F) + 0.5D) & 3;
-        int var8 = p_149689_1_.getBlockMetadata(p_149689_2_, p_149689_3_, p_149689_4_) >> 2;
-        ++var7;
-        var7 %= 4;
-
-        if (var7 == 0) {
-            p_149689_1_.setBlockMetadataWithNotify(p_149689_2_, p_149689_3_, p_149689_4_, 2 | var8 << 2, 2);
-        }
-
-        if (var7 == 1) {
-            p_149689_1_.setBlockMetadataWithNotify(p_149689_2_, p_149689_3_, p_149689_4_, 3 | var8 << 2, 2);
-        }
-
-        if (var7 == 2) {
-            p_149689_1_.setBlockMetadataWithNotify(p_149689_2_, p_149689_3_, p_149689_4_, 0 | var8 << 2, 2);
-        }
-
-        if (var7 == 3) {
-            p_149689_1_.setBlockMetadataWithNotify(p_149689_2_, p_149689_3_, p_149689_4_, 1 | var8 << 2, 2);
-        }
+    public int damageDropped(IBlockState state)
+    {
+        return ((Integer)state.getValue(DAMAGE)).intValue();
     }
 
-    /**
-     * Called upon block activation (right click on the block.)
-     */
-    public boolean onBlockActivated(World p_149727_1_, int p_149727_2_, int p_149727_3_, int p_149727_4_, EntityPlayer p_149727_5_, int p_149727_6_, float p_149727_7_, float p_149727_8_, float p_149727_9_) {
-        if (p_149727_1_.isClient) {
-            return true;
-        } else {
-            p_149727_5_.displayGUIAnvil(p_149727_2_, p_149727_3_, p_149727_4_);
-            return true;
-        }
-    }
+    public void setBlockBoundsBasedOnState(IBlockAccess worldIn, BlockPos pos)
+    {
+        EnumFacing enumfacing = (EnumFacing)worldIn.getBlockState(pos).getValue(FACING);
 
-    /**
-     * The type of render function that is called for this block
-     */
-    public int getRenderType() {
-        return 35;
-    }
-
-    /**
-     * Determines the damage on the item the block drops. Used in cloth and wood.
-     */
-    public int damageDropped(int p_149692_1_) {
-        return p_149692_1_ >> 2;
-    }
-
-    public void setBlockBoundsBasedOnState(IBlockAccess p_149719_1_, int p_149719_2_, int p_149719_3_, int p_149719_4_) {
-        int var5 = p_149719_1_.getBlockMetadata(p_149719_2_, p_149719_3_, p_149719_4_) & 3;
-
-        if (var5 != 3 && var5 != 1) {
-            this.setBlockBounds(0.125F, 0.0F, 0.0F, 0.875F, 1.0F, 1.0F);
-        } else {
+        if (enumfacing.getAxis() == EnumFacing.Axis.X)
+        {
             this.setBlockBounds(0.0F, 0.0F, 0.125F, 1.0F, 1.0F, 0.875F);
         }
+        else
+        {
+            this.setBlockBounds(0.125F, 0.0F, 0.0F, 0.875F, 1.0F, 1.0F);
+        }
     }
 
-    public void getSubBlocks(Item p_149666_1_, CreativeTabs p_149666_2_, List p_149666_3_) {
-        p_149666_3_.add(new ItemStack(p_149666_1_, 1, 0));
-        p_149666_3_.add(new ItemStack(p_149666_1_, 1, 1));
-        p_149666_3_.add(new ItemStack(p_149666_1_, 1, 2));
+    public void getSubBlocks(Item itemIn, CreativeTabs tab, List<ItemStack> list)
+    {
+        list.add(new ItemStack(itemIn, 1, 0));
+        list.add(new ItemStack(itemIn, 1, 1));
+        list.add(new ItemStack(itemIn, 1, 2));
     }
 
-    protected void func_149829_a(EntityFallingBlock p_149829_1_) {
-        p_149829_1_.func_145806_a(true);
+    protected void onStartFalling(EntityFallingBlock fallingEntity)
+    {
+        fallingEntity.setHurtEntities(true);
     }
 
-    public void func_149828_a(World p_149828_1_, int p_149828_2_, int p_149828_3_, int p_149828_4_, int p_149828_5_) {
-        p_149828_1_.playAuxSFX(1022, p_149828_2_, p_149828_3_, p_149828_4_, 0);
+    public void onEndFalling(World worldIn, BlockPos pos)
+    {
+        worldIn.playAuxSFX(1022, pos, 0);
     }
 
-    public boolean shouldSideBeRendered(IBlockAccess p_149646_1_, int p_149646_2_, int p_149646_3_, int p_149646_4_, int p_149646_5_) {
+    public boolean shouldSideBeRendered(IBlockAccess worldIn, BlockPos pos, EnumFacing side)
+    {
         return true;
+    }
+
+    public IBlockState getStateForEntityRender(IBlockState state)
+    {
+        return this.getDefaultState().withProperty(FACING, EnumFacing.SOUTH);
+    }
+
+    public IBlockState getStateFromMeta(int meta)
+    {
+        return this.getDefaultState().withProperty(FACING, EnumFacing.getHorizontal(meta & 3)).withProperty(DAMAGE, Integer.valueOf((meta & 15) >> 2));
+    }
+
+    public int getMetaFromState(IBlockState state)
+    {
+        int i = 0;
+        i = i | ((EnumFacing)state.getValue(FACING)).getHorizontalIndex();
+        i = i | ((Integer)state.getValue(DAMAGE)).intValue() << 2;
+        return i;
+    }
+
+    protected BlockState createBlockState()
+    {
+        return new BlockState(this, new IProperty[] {FACING, DAMAGE});
+    }
+
+    public static class Anvil implements IInteractionObject
+    {
+        private final World world;
+        private final BlockPos position;
+
+        public Anvil(World worldIn, BlockPos pos)
+        {
+            this.world = worldIn;
+            this.position = pos;
+        }
+
+        public String getName()
+        {
+            return "anvil";
+        }
+
+        public boolean hasCustomName()
+        {
+            return false;
+        }
+
+        public IChatComponent getDisplayName()
+        {
+            return new ChatComponentTranslation(Blocks.anvil.getUnlocalizedName() + ".name", new Object[0]);
+        }
+
+        public Container createContainer(InventoryPlayer playerInventory, EntityPlayer playerIn)
+        {
+            return new ContainerRepair(playerInventory, this.world, this.position, playerIn);
+        }
+
+        public String getGuiID()
+        {
+            return "minecraft:anvil";
+        }
     }
 }

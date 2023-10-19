@@ -1,60 +1,84 @@
 package net.minecraft.entity.ai.attributes;
 
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import net.minecraft.server.management.LowerStringMap;
 
-public abstract class BaseAttributeMap {
-    protected final Map attributes = new HashMap();
-    protected final Map attributesByName = new LowerStringMap();
+public abstract class BaseAttributeMap
+{
+    protected final Map<IAttribute, IAttributeInstance> attributes = Maps.<IAttribute, IAttributeInstance>newHashMap();
+    protected final Map<String, IAttributeInstance> attributesByName = new LowerStringMap();
+    protected final Multimap<IAttribute, IAttribute> field_180377_c = HashMultimap.<IAttribute, IAttribute>create();
 
-
-    public IAttributeInstance getAttributeInstance(IAttribute p_111151_1_) {
-        return (IAttributeInstance)this.attributes.get(p_111151_1_);
+    public IAttributeInstance getAttributeInstance(IAttribute attribute)
+    {
+        return (IAttributeInstance)this.attributes.get(attribute);
     }
 
-    public IAttributeInstance getAttributeInstanceByName(String p_111152_1_) {
-        return (IAttributeInstance)this.attributesByName.get(p_111152_1_);
+    public IAttributeInstance getAttributeInstanceByName(String attributeName)
+    {
+        return (IAttributeInstance)this.attributesByName.get(attributeName);
     }
 
-    /**
-     * Registers an attribute with this AttributeMap, returns a modifiable AttributeInstance associated with this map
-     */
-    public abstract IAttributeInstance registerAttribute(IAttribute p_111150_1_);
+    public IAttributeInstance registerAttribute(IAttribute attribute)
+    {
+        if (this.attributesByName.containsKey(attribute.getAttributeUnlocalizedName()))
+        {
+            throw new IllegalArgumentException("Attribute is already registered!");
+        }
+        else
+        {
+            IAttributeInstance iattributeinstance = this.func_180376_c(attribute);
+            this.attributesByName.put(attribute.getAttributeUnlocalizedName(), iattributeinstance);
+            this.attributes.put(attribute, iattributeinstance);
 
-    public Collection getAllAttributes() {
+            for (IAttribute iattribute = attribute.func_180372_d(); iattribute != null; iattribute = iattribute.func_180372_d())
+            {
+                this.field_180377_c.put(iattribute, attribute);
+            }
+
+            return iattributeinstance;
+        }
+    }
+
+    protected abstract IAttributeInstance func_180376_c(IAttribute attribute);
+
+    public Collection<IAttributeInstance> getAllAttributes()
+    {
         return this.attributesByName.values();
     }
 
-    public void addAttributeInstance(ModifiableAttributeInstance p_111149_1_) {}
+    public void func_180794_a(IAttributeInstance instance)
+    {
+    }
 
-    public void removeAttributeModifiers(Multimap p_111148_1_) {
-        Iterator var2 = p_111148_1_.entries().iterator();
+    public void removeAttributeModifiers(Multimap<String, AttributeModifier> modifiers)
+    {
+        for (Entry<String, AttributeModifier> entry : modifiers.entries())
+        {
+            IAttributeInstance iattributeinstance = this.getAttributeInstanceByName((String)entry.getKey());
 
-        while (var2.hasNext()) {
-            Entry var3 = (Entry)var2.next();
-            IAttributeInstance var4 = this.getAttributeInstanceByName((String)var3.getKey());
-
-            if (var4 != null) {
-                var4.removeModifier((AttributeModifier)var3.getValue());
+            if (iattributeinstance != null)
+            {
+                iattributeinstance.removeModifier((AttributeModifier)entry.getValue());
             }
         }
     }
 
-    public void applyAttributeModifiers(Multimap p_111147_1_) {
-        Iterator var2 = p_111147_1_.entries().iterator();
+    public void applyAttributeModifiers(Multimap<String, AttributeModifier> modifiers)
+    {
+        for (Entry<String, AttributeModifier> entry : modifiers.entries())
+        {
+            IAttributeInstance iattributeinstance = this.getAttributeInstanceByName((String)entry.getKey());
 
-        while (var2.hasNext()) {
-            Entry var3 = (Entry)var2.next();
-            IAttributeInstance var4 = this.getAttributeInstanceByName((String)var3.getKey());
-
-            if (var4 != null) {
-                var4.removeModifier((AttributeModifier)var3.getValue());
-                var4.applyModifier((AttributeModifier)var3.getValue());
+            if (iattributeinstance != null)
+            {
+                iattributeinstance.removeModifier((AttributeModifier)entry.getValue());
+                iattributeinstance.applyModifier((AttributeModifier)entry.getValue());
             }
         }
     }

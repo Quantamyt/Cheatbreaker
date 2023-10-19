@@ -6,77 +6,81 @@ import com.mojang.util.UUIDTypeAdapter;
 import java.util.Map;
 import java.util.UUID;
 
-public class Session {
+public class Session
+{
     private final String username;
     private final String playerID;
     private final String token;
-    private final Session.Type field_152429_d;
+    private final Session.Type sessionType;
 
-
-    public Session(String p_i1098_1_, String p_i1098_2_, String p_i1098_3_, String p_i1098_4_) {
-        this.username = p_i1098_1_;
-        this.playerID = p_i1098_2_;
-        this.token = p_i1098_3_;
-        this.field_152429_d = Session.Type.func_152421_a(p_i1098_4_);
+    public Session(String usernameIn, String playerIDIn, String tokenIn, String sessionTypeIn)
+    {
+        this.username = usernameIn;
+        this.playerID = playerIDIn;
+        this.token = tokenIn;
+        this.sessionType = Session.Type.setSessionType(sessionTypeIn);
     }
 
-    public String getSessionID() {
+    public String getSessionID()
+    {
         return "token:" + this.token + ":" + this.playerID;
     }
 
-    public String getPlayerID() {
+    public String getPlayerID()
+    {
         return this.playerID;
     }
 
-    public String getUsername() {
+    public String getUsername()
+    {
         return this.username;
     }
 
-    public String getToken() {
+    public String getToken()
+    {
         return this.token;
     }
 
-    public GameProfile func_148256_e() {
-        try {
-            UUID var1 = UUIDTypeAdapter.fromString(this.getPlayerID());
-            return new GameProfile(var1, this.getUsername());
-        } catch (IllegalArgumentException var2) {
-            return new GameProfile(null, this.getUsername());
+    public GameProfile getProfile()
+    {
+        try
+        {
+            UUID uuid = UUIDTypeAdapter.fromString(this.getPlayerID());
+            return new GameProfile(uuid, this.getUsername());
+        }
+        catch (IllegalArgumentException var2)
+        {
+            return new GameProfile((UUID)null, this.getUsername());
         }
     }
 
-    public Session.Type func_152428_f() {
-        return this.field_152429_d;
+    public Session.Type getSessionType()
+    {
+        return this.sessionType;
     }
 
-    public UUID getUniqueID() {
-        return func_148256_e().getId();
-    }
+    public static enum Type
+    {
+        LEGACY("legacy"),
+        MOJANG("mojang");
 
-    public enum Type {
-        LEGACY("LEGACY", 0, "legacy"),
-        MOJANG("MOJANG", 1, "mojang");
-        private static final Map field_152425_c = Maps.newHashMap();
-        private final String field_152426_d;
+        private static final Map<String, Session.Type> SESSION_TYPES = Maps.<String, Session.Type>newHashMap();
+        private final String sessionType;
 
-        private static final Session.Type[] $VALUES = new Session.Type[]{LEGACY, MOJANG};
-
-
-        Type(String p_i1096_1_, int p_i1096_2_, String p_i1096_3_) {
-            this.field_152426_d = p_i1096_3_;
+        private Type(String sessionTypeIn)
+        {
+            this.sessionType = sessionTypeIn;
         }
 
-        public static Session.Type func_152421_a(String p_152421_0_) {
-            return (Session.Type)field_152425_c.get(p_152421_0_.toLowerCase());
+        public static Session.Type setSessionType(String sessionTypeIn)
+        {
+            return (Session.Type)SESSION_TYPES.get(sessionTypeIn.toLowerCase());
         }
 
         static {
-            Session.Type[] var0 = values();
-            int var1 = var0.length;
-
-            for (int var2 = 0; var2 < var1; ++var2) {
-                Session.Type var3 = var0[var2];
-                field_152425_c.put(var3.field_152426_d, var3);
+            for (Session.Type session$type : values())
+            {
+                SESSION_TYPES.put(session$type.sessionType, session$type);
             }
         }
     }

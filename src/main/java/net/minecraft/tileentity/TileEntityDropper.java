@@ -1,12 +1,14 @@
 package net.minecraft.tileentity;
 
-public class TileEntityDropper extends TileEntityDispenser {
+public class TileEntityDropper extends TileEntityDispenser
+{
+    public String getName()
+    {
+        return this.hasCustomName() ? this.customName : "container.dropper";
+    }
 
-
-    /**
-     * Returns the name of the inventory
-     */
-    public String getInventoryName() {
-        return this.isInventoryNameLocalized() ? this.field_146020_a : "container.dropper";
+    public String getGuiID()
+    {
+        return "minecraft:dropper";
     }
 }

@@ -1,50 +1,66 @@
 package net.minecraft.entity.ai;
 
-import java.util.Iterator;
-import java.util.List;
 import net.minecraft.entity.EntityCreature;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.util.AxisAlignedBB;
 
-public class EntityAIHurtByTarget extends EntityAITarget {
-    boolean entityCallsForHelp;
-    private int field_142052_b;
+public class EntityAIHurtByTarget extends EntityAITarget
+{
+    private boolean entityCallsForHelp;
+    private int revengeTimerOld;
+    private final Class[] targetClasses;
 
-
-    public EntityAIHurtByTarget(EntityCreature p_i1660_1_, boolean p_i1660_2_) {
-        super(p_i1660_1_, false);
-        this.entityCallsForHelp = p_i1660_2_;
+    public EntityAIHurtByTarget(EntityCreature creatureIn, boolean entityCallsForHelpIn, Class... targetClassesIn)
+    {
+        super(creatureIn, false);
+        this.entityCallsForHelp = entityCallsForHelpIn;
+        this.targetClasses = targetClassesIn;
         this.setMutexBits(1);
     }
 
-    /**
-     * Returns whether the EntityAIBase should begin execution.
-     */
-    public boolean shouldExecute() {
-        int var1 = this.taskOwner.func_142015_aE();
-        return var1 != this.field_142052_b && this.isSuitableTarget(this.taskOwner.getAITarget(), false);
+    public boolean shouldExecute()
+    {
+        int i = this.taskOwner.getRevengeTimer();
+        return i != this.revengeTimerOld && this.isSuitableTarget(this.taskOwner.getAITarget(), false);
     }
 
-    /**
-     * Execute a one shot task or start executing a continuous task
-     */
-    public void startExecuting() {
+    public void startExecuting()
+    {
         this.taskOwner.setAttackTarget(this.taskOwner.getAITarget());
-        this.field_142052_b = this.taskOwner.func_142015_aE();
+        this.revengeTimerOld = this.taskOwner.getRevengeTimer();
 
-        if (this.entityCallsForHelp) {
-            double var1 = this.getTargetDistance();
-            List var3 = this.taskOwner.worldObj.getEntitiesWithinAABB(this.taskOwner.getClass(), AxisAlignedBB.getBoundingBox(this.taskOwner.posX, this.taskOwner.posY, this.taskOwner.posZ, this.taskOwner.posX + 1.0D, this.taskOwner.posY + 1.0D, this.taskOwner.posZ + 1.0D).expand(var1, 10.0D, var1));
-            Iterator var4 = var3.iterator();
+        if (this.entityCallsForHelp)
+        {
+            double d0 = this.getTargetDistance();
 
-            while (var4.hasNext()) {
-                EntityCreature var5 = (EntityCreature)var4.next();
+            for (EntityCreature entitycreature : this.taskOwner.worldObj.getEntitiesWithinAABB(this.taskOwner.getClass(), (new AxisAlignedBB(this.taskOwner.posX, this.taskOwner.posY, this.taskOwner.posZ, this.taskOwner.posX + 1.0D, this.taskOwner.posY + 1.0D, this.taskOwner.posZ + 1.0D)).expand(d0, 10.0D, d0)))
+            {
+                if (this.taskOwner != entitycreature && entitycreature.getAttackTarget() == null && !entitycreature.isOnSameTeam(this.taskOwner.getAITarget()))
+                {
+                    boolean flag = false;
 
-                if (this.taskOwner != var5 && var5.getAttackTarget() == null && !var5.isOnSameTeam(this.taskOwner.getAITarget())) {
-                    var5.setAttackTarget(this.taskOwner.getAITarget());
+                    for (Class oclass : this.targetClasses)
+                    {
+                        if (entitycreature.getClass() == oclass)
+                        {
+                            flag = true;
+                            break;
+                        }
+                    }
+
+                    if (!flag)
+                    {
+                        this.setEntityAttackTarget(entitycreature, this.taskOwner.getAITarget());
+                    }
                 }
             }
         }
 
         super.startExecuting();
+    }
+
+    protected void setEntityAttackTarget(EntityCreature creatureIn, EntityLivingBase entityLivingBaseIn)
+    {
+        creatureIn.setAttackTarget(entityLivingBaseIn);
     }
 }

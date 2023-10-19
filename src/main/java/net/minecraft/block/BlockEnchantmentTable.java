@@ -1,8 +1,9 @@
 package net.minecraft.block;
 
 import java.util.Random;
+import net.minecraft.block.material.MapColor;
 import net.minecraft.block.material.Material;
-import net.minecraft.client.renderer.texture.IIconRegister;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
@@ -10,45 +11,53 @@ import net.minecraft.init.Blocks;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.tileentity.TileEntityEnchantmentTable;
-import net.minecraft.util.IIcon;
+import net.minecraft.util.BlockPos;
+import net.minecraft.util.EnumFacing;
+import net.minecraft.util.EnumParticleTypes;
 import net.minecraft.world.World;
 
-public class BlockEnchantmentTable extends BlockContainer {
-    private IIcon field_149950_a;
-    private IIcon field_149949_b;
-
-
-    protected BlockEnchantmentTable() {
-        super(Material.rock);
+public class BlockEnchantmentTable extends BlockContainer
+{
+    protected BlockEnchantmentTable()
+    {
+        super(Material.rock, MapColor.redColor);
         this.setBlockBounds(0.0F, 0.0F, 0.0F, 1.0F, 0.75F, 1.0F);
         this.setLightOpacity(0);
         this.setCreativeTab(CreativeTabs.tabDecorations);
     }
 
-    public boolean renderAsNormalBlock() {
+    public boolean isFullCube()
+    {
         return false;
     }
 
-    /**
-     * A randomly called display update to be able to add particles or other items for display
-     */
-    public void randomDisplayTick(World p_149734_1_, int p_149734_2_, int p_149734_3_, int p_149734_4_, Random p_149734_5_) {
-        super.randomDisplayTick(p_149734_1_, p_149734_2_, p_149734_3_, p_149734_4_, p_149734_5_);
+    public void randomDisplayTick(World worldIn, BlockPos pos, IBlockState state, Random rand)
+    {
+        super.randomDisplayTick(worldIn, pos, state, rand);
 
-        for (int var6 = p_149734_2_ - 2; var6 <= p_149734_2_ + 2; ++var6) {
-            for (int var7 = p_149734_4_ - 2; var7 <= p_149734_4_ + 2; ++var7) {
-                if (var6 > p_149734_2_ - 2 && var6 < p_149734_2_ + 2 && var7 == p_149734_4_ - 1) {
-                    var7 = p_149734_4_ + 2;
+        for (int i = -2; i <= 2; ++i)
+        {
+            for (int j = -2; j <= 2; ++j)
+            {
+                if (i > -2 && i < 2 && j == -1)
+                {
+                    j = 2;
                 }
 
-                if (p_149734_5_.nextInt(16) == 0) {
-                    for (int var8 = p_149734_3_; var8 <= p_149734_3_ + 1; ++var8) {
-                        if (p_149734_1_.getBlock(var6, var8, var7) == Blocks.bookshelf) {
-                            if (!p_149734_1_.isAirBlock((var6 - p_149734_2_) / 2 + p_149734_2_, var8, (var7 - p_149734_4_) / 2 + p_149734_4_)) {
+                if (rand.nextInt(16) == 0)
+                {
+                    for (int k = 0; k <= 1; ++k)
+                    {
+                        BlockPos blockpos = pos.add(i, k, j);
+
+                        if (worldIn.getBlockState(blockpos).getBlock() == Blocks.bookshelf)
+                        {
+                            if (!worldIn.isAirBlock(pos.add(i / 2, 0, j / 2)))
+                            {
                                 break;
                             }
 
-                            p_149734_1_.spawnParticle("enchantmenttable", (double)p_149734_2_ + 0.5D, (double)p_149734_3_ + 2.0D, (double)p_149734_4_ + 0.5D, (double)((float)(var6 - p_149734_2_) + p_149734_5_.nextFloat()) - 0.5D, (float)(var8 - p_149734_3_) - p_149734_5_.nextFloat() - 1.0F, (double)((float)(var7 - p_149734_4_) + p_149734_5_.nextFloat()) - 0.5D);
+                            worldIn.spawnParticle(EnumParticleTypes.ENCHANTMENT_TABLE, (double)pos.getX() + 0.5D, (double)pos.getY() + 2.0D, (double)pos.getZ() + 0.5D, (double)((float)i + rand.nextFloat()) - 0.5D, (double)((float)k - rand.nextFloat() - 1.0F), (double)((float)j + rand.nextFloat()) - 0.5D, new int[0]);
                         }
                     }
                 }
@@ -56,51 +65,52 @@ public class BlockEnchantmentTable extends BlockContainer {
         }
     }
 
-    public boolean isOpaqueCube() {
+    public boolean isOpaqueCube()
+    {
         return false;
     }
 
-    /**
-     * Gets the block's texture. Args: side, meta
-     */
-    public IIcon getIcon(int p_149691_1_, int p_149691_2_) {
-        return p_149691_1_ == 0 ? this.field_149949_b : (p_149691_1_ == 1 ? this.field_149950_a : this.blockIcon);
+    public int getRenderType()
+    {
+        return 3;
     }
 
-    /**
-     * Returns a new instance of a block's tile entity class. Called on placing the block.
-     */
-    public TileEntity createNewTileEntity(World p_149915_1_, int p_149915_2_) {
+    public TileEntity createNewTileEntity(World worldIn, int meta)
+    {
         return new TileEntityEnchantmentTable();
     }
 
-    /**
-     * Called upon block activation (right click on the block.)
-     */
-    public boolean onBlockActivated(World p_149727_1_, int p_149727_2_, int p_149727_3_, int p_149727_4_, EntityPlayer p_149727_5_, int p_149727_6_, float p_149727_7_, float p_149727_8_, float p_149727_9_) {
-        if (p_149727_1_.isClient) {
+    public boolean onBlockActivated(World worldIn, BlockPos pos, IBlockState state, EntityPlayer playerIn, EnumFacing side, float hitX, float hitY, float hitZ)
+    {
+        if (worldIn.isRemote)
+        {
             return true;
-        } else {
-            TileEntityEnchantmentTable var10 = (TileEntityEnchantmentTable)p_149727_1_.getTileEntity(p_149727_2_, p_149727_3_, p_149727_4_);
-            p_149727_5_.displayGUIEnchantment(p_149727_2_, p_149727_3_, p_149727_4_, var10.func_145921_b() ? var10.func_145919_a() : null);
+        }
+        else
+        {
+            TileEntity tileentity = worldIn.getTileEntity(pos);
+
+            if (tileentity instanceof TileEntityEnchantmentTable)
+            {
+                playerIn.displayGui((TileEntityEnchantmentTable)tileentity);
+            }
+
             return true;
         }
     }
 
-    /**
-     * Called when the block is placed in the world.
-     */
-    public void onBlockPlacedBy(World p_149689_1_, int p_149689_2_, int p_149689_3_, int p_149689_4_, EntityLivingBase p_149689_5_, ItemStack p_149689_6_) {
-        super.onBlockPlacedBy(p_149689_1_, p_149689_2_, p_149689_3_, p_149689_4_, p_149689_5_, p_149689_6_);
+    public void onBlockPlacedBy(World worldIn, BlockPos pos, IBlockState state, EntityLivingBase placer, ItemStack stack)
+    {
+        super.onBlockPlacedBy(worldIn, pos, state, placer, stack);
 
-        if (p_149689_6_.hasDisplayName()) {
-            ((TileEntityEnchantmentTable)p_149689_1_.getTileEntity(p_149689_2_, p_149689_3_, p_149689_4_)).func_145920_a(p_149689_6_.getDisplayName());
+        if (stack.hasDisplayName())
+        {
+            TileEntity tileentity = worldIn.getTileEntity(pos);
+
+            if (tileentity instanceof TileEntityEnchantmentTable)
+            {
+                ((TileEntityEnchantmentTable)tileentity).setCustomName(stack.getDisplayName());
+            }
         }
-    }
-
-    public void registerBlockIcons(IIconRegister p_149651_1_) {
-        this.blockIcon = p_149651_1_.registerIcon(this.getTextureName() + "_" + "side");
-        this.field_149950_a = p_149651_1_.registerIcon(this.getTextureName() + "_" + "top");
-        this.field_149949_b = p_149651_1_.registerIcon(this.getTextureName() + "_" + "bottom");
     }
 }

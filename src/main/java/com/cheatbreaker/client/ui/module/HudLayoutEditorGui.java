@@ -26,6 +26,7 @@ import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
 
 import java.awt.*;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -65,7 +66,6 @@ public class HudLayoutEditorGui extends GuiScreen {
     private int arrowKeyMoves;
     private GuiTextField bugReportTextField;
     private float animationPhase = 0;
-    private final boolean notExperimentalBuild = !CheatBreaker.getInstance().getGitBuildVersion().equals("Production") && !CheatBreaker.getInstance().getGitBuildVersion().equals("Preview");
 
     @Override
     public void onGuiClosed() {
@@ -91,8 +91,8 @@ public class HudLayoutEditorGui extends GuiScreen {
         this.dataHolder = null;
         allMenusClosed = false;
         float scale = 1.0f / CheatBreaker.getScaleFactor();
-        int scaledWidth = (int)((float)this.width / scale);
-        int scaledHeight = (int)((float)this.height / scale);
+        int scaledWidth = (int) ((float) this.width / scale);
+        int scaledHeight = (int) ((float) this.height / scale);
         this.guiElements.clear();
         this.buttons.clear();
         List<AbstractModule> moduleList = CheatBreaker.getInstance().getModuleManager().playerMods;
@@ -109,10 +109,12 @@ public class HudLayoutEditorGui extends GuiScreen {
         this.showGuidesButton = new ModulesGuiButtonElement(null, "eye-64.png", 4, scaledHeight - 32, 28, 28, -12418828, scale);
         this.helpButton = new ModulesGuiButtonElement(null, "?", 36, scaledHeight - 32, 28, 28, -12418828, scale);
         this.bugReportButton = new ModulesGuiButtonElement(null, "Bug report", 68, scaledHeight - 32, 140, 28, -12418828, scale);
-        this.bugReportTextField = new GuiTextField(this.mc.fontRenderer, 68, scaledHeight - 58, 140, 20);
-        if (CheatBreaker.getInstance().getModuleManager().isUsingStaffModules()) {
+        this.bugReportTextField = new GuiTextField(299, this.mc.fontRendererObj, 68, scaledHeight - 58, 140, 20);
+
+        if (CheatBreaker.getInstance().getConfigManager().isUsingStaffModules()) {
             this.buttons.add(new ModulesGuiButtonElement(this.staffModulesElement, "Staff Mods", scaledWidth / 2 - 50, scaledHeight / 2 - 44, 100, 20, -9442858, scale));
         }
+
         this.buttons.add(new ModulesGuiButtonElement(this.modulesElement, "Mods", scaledWidth / 2 - 50, scaledHeight / 2 - 19, 100, 28, -13916106, scale));
         this.buttons.add(new ModulesGuiButtonElement(this.settingsElement, "cog-64.png", scaledWidth / 2 + 54, scaledHeight / 2 - 19, 28, 28, -12418828, scale));
         this.buttons.add(new ModulesGuiButtonElement(this.profilesElement, "profiles-64.png", scaledWidth / 2 - 82, scaledHeight / 2 - 19, 28, 28, -12418828, scale));
@@ -124,8 +126,8 @@ public class HudLayoutEditorGui extends GuiScreen {
     @Override
     public void updateScreen() {
         float f = 1.0f / CheatBreaker.getScaleFactor();
-        int n = (int)((float)this.width / f);
-        int n2 = (int)((float)this.height / f);
+        int n = (int) ((float) this.width / f);
+        int n2 = (int) ((float) this.height / f);
         this.setDirection(n);
         if (this.isBugReportOpen) {
             this.bugReportTextField.updateCursorCounter();
@@ -142,27 +144,27 @@ public class HudLayoutEditorGui extends GuiScreen {
                         AbstractModule module = position.module;
                         if (module == null) continue;
                         if (leftKeyPressed) {
-                            module.setTranslations((int)module.getXTranslation() - 1, (float)((int)module.getYTranslation()));
+                            module.setTranslations((int) module.getXTranslation() - 1, (float) ((int) module.getYTranslation()));
                             continue;
                         }
                         if (rightKeyPressed) {
-                            module.setTranslations((int)module.getXTranslation() + 1, (float)((int)module.getYTranslation()));
+                            module.setTranslations((int) module.getXTranslation() + 1, (float) ((int) module.getYTranslation()));
                             continue;
                         }
                         if (downKeyPressed) {
-                            module.setTranslations((int)module.getXTranslation(), (float)((int)module.getYTranslation() - 1));
+                            module.setTranslations((int) module.getXTranslation(), (float) ((int) module.getYTranslation() - 1));
                             continue;
                         }
                         if (upKeyPressed) {
-                            module.setTranslations((int)module.getXTranslation(), (float)((int)module.getYTranslation() + 1));
+                            module.setTranslations((int) module.getXTranslation(), (float) ((int) module.getYTranslation() + 1));
                         }
 
                     }
                 }
             }
         }
-        float f2 = this.animationPhase > 30 ? 2.0f + this.animationPhase / 2.0f : (float)4;
-        this.animationPhase = this.animationPhase + f2 >= (float)255 ? 255 : (int)(this.animationPhase + f2);
+        float f2 = this.animationPhase > 30 ? 2.0f + this.animationPhase / 2.0f : (float) 4;
+        this.animationPhase = this.animationPhase + f2 >= (float) 255 ? 255 : (int) (this.animationPhase + f2);
     }
 
     private float lIIIIlIIllIIlIIlIIIlIIllI(Rectangle rectangle, Rectangle rectangle2) {
@@ -178,17 +180,14 @@ public class HudLayoutEditorGui extends GuiScreen {
         Rectangle object;
         super.drawScreen(mouseX, mouseY, partialTicks);
         this.renderBlur();
-        ScaledResolution scaledResolution = new ScaledResolution(this.mc, this.mc.displayWidth, this.mc.displayHeight);
+        ScaledResolution scaledResolution = new ScaledResolution(this.mc);
         float scale = 1.0f / CheatBreaker.getScaleFactor();
         if (draggingModule != null) {
-            if (CheatBreaker.getInstance().getGlobalSettings().showDebugOutput.getBooleanValue()) {
-                this.debugOutputHud(scaledResolution);
-            }
             if (!Mouse.isButtonDown(1)) {
                 RenderUtil.drawRoundedRect(2.0, 2.0, 2.5D, this.height - 2, 0.0, -15599126);
-                RenderUtil.drawRoundedRect((float)this.width - 2.5F, 2.0, this.width - 2, this.height - 2, 0.0, -15599126);
-                RenderUtil.drawRoundedRect(2.0, 2, this.width - 2,  2.5, 0.0, -15599126);
-                RenderUtil.drawRoundedRect(2.0, (float)this.height - 2.5F, this.width - 2, this.height - 2, 0.0, -15599126);
+                RenderUtil.drawRoundedRect((float) this.width - 2.5F, 2.0, this.width - 2, this.height - 2, 0.0, -15599126);
+                RenderUtil.drawRoundedRect(2.0, 2, this.width - 2, 2.5, 0.0, -15599126);
+                RenderUtil.drawRoundedRect(2.0, (float) this.height - 2.5F, this.width - 2, this.height - 2, 0.0, -15599126);
             }
             // Temporarily Try-Catching this until me or someone else figures out how to fix this *without* the need to reset profiles - Tellinq
             try {
@@ -199,9 +198,9 @@ public class HudLayoutEditorGui extends GuiScreen {
                     float[] arrf = module.getScaledPoints(scaledResolution, true);
                     float[] arrf2 = module1.getScaledPoints(scaledResolution, true);
                     float[] arrf3 = draggingModule.getScaledPoints(scaledResolution, true);
-                    Rectangle rectangle = new Rectangle((int)(arrf[0] * module.masterScale()), (int)(arrf[1] * module.masterScale()), (int)(module.height * module.masterScale()), (int)(module.width * module.masterScale()));
-                    Rectangle rectangle2 = new Rectangle((int)(arrf2[0] * module1.masterScale()), (int)(arrf2[1] * module1.masterScale()), (int)(module1.height * module1.masterScale()), (int)(module1.width * module1.masterScale()));
-                    Rectangle rectangle3 = new Rectangle((int)(arrf3[0] * HudLayoutEditorGui.draggingModule.masterScale()), (int)(arrf3[1] * HudLayoutEditorGui.draggingModule.masterScale()), (int)(HudLayoutEditorGui.draggingModule.width * HudLayoutEditorGui.draggingModule.masterScale()), (int)(HudLayoutEditorGui.draggingModule.height * HudLayoutEditorGui.draggingModule.masterScale()));
+                    Rectangle rectangle = new Rectangle((int) (arrf[0] * module.masterScale()), (int) (arrf[1] * module.masterScale()), (int) (module.height * module.masterScale()), (int) (module.width * module.masterScale()));
+                    Rectangle rectangle2 = new Rectangle((int) (arrf2[0] * module1.masterScale()), (int) (arrf2[1] * module1.masterScale()), (int) (module1.height * module1.masterScale()), (int) (module1.width * module1.masterScale()));
+                    Rectangle rectangle3 = new Rectangle((int) (arrf3[0] * HudLayoutEditorGui.draggingModule.masterScale()), (int) (arrf3[1] * HudLayoutEditorGui.draggingModule.masterScale()), (int) (HudLayoutEditorGui.draggingModule.width * HudLayoutEditorGui.draggingModule.masterScale()), (int) (HudLayoutEditorGui.draggingModule.height * HudLayoutEditorGui.draggingModule.masterScale()));
                     try {
                         if (this.lIIIIlIIllIIlIIlIIIlIIllI(rectangle, rectangle3) > this.lIIIIlIIllIIlIIlIIIlIIllI(rectangle2, rectangle3)) {
                             return -1;
@@ -222,19 +221,21 @@ public class HudLayoutEditorGui extends GuiScreen {
             }
             for (ModulePosition position : this.positions) {
                 this.dragModule(position, mouseX, mouseY, scaledResolution);
-                if (!(Boolean) CheatBreaker.getInstance().getGlobalSettings().snapModules.getValue() || !this.IlIlIIIlllllIIIlIlIlIllII || Mouse.isButtonDown(1) || position.module != draggingModule) continue;
+                if (!(Boolean) CheatBreaker.getInstance().getGlobalSettings().snapModules.getValue() || !this.IlIlIIIlllllIIIlIlIlIllII || Mouse.isButtonDown(1) || position.module != draggingModule)
+                    continue;
                 for (AbstractModule module : this.modules) {
                     float[] positionScaledPoints = position.module.getScaledPoints(scaledResolution, true);
                     float centerVerticalSnap = this.height / 2 - (positionScaledPoints[1] + position.module.height / 2) * position.module.masterScale();
                     float centerHorizontalSnap = this.width / 2 - (positionScaledPoints[0] + position.module.width / 2) * position.module.masterScale();
-                    float snappingStrength = (float)CheatBreaker.getInstance().getGlobalSettings().snappingStrength.getValue();
-                    if (centerHorizontalSnap >= (float)(-snappingStrength) && centerHorizontalSnap <= (float)snappingStrength) {
+                    float snappingStrength = (float) CheatBreaker.getInstance().getGlobalSettings().snappingStrength.getValue();
+                    if (centerHorizontalSnap >= -snappingStrength && centerHorizontalSnap <= snappingStrength) {
                         this.snapHorizontalPosition(centerHorizontalSnap);
                     }
-                    if (centerVerticalSnap >= (float)(-snappingStrength) && centerVerticalSnap <= (float)snappingStrength) {
+                    if (centerVerticalSnap >= -snappingStrength && centerVerticalSnap <= snappingStrength) {
                         this.snapVerticalPosition(centerVerticalSnap);
                     }
-                    if (this.getSelectedModules(module) != null || module.getGuiAnchor() == null || !module.isRenderHud() || !module.isEnabled() || module.getName().contains("Zans") && CheatBreaker.getInstance().getModuleManager().miniMapMod.getVoxelMap().getMapOptions().hide) continue;
+                    if (this.getSelectedModules(module) != null || module.getGuiAnchor() == null || !module.isRenderHud() || !module.isEnabled() || module.getName().contains("Zans")/* && CheatBreaker.getInstance().getModuleManager().miniMapMod.getVoxelMap().getMapOptions().hide*/)
+                        continue;
                     float[] moduleScaledPoints = module.getScaledPoints(scaledResolution, true);
                     boolean bl = true;
                     boolean bl2 = true;
@@ -247,34 +248,34 @@ public class HudLayoutEditorGui extends GuiScreen {
                     f2 = (moduleScaledPoints[1] + module.height) * module.masterScale() - positionScaledPoints[1] * position.module.masterScale();
                     float f11 = moduleScaledPoints[1] * module.masterScale() - (positionScaledPoints[1] + position.module.height) * position.module.masterScale();
 
-                    if (f6 >= (float)(-snappingStrength) && f6 <= (float)snappingStrength) {
+                    if (f6 >= -snappingStrength && f6 <= snappingStrength) {
                         bl = false;
                         this.snapHorizontalPosition(f6);
                     }
-                    if (f7 >= (float)(-snappingStrength) && f7 <= (float)snappingStrength && bl) {
+                    if (f7 >= -snappingStrength && f7 <= snappingStrength && bl) {
                         bl = false;
                         this.snapHorizontalPosition(f7);
                     }
-                    if (f9 >= (float)(-snappingStrength) && f9 <= (float)snappingStrength && bl) {
+                    if (f9 >= -snappingStrength && f9 <= snappingStrength && bl) {
                         bl = false;
                         this.snapHorizontalPosition(f9);
                     }
-                    if (f8 >= (float)(-snappingStrength) && f8 <= (float)snappingStrength && bl) {
+                    if (f8 >= -snappingStrength && f8 <= snappingStrength && bl) {
                         this.snapHorizontalPosition(f8);
                     }
-                    if (f10 >= (float)(-snappingStrength) && f10 <= (float)snappingStrength) {
+                    if (f10 >= -snappingStrength && f10 <= snappingStrength) {
                         bl2 = false;
                         this.snapVerticalPosition(f10);
                     }
-                    if (f3 >= (float)(-snappingStrength) && f3 <= (float)snappingStrength && bl2) {
+                    if (f3 >= -snappingStrength && f3 <= snappingStrength && bl2) {
                         bl2 = false;
                         this.snapVerticalPosition(f3);
                     }
-                    if (f11 >= (float)(-snappingStrength) && f11 <= (float)snappingStrength && bl2) {
+                    if (f11 >= -snappingStrength && f11 <= snappingStrength && bl2) {
                         bl2 = false;
                         this.snapVerticalPosition(f11);
                     }
-                    if (!(f2 >= (float)(-snappingStrength)) || !(f2 <= (float)snappingStrength) || !bl2) continue;
+                    if (!(f2 >= -snappingStrength) || !(f2 <= snappingStrength) || !bl2) continue;
                     this.snapVerticalPosition(f2);
                 }
             }
@@ -284,19 +285,19 @@ public class HudLayoutEditorGui extends GuiScreen {
             switch (this.dataHolder.screenLocation) {
                 case RIGHT_BOTTOM:
                     n4 = mouseY - this.dataHolder.mouseY + (mouseX - this.dataHolder.mouseX);
-                    f12 = this.dataHolder.scale - (float)n4 / (float)115;
+                    f12 = this.dataHolder.scale - (float) n4 / (float) 115;
                     break;
                 case LEFT_TOP:
                     n4 = mouseY - this.dataHolder.mouseY + (mouseX - this.dataHolder.mouseX);
-                    f12 = this.dataHolder.scale + (float)n4 / (float)115;
+                    f12 = this.dataHolder.scale + (float) n4 / (float) 115;
                     break;
                 case RIGHT_TOP:
                     n4 = mouseX - this.dataHolder.mouseX - (mouseY - this.dataHolder.mouseY);
-                    f12 = this.dataHolder.scale - (float)n4 / (float)115;
+                    f12 = this.dataHolder.scale - (float) n4 / (float) 115;
                     break;
                 case LEFT_BOTTOM:
                     n4 = mouseX - this.dataHolder.mouseX - (mouseY - this.dataHolder.mouseY);
-                    f12 = this.dataHolder.scale + (float)n4 / (float)115;
+                    f12 = this.dataHolder.scale + (float) n4 / (float) 115;
             }
             if (f12 >= 1.0421053f * 0.47979796f && f12 <= 1.8962264f * 0.7910448f) {
                 this.dataHolder.module.scale.setValue((float) ((double) Math.round((double) f12 * (double) 100) / (double) 100));
@@ -311,31 +312,31 @@ public class HudLayoutEditorGui extends GuiScreen {
         }
         GL11.glPushMatrix();
         GL11.glScalef(scale, scale, scale);
-        int n5 = (int)((float)this.width / scale);
-        int n6 = (int)((float)this.height / scale);
+        int n5 = (int) ((float) this.width / scale);
+        int n6 = (int) ((float) this.height / scale);
         this.showGuidesButton.handleDrawElement(mouseX, mouseY, partialTicks);
         this.helpButton.handleDrawElement(mouseX, mouseY, partialTicks);
-        if (notExperimentalBuild) this.bugReportButton.handleDrawElement(mouseX, mouseY, partialTicks);
+        this.bugReportButton.handleDrawElement(mouseX, mouseY, partialTicks);
         if (this.isBugReportOpen) {
-            this.mc.fontRenderer.drawString("Bug Description (Press ENTER to send)", 39, n6 - 70, -1);
+            this.mc.fontRendererObj.drawString("Bug Description (Press ENTER to send)", 39, n6 - 70, -1);
             this.bugReportTextField.setMaxStringLength(180);
             this.bugReportTextField.drawTextBox();
         }
-        float f13 = (this.animationPhase * 8) / (float)255;
+        float f13 = (this.animationPhase * 8) / (float) 255;
         GL11.glPushMatrix();
         GL11.glColor4f(1.0f, 1.0f, 1.0f, f13);
         int n7 = 0xFFFFFF;
-        if (f13 / (float)4 > 0.0f && f13 / (float)4 < 1.0f) {
-            n7 = new Color(1.0f, 1.0f, 1.0f, f13 / (float)4).getRGB();
+        if (f13 / (float) 4 > 0.0f && f13 / (float) 4 < 1.0f) {
+            n7 = new Color(1.0f, 1.0f, 1.0f, f13 / (float) 4).getRGB();
         }
         GL11.glColor4f(1.0f, 1.0f, 1.0f, f13);
         if (f13 > 1.0f) {
-            GL11.glTranslatef(-((this.animationPhase * 2) - (float)32) / (float)12 - 1.0f, 0.0f, 0.0f);
+            GL11.glTranslatef(-((this.animationPhase * 2) - (float) 32) / (float) 12 - 1.0f, 0.0f, 0.0f);
         }
-        RenderUtil.renderIcon(new ResourceLocation("client/logo_white.png"), (float)(n5 / 2 - 14), (float)(n6 / 2 - 47 - (CheatBreaker.getInstance().getModuleManager().isUsingStaffModules() ? 22 : 0)), (float)28, 15);
+        RenderUtil.renderIcon(new ResourceLocation("client/logo_white.png"), (float) (n5 / 2 - 14), (float) (n6 / 2 - 47 - (CheatBreaker.getInstance().getConfigManager().isUsingStaffModules() ? 22 : 0)), (float) 28, 15);
         if (f13 > 1.0f) {
-            CheatBreaker.getInstance().playBold18px.drawString("| CHEAT", n5 / 2.0f + 18.0f, (float)(n6 / 2 - 45 - (CheatBreaker.getInstance().getModuleManager().isUsingStaffModules() ? 22 : 0)), n7);
-            CheatBreaker.getInstance().playRegular18px.drawString("BREAKER", n5 / 2.0f + 53.0f, (float)(n6 / 2 - 45 - (CheatBreaker.getInstance().getModuleManager().isUsingStaffModules() ? 22 : 0)), n7);
+            CheatBreaker.getInstance().playBold18px.drawString("| CHEAT", n5 / 2.0f + 18.0f, (float) (n6 / 2 - 45 - (CheatBreaker.getInstance().getConfigManager().isUsingStaffModules() ? 22 : 0)), n7);
+            CheatBreaker.getInstance().playRegular18px.drawString("BREAKER", n5 / 2.0f + 53.0f, (float) (n6 / 2 - 45 - (CheatBreaker.getInstance().getConfigManager().isUsingStaffModules() ? 22 : 0)), n7);
         }
         GL11.glPopMatrix();
         for (ModulesGuiButtonElement modulesGuiButtonElement : this.buttons) {
@@ -344,9 +345,10 @@ public class HudLayoutEditorGui extends GuiScreen {
         if (draggingModule == null) {
             GL11.glPushMatrix();
             GL11.glEnable(3089);
-            RenderUtil.startScissorBox(n5 / 2 - 185, n6 / 2 + 15, n5 / 2 + 185, n6 - 20, (float)scaledResolution.getScaleFactor() * scale, n6);
+            RenderUtil.startScissorBox(n5 / 2 - 185, n6 / 2 + 15, n5 / 2 + 185, n6 - 20, (float) scaledResolution.getScaleFactor() * scale, n6);
             for (AbstractScrollableElement abstractScrollableElement : this.guiElements) {
-                if (abstractScrollableElement != this.allElements && abstractScrollableElement != this.currentScrollableElement) continue;
+                if (abstractScrollableElement != this.allElements && abstractScrollableElement != this.currentScrollableElement)
+                    continue;
                 abstractScrollableElement.handleDrawElement(mouseX, mouseY, partialTicks);
             }
             GL11.glDisable(3089);
@@ -366,11 +368,13 @@ public class HudLayoutEditorGui extends GuiScreen {
                     int n10;
                     int n11;
                     Rectangle rectangle;
-                    if (module.getGuiAnchor() == null || !module.isEnabled() || module.getName().contains("Zans") && CheatBreaker.getInstance().getModuleManager().miniMapMod.getVoxelMap().getMapOptions().hide) continue;
+                    if (module.getGuiAnchor() == null || !module.isEnabled() || module.getName().contains("Zans")/* && CheatBreaker.getInstance().getModuleManager().miniMapMod.getVoxelMap().getMapOptions().hide*/)
+                        continue;
                     float[] arrf = module.getScaledPoints(scaledResolution, true);
                     float f14 = scale / module.masterScale();
-                    object = new Rectangle((int)(arrf[0] * module.masterScale() - 2.0f), (int)(arrf[1] * module.masterScale() - 2.0f), (int)(module.width * module.masterScale() + (float)4), (int)(module.height * module.masterScale() + (float)4));
-                    if (!object.intersects(rectangle = new Rectangle(n11 = Math.min(this.mouseX, mouseX), n10 = Math.min(this.mouseY, mouseY), n9 = Math.max(this.mouseX, mouseX) - n11, n8 = Math.max(this.mouseY, mouseY) - n10))) continue;
+                    object = new Rectangle((int) (arrf[0] * module.masterScale() - 2.0f), (int) (arrf[1] * module.masterScale() - 2.0f), (int) (module.width * module.masterScale() + (float) 4), (int) (module.height * module.masterScale() + (float) 4));
+                    if (!object.intersects(rectangle = new Rectangle(n11 = Math.min(this.mouseX, mouseX), n10 = Math.min(this.mouseY, mouseY), n9 = Math.max(this.mouseX, mouseX) - n11, n8 = Math.max(this.mouseY, mouseY) - n10)))
+                        continue;
                     f3 = (float) mouseX - module.getXTranslation();
                     f2 = (float) mouseY - module.getYTranslation();
                     this.positions.add(new ModulePosition(module, f3, f2));
@@ -386,7 +390,7 @@ public class HudLayoutEditorGui extends GuiScreen {
 
     private void drawShortcutHints(float scale) {
         GL11.glPushMatrix();
-        GL11.glTranslatef(4, (float)this.height - 245.0f * scale, 0.0f);
+        GL11.glTranslatef(4, (float) this.height - 245.0f * scale, 0.0f);
         GL11.glScalef(scale, scale, scale);
         Gui.drawRect(0.0f, 0.0f, 240, 200, -1895825408);
         CheatBreaker.getInstance().ubuntuMedium16px.drawString("Shortcuts & Movement", 4, 2.0f, -1);
@@ -395,99 +399,98 @@ public class HudLayoutEditorGui extends GuiScreen {
         String ctrlOrCmd = Minecraft.isRunningOnMac ? "CMD" : "CTRL";
         int ctrlOrCmdPos = Minecraft.isRunningOnMac ? 2 : 0;
         this.drawShortcutString("Mouse1", 6, n);
-        CheatBreaker.getInstance().playRegular14px.drawString("| " + EnumChatFormatting.AQUA + "HOLD" + EnumChatFormatting.RESET + " Add mods to selected region", 80, (float)n, -1);
+        CheatBreaker.getInstance().playRegular14px.drawString("| " + EnumChatFormatting.AQUA + "HOLD" + EnumChatFormatting.RESET + " Add mods to selected region", 80, (float) n, -1);
         this.drawShortcutString("Mouse1", 6, n += 12);
-        CheatBreaker.getInstance().playRegular14px.drawString("| " + EnumChatFormatting.AQUA + "HOLD" + EnumChatFormatting.RESET + " Select & drag mods", 80, (float)n, -1);
+        CheatBreaker.getInstance().playRegular14px.drawString("| " + EnumChatFormatting.AQUA + "HOLD" + EnumChatFormatting.RESET + " Select & drag mods", 80, (float) n, -1);
         this.drawShortcutString("Mouse2", 6, n += 12);
-        CheatBreaker.getInstance().playRegular14px.drawString("| " + EnumChatFormatting.AQUA + "CLICK" + EnumChatFormatting.RESET + " Reset mod to closest position", 80, (float)n, -1);
+        CheatBreaker.getInstance().playRegular14px.drawString("| " + EnumChatFormatting.AQUA + "CLICK" + EnumChatFormatting.RESET + " Reset mod to closest position", 80, (float) n, -1);
         this.drawShortcutString("Mouse2", 6, n += 12);
-        CheatBreaker.getInstance().playRegular14px.drawString("| " + EnumChatFormatting.AQUA + "HOLD" + EnumChatFormatting.RESET + " Don't lock mods while dragging", 80, (float)n, -1);
+        CheatBreaker.getInstance().playRegular14px.drawString("| " + EnumChatFormatting.AQUA + "HOLD" + EnumChatFormatting.RESET + " Don't lock mods while dragging", 80, (float) n, -1);
         this.drawShortcutString(ctrlOrCmd, 6, n += 12);
-        CheatBreaker.getInstance().playRegular14px.drawString("+", 30 - ctrlOrCmdPos, (float)n, -1);
+        CheatBreaker.getInstance().playRegular14px.drawString("+", 30 - ctrlOrCmdPos, (float) n, -1);
         this.drawShortcutString("Mouse1", 36 - ctrlOrCmdPos, n);
-        CheatBreaker.getInstance().playRegular14px.drawString("| Toggle (multiple) mod selection", 80, (float)n, -1);
+        CheatBreaker.getInstance().playRegular14px.drawString("| Toggle (multiple) mod selection", 80, (float) n, -1);
         this.drawShortcutString(ctrlOrCmd, 6, n += 12);
-        CheatBreaker.getInstance().playRegular14px.drawString("+", 30 - ctrlOrCmdPos, (float)n, -1);
+        CheatBreaker.getInstance().playRegular14px.drawString("+", 30 - ctrlOrCmdPos, (float) n, -1);
         this.drawShortcutString("A", 36 - ctrlOrCmdPos, n);
-        CheatBreaker.getInstance().playRegular14px.drawString("| Select all mods", 80, (float)n, -1);
+        CheatBreaker.getInstance().playRegular14px.drawString("| Select all mods", 80, (float) n, -1);
         this.drawShortcutString(ctrlOrCmd, 6, n += 12);
-        CheatBreaker.getInstance().playRegular14px.drawString("+", 30 - ctrlOrCmdPos, (float)n, -1);
+        CheatBreaker.getInstance().playRegular14px.drawString("+", 30 - ctrlOrCmdPos, (float) n, -1);
         this.drawShortcutString("X", 36 - ctrlOrCmdPos, n);
-        CheatBreaker.getInstance().playRegular14px.drawString("| Remove selected mod(s) from HUD", 80, (float)n, -1);
+        CheatBreaker.getInstance().playRegular14px.drawString("| Remove selected mod(s) from HUD", 80, (float) n, -1);
         this.drawShortcutString(ctrlOrCmd, 6, n += 12);
-        CheatBreaker.getInstance().playRegular14px.drawString("+", 30 - ctrlOrCmdPos, (float)n, -1);
+        CheatBreaker.getInstance().playRegular14px.drawString("+", 30 - ctrlOrCmdPos, (float) n, -1);
         this.drawShortcutString("R", 36 - ctrlOrCmdPos, n);
-        CheatBreaker.getInstance().playRegular14px.drawString("| Reset selected mod(s) scale", 80, (float)n, -1);
+        CheatBreaker.getInstance().playRegular14px.drawString("| Reset selected mod(s) scale", 80, (float) n, -1);
         this.drawShortcutString(ctrlOrCmd, 6, n += 12);
-        CheatBreaker.getInstance().playRegular14px.drawString("+", 30 - ctrlOrCmdPos, (float)n, -1);
+        CheatBreaker.getInstance().playRegular14px.drawString("+", 30 - ctrlOrCmdPos, (float) n, -1);
         this.drawShortcutString("Z", 36 - ctrlOrCmdPos, n);
-        CheatBreaker.getInstance().playRegular14px.drawString("| Undo mod movements", 80, (float)n, -1);
+        CheatBreaker.getInstance().playRegular14px.drawString("| Undo mod movements", 80, (float) n, -1);
         this.drawShortcutString(ctrlOrCmd, 6, n += 12);
-        CheatBreaker.getInstance().playRegular14px.drawString("+", 30 - ctrlOrCmdPos, (float)n, -1);
+        CheatBreaker.getInstance().playRegular14px.drawString("+", 30 - ctrlOrCmdPos, (float) n, -1);
         this.drawShortcutString("Y", 36 - ctrlOrCmdPos, n);
-        CheatBreaker.getInstance().playRegular14px.drawString("| Redo mod movements", 80, (float)n, -1);
+        CheatBreaker.getInstance().playRegular14px.drawString("| Redo mod movements", 80, (float) n, -1);
         this.drawShortcutString("SHIFT", 6, n += 12);
-        CheatBreaker.getInstance().playRegular14px.drawString("+", 32, (float)n, -1);
+        CheatBreaker.getInstance().playRegular14px.drawString("+", 32, (float) n, -1);
         this.drawShortcutString("Arrows", 38, n);
-        CheatBreaker.getInstance().playRegular14px.drawString("| Smaller mod movements", 80, (float)n, -1);
+        CheatBreaker.getInstance().playRegular14px.drawString("| Smaller mod movements", 80, (float) n, -1);
         this.drawShortcutString(ctrlOrCmd, 6, n += 12);
-        CheatBreaker.getInstance().playRegular14px.drawString("+", 30 - ctrlOrCmdPos, (float)n, -1);
+        CheatBreaker.getInstance().playRegular14px.drawString("+", 30 - ctrlOrCmdPos, (float) n, -1);
         this.drawShortcutString("Arrows", 36 - ctrlOrCmdPos, n);
-        CheatBreaker.getInstance().playRegular14px.drawString("| Larger mod movements", 80, (float)n, -1);
+        CheatBreaker.getInstance().playRegular14px.drawString("| Larger mod movements", 80, (float) n, -1);
         n = 172;
         this.drawShortcutString("Up", 31, n);
         this.drawShortcutString("Left", 6, n += 12);
         this.drawShortcutString("Down", 26, n);
         this.drawShortcutString("Right", 51, n);
-        CheatBreaker.getInstance().playRegular14px.drawString("| Move selected mod(s) with precision", 80, (float)n, -1);
+        CheatBreaker.getInstance().playRegular14px.drawString("| Move selected mod(s) with precision", 80, (float) n, -1);
         GL11.glPopMatrix();
     }
 
     private void drawShortcutString(String string, int x, int y) {
         CBFontRenderer font = CheatBreaker.getInstance().playRegular14px;
         float width = font.getStringWidth(string);
-        RenderUtil.drawRoundedRect(x, y, (float)x + width + 4.0f, y + 10, 2, -1073741825);
-        font.drawString(string, x + 2, (float)y, -16777216);
+        RenderUtil.drawRoundedRect(x, y, (float) x + width + 4.0f, y + 10, 2, -1073741825);
+        font.drawString(string, x + 2, (float) y, -16777216);
     }
 
     @Override
     public void mouseClicked(int mouseX, int mouseY, int mouseButton) {
-        ScaledResolution scaledResolution = new ScaledResolution(this.mc, this.mc.displayWidth, this.mc.displayHeight);
+        ScaledResolution scaledResolution = new ScaledResolution(this.mc);
         if (this.allElements != null && this.allElements.isMouseInside(mouseX, mouseY)) {
             this.allElements.handleMouseClick(mouseX, mouseY, mouseButton);
-            //System.out.println("mouseX=" + mouseX + " mouseY=" + mouseY + " mouseButton=" + mouseButton);
         } else {
             AbstractModule module1 = this.lIIIIlIIllIIlIIlIIIlIIllI(scaledResolution, mouseX, mouseY);
             if (!(draggingModule != null && this.IlIlIIIlllllIIIlIlIlIllII || module1 == null)) {
                 float[] scaledPoints = module1.getScaledPoints(scaledResolution, true);
                 boolean isModSizeSmall = module1.width < 22 || module1.height < 8;
                 boolean hoveringSettingsIcon = !isModSizeSmall && module1.isEnabled() && !module1.getSettingsList().isEmpty() &&
-                        (float)mouseX >= scaledPoints[0] * module1.masterScale() &&
-                        (float)mouseX <= (scaledPoints[0] + 10.0F) * module1.masterScale() &&
-                        (float)mouseY >= (scaledPoints[1] + module1.height - 10.0F) * module1.masterScale() &&
-                        (float)mouseY <= (scaledPoints[1] + module1.height + 2.0f) * module1.masterScale();
+                        (float) mouseX >= scaledPoints[0] * module1.masterScale() &&
+                        (float) mouseX <= (scaledPoints[0] + 10.0F) * module1.masterScale() &&
+                        (float) mouseY >= (scaledPoints[1] + module1.height - 10.0F) * module1.masterScale() &&
+                        (float) mouseY <= (scaledPoints[1] + module1.height + 2.0f) * module1.masterScale();
                 boolean hoveringDeleteIcon = !isModSizeSmall && module1.isEnabled() &&
-                        (float)mouseX > (scaledPoints[0] + module1.width - 10.0F) * module1.masterScale() &&
-                        (float)mouseX < (scaledPoints[0] + module1.width + 2.0f) * module1.masterScale() &&
-                        (float)mouseY > (scaledPoints[1] + module1.height - 10.0F) * module1.masterScale() &&
-                        (float)mouseY < (scaledPoints[1] + module1.height + 2.0f) * module1.masterScale();
+                        (float) mouseX > (scaledPoints[0] + module1.width - 10.0F) * module1.masterScale() &&
+                        (float) mouseX < (scaledPoints[0] + module1.width + 2.0f) * module1.masterScale() &&
+                        (float) mouseY > (scaledPoints[1] + module1.height - 10.0F) * module1.masterScale() &&
+                        (float) mouseY < (scaledPoints[1] + module1.height + 2.0f) * module1.masterScale();
                 boolean hoveringSettingsShiftedIcon = isModSizeSmall && module1.isEnabled() && !module1.getSettingsList().isEmpty() &&
-                        (float)mouseX >= (scaledPoints[0] + module1.width / 2 - 10.0f) * module1.masterScale() &&
-                        (float)mouseX <= (scaledPoints[0] + module1.width / 2 - 2.0F) * module1.masterScale() &&
-                        (float)mouseY >= (scaledPoints[1] + module1.height + 2.0F) * module1.masterScale() &&
-                        (float)mouseY <= (scaledPoints[1] + module1.height + 12.0f) * module1.masterScale();
+                        (float) mouseX >= (scaledPoints[0] + module1.width / 2 - 10.0f) * module1.masterScale() &&
+                        (float) mouseX <= (scaledPoints[0] + module1.width / 2 - 2.0F) * module1.masterScale() &&
+                        (float) mouseY >= (scaledPoints[1] + module1.height + 2.0F) * module1.masterScale() &&
+                        (float) mouseY <= (scaledPoints[1] + module1.height + 12.0f) * module1.masterScale();
                 boolean hoveringDeleteShiftedIcon = isModSizeSmall && module1.isEnabled() &&
-                        (float)mouseX > (scaledPoints[0] + module1.width / 2 + 0.0F) * module1.masterScale() &&
-                        (float)mouseX < (scaledPoints[0] + module1.width / 2 + 8.0f) * module1.masterScale() &&
-                        (float)mouseY > (scaledPoints[1] + module1.height + 2.0F) * module1.masterScale() &&
-                        (float)mouseY < (scaledPoints[1] + module1.height + 12.0f) * module1.masterScale();
+                        (float) mouseX > (scaledPoints[0] + module1.width / 2 + 0.0F) * module1.masterScale() &&
+                        (float) mouseX < (scaledPoints[0] + module1.width / 2 + 8.0f) * module1.masterScale() &&
+                        (float) mouseY > (scaledPoints[1] + module1.height + 2.0F) * module1.masterScale() &&
+                        (float) mouseY < (scaledPoints[1] + module1.height + 12.0f) * module1.masterScale();
                 if (hoveringSettingsIcon || hoveringSettingsShiftedIcon) {
-                    Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.func_147674_a(new ResourceLocation("gui.button.press"), 1.0f));
-                    ((ModuleListElement)this.settingsElement).resetColor = false;
-                    ((ModuleListElement)this.settingsElement).module = module1;
+                    Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("gui.button.press"), 1.0f));
+                    ((ModuleListElement) this.settingsElement).isCheatBreakerSettings = false;
+                    ((ModuleListElement) this.settingsElement).module = module1;
                     this.currentScrollableElement = this.settingsElement;
                 } else if (hoveringDeleteIcon || hoveringDeleteShiftedIcon) {
-                    Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.func_147674_a(new ResourceLocation("gui.button.press"), 1.0f));
+                    Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("gui.button.press"), 1.0f));
                     module1.setState(false);
                 }
                 if (!isModSizeSmall) {
@@ -498,13 +501,14 @@ public class HudLayoutEditorGui extends GuiScreen {
             for (AbstractModule module : this.modules) {
                 GuiAnchor anchor;
                 ScreenLocation screenLocation;
-                if (module.getGuiAnchor() == null || !module.isEnabled() || module == CheatBreaker.getInstance().getModuleManager().miniMapMod) continue;
+                if (module.getGuiAnchor() == null || !module.isEnabled() || module == CheatBreaker.getInstance().getModuleManager().miniMapMod)
+                    continue;
                 float[] arrf = module.getScaledPoints(scaledResolution, true);
-                boolean bl4 = (float)mouseX > arrf[0] * module.masterScale() && (float)mouseX < (arrf[0] + module.width) * module.masterScale() && (float)mouseY > arrf[1] * module.masterScale() && (float)mouseY < (arrf[1] + module.height) * module.masterScale();
-                boolean bl5 = this.dataHolder != null && this.dataHolder.module == module && this.dataHolder.screenLocation == ScreenLocation.LEFT_BOTTOM || !bl4 && (float)mouseX >= (arrf[0] + module.width - (float)5) * module.masterScale() && (float)mouseX <= (arrf[0] + module.width + (float)5) * module.masterScale() && (float)mouseY >= (arrf[1] - (float)5) * module.masterScale() && (float)mouseY <= (arrf[1] + (float)5) * module.masterScale();
-                boolean bl6 = this.dataHolder != null && this.dataHolder.module == module && this.dataHolder.screenLocation == ScreenLocation.RIGHT_TOP || !bl4 && (float)mouseX >= (arrf[0] - (float)5) * module.masterScale() && (float)mouseX <= (arrf[0] + (float)5) * module.masterScale() && (float)mouseY >= (arrf[1] + module.height - (float)5) * module.masterScale() && (float)mouseY <= (arrf[1] + module.height + (float)5) * module.masterScale();
-                boolean bl7 = this.dataHolder != null && this.dataHolder.module == module && this.dataHolder.screenLocation == ScreenLocation.RIGHT_BOTTOM || !bl4 && (float)mouseX >= (arrf[0] - (float)5) * module.masterScale() && (float)mouseX <= (arrf[0] + (float)5) * module.masterScale() && (float)mouseY >= (arrf[1] - (float)5) * module.masterScale() && (float)mouseY <= (arrf[1] + (float)5) * module.masterScale();
-                boolean bl = this.dataHolder != null && this.dataHolder.module == module && this.dataHolder.screenLocation == ScreenLocation.LEFT_TOP || !bl4 && (float)mouseX >= (arrf[0] + module.width - (float)5) * module.masterScale() && (float)mouseX <= (arrf[0] + module.width + (float)5) * module.masterScale() && (float)mouseY >= (arrf[1] + module.height - (float)5) * module.masterScale() && (float)mouseY <= (arrf[1] + module.height + (float)5) * module.masterScale();
+                boolean bl4 = (float) mouseX > arrf[0] * module.masterScale() && (float) mouseX < (arrf[0] + module.width) * module.masterScale() && (float) mouseY > arrf[1] * module.masterScale() && (float) mouseY < (arrf[1] + module.height) * module.masterScale();
+                boolean bl5 = this.dataHolder != null && this.dataHolder.module == module && this.dataHolder.screenLocation == ScreenLocation.LEFT_BOTTOM || !bl4 && (float) mouseX >= (arrf[0] + module.width - (float) 5) * module.masterScale() && (float) mouseX <= (arrf[0] + module.width + (float) 5) * module.masterScale() && (float) mouseY >= (arrf[1] - (float) 5) * module.masterScale() && (float) mouseY <= (arrf[1] + (float) 5) * module.masterScale();
+                boolean bl6 = this.dataHolder != null && this.dataHolder.module == module && this.dataHolder.screenLocation == ScreenLocation.RIGHT_TOP || !bl4 && (float) mouseX >= (arrf[0] - (float) 5) * module.masterScale() && (float) mouseX <= (arrf[0] + (float) 5) * module.masterScale() && (float) mouseY >= (arrf[1] + module.height - (float) 5) * module.masterScale() && (float) mouseY <= (arrf[1] + module.height + (float) 5) * module.masterScale();
+                boolean bl7 = this.dataHolder != null && this.dataHolder.module == module && this.dataHolder.screenLocation == ScreenLocation.RIGHT_BOTTOM || !bl4 && (float) mouseX >= (arrf[0] - (float) 5) * module.masterScale() && (float) mouseX <= (arrf[0] + (float) 5) * module.masterScale() && (float) mouseY >= (arrf[1] - (float) 5) * module.masterScale() && (float) mouseY <= (arrf[1] + (float) 5) * module.masterScale();
+                boolean bl = this.dataHolder != null && this.dataHolder.module == module && this.dataHolder.screenLocation == ScreenLocation.LEFT_TOP || !bl4 && (float) mouseX >= (arrf[0] + module.width - (float) 5) * module.masterScale() && (float) mouseX <= (arrf[0] + module.width + (float) 5) * module.masterScale() && (float) mouseY >= (arrf[1] + module.height - (float) 5) * module.masterScale() && (float) mouseY <= (arrf[1] + module.height + (float) 5) * module.masterScale();
                 if (this.mouseX != -1 || !bl5 && !bl6 && !bl7 && !bl) continue;
                 if (bl5) {
                     screenLocation = ScreenLocation.LEFT_BOTTOM;
@@ -519,7 +523,6 @@ public class HudLayoutEditorGui extends GuiScreen {
                     screenLocation = ScreenLocation.LEFT_TOP;
                     anchor = GuiAnchor.LEFT_TOP;
                 }
-
                 if (this.lIIIIIIIIIlIllIIllIlIIlIl(scaledResolution, mouseX, mouseY)) continue;
                 if (mouseButton == 0) {
                     this.undoList.add(new ModuleActionData(this, this.positions));
@@ -535,10 +538,10 @@ public class HudLayoutEditorGui extends GuiScreen {
             }
             if (draggingModule == null) {
                 if (this.showGuidesButton.isMouseInside(mouseX, mouseY)) {
-                    Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.func_147674_a(new ResourceLocation("gui.button.press"), 1.0f));
+                    Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("gui.button.press"), 1.0f));
                     this.showModSizeOutline = !this.showModSizeOutline;
-                } else if (this.bugReportButton.isMouseInside(mouseX, mouseY) && notExperimentalBuild) {
-                    Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.func_147674_a(new ResourceLocation("gui.button.press"), 1.0F));
+                } else if (this.bugReportButton.isMouseInside(mouseX, mouseY)) {
+                    Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("gui.button.press"), 1.0F));
                     this.isBugReportOpen = !this.isBugReportOpen;
                     if (this.isBugReportOpen) {
                         this.bugReportTextField.setFocused(true);
@@ -557,7 +560,7 @@ public class HudLayoutEditorGui extends GuiScreen {
             }
             if (!this.positions.isEmpty()) {
                 this.positions.clear();
-                Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.func_147674_a(new ResourceLocation("gui.button.press"), 1.0f));
+                Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("gui.button.press"), 1.0f));
             }
             this.mouseX = mouseX;
             this.mouseY = mouseY;
@@ -568,7 +571,7 @@ public class HudLayoutEditorGui extends GuiScreen {
     }
 
     @Override
-    public void handleMouseInput() {
+    public void handleMouseInput() throws IOException {
         super.handleMouseInput();
         int n = Mouse.getEventDWheel();
         if (this.allElements != null) {
@@ -586,8 +589,8 @@ public class HudLayoutEditorGui extends GuiScreen {
     }
 
     @Override
-    public void mouseMovedOrUp(int mouseX, int mouseY, int partialTicks) {
-        ScaledResolution scaledResolution = new ScaledResolution(this.mc, this.mc.displayWidth, this.mc.displayHeight);
+    public void mouseReleased(int mouseX, int mouseY, int partialTicks) {
+        ScaledResolution scaledResolution = new ScaledResolution(this.mc);
         if (this.dataHolder != null && partialTicks == 0) {
             this.lIIIIlIIllIIlIIlIIIlIIllI(this.dataHolder.module, this.dataHolder.anchor, mouseX, mouseY, scaledResolution);
             this.dataHolder = null;
@@ -596,41 +599,41 @@ public class HudLayoutEditorGui extends GuiScreen {
             if (this.IlIlIIIlllllIIIlIlIlIllII) {
                 for (ModulePosition position : this.positions) {
                     GuiAnchor anchor = AnchorHelper.getAnchor(mouseX, mouseY, scaledResolution);
-                    if (anchor == GuiAnchor.MIDDLE_MIDDLE || anchor == position.module.getGuiAnchor() || !this.IlIlIIIlllllIIIlIlIlIllII) continue;
+                    if (anchor == GuiAnchor.MIDDLE_MIDDLE || anchor == position.module.getGuiAnchor() || !this.IlIlIIIlllllIIIlIlIlIllII)
+                        continue;
                     this.lIIIIlIIllIIlIIlIIIlIIllI(position.module, anchor, mouseX, mouseY, scaledResolution);
-                    position.x = (float)mouseX - position.module.getXTranslation();
-                    position.y = (float)mouseY - position.module.getYTranslation();
+                    position.x = (float) mouseX - position.module.getXTranslation();
+                    position.y = (float) mouseY - position.module.getYTranslation();
                 }
                 if (this.getSelectedModules(draggingModule) == null) {
                     Object object = draggingModule.getScaledPoints(scaledResolution, true);
-                    float x = (float)mouseX - draggingModule.getXTranslation();
-                    float y = (float)mouseY - draggingModule.getYTranslation();
+                    float x = (float) mouseX - draggingModule.getXTranslation();
+                    float y = (float) mouseY - draggingModule.getYTranslation();
                     this.positions.add(new ModulePosition(draggingModule, x, y));
                 }
-
-                Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.func_147674_a(new ResourceLocation("gui.button.press"), 1.0f));
+                Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("gui.button.press"), 1.0f));
             }
             draggingModule = null;
         }
     }
 
     @Override
-    public void keyTyped(char c, int n) {
+    public void keyTyped(char c, int n) throws IOException {
         if (n == 1) {
-            CheatBreaker.getInstance().configManager.write();
+            CheatBreaker.getInstance().configManager.updateProfile();
         }
         super.keyTyped(c, n);
         if (this.isBugReportOpen) {
             if (n == 28) {
                 DebugInfoHandler.ReportThatBug(this.bugReportTextField.getText());
             }
-            this.bugReportTextField.keyTyped(c, n);
+            this.bugReportTextField.textboxKeyTyped(c, n);
         }
         if (n == 30 && HudLayoutEditorGui.isCtrlKeyDown()) {
             for (AbstractModule module : this.modules) {
                 if (module.isEnabled() && module.getGuiAnchor() != null && this.getSelectedModules(module) == null) {
-                    float f4 = (float)mouseX - module.getXTranslation() * module.masterScale();
-                    float f5 = (float)mouseY - module.getYTranslation() * module.masterScale();
+                    float f4 = (float) mouseX - module.getXTranslation() * module.masterScale();
+                    float f5 = (float) mouseY - module.getYTranslation() * module.masterScale();
                     this.positions.add(new ModulePosition(module, f4, f5));
                 }
             }
@@ -659,7 +662,7 @@ public class HudLayoutEditorGui extends GuiScreen {
                     float f = moduleActionData.xTranslationList.get(i);
                     float f2 = moduleActionData.yTranslationList.get(i);
                     GuiAnchor cBGuiAnchor = moduleActionData.guiAnchorList.get(i);
-                    Float f3 = (Float)moduleActionData.valueList.get(i);
+                    Float f3 = (Float) moduleActionData.valueList.get(i);
                     abstractModule.setAnchor(cBGuiAnchor);
                     abstractModule.setTranslations(f, f2);
                     abstractModule.scale.setValue(f3);
@@ -679,7 +682,7 @@ public class HudLayoutEditorGui extends GuiScreen {
                     float f = moduleActionData.xTranslationList.get(i);
                     float f4 = moduleActionData.yTranslationList.get(i);
                     GuiAnchor cBGuiAnchor = moduleActionData.guiAnchorList.get(i);
-                    Float f5 = (Float)moduleActionData.valueList.get(i);
+                    Float f5 = (Float) moduleActionData.valueList.get(i);
                     abstractModule.setAnchor(cBGuiAnchor);
                     abstractModule.setTranslations(f, f4);
                     abstractModule.scale.setValue(f5);
@@ -735,7 +738,8 @@ public class HudLayoutEditorGui extends GuiScreen {
     private void lIIIIlIIllIIlIIlIIIlIIllI(ScaledResolution scaledResolution, int mouseX, int mouseY, int n3) {
         for (AbstractModule module : this.modules) {
             float[] scaledPoints;
-            if (module.getGuiAnchor() == null || !module.isEnabled() || module.getName().contains("Zans") && CheatBreaker.getInstance().getModuleManager().miniMapMod.getVoxelMap().getMapOptions().hide) continue;
+            if (module.getGuiAnchor() == null || !module.isEnabled() || module.getName().contains("Zans")/* && CheatBreaker.getInstance().getModuleManager().miniMapMod.getVoxelMap().getMapOptions().hide*/)
+                continue;
 //            float f = module.width;
 //            float f2 = module.height;
 //            float f3 = 18;
@@ -745,30 +749,30 @@ public class HudLayoutEditorGui extends GuiScreen {
 //            if (f2 < (float)18) {
 //                module.height = 18;
 //            }
-            if (!((float)mouseX > (scaledPoints = module.getScaledPoints(scaledResolution, true))[0] * module.masterScale() &&
-                    (float)mouseX < (scaledPoints[0] + module.width) * module.masterScale() &&
-                    (float)mouseY > scaledPoints[1] * module.masterScale() &&
-                    (float)mouseY < (scaledPoints[1] + module.height) * module.masterScale())) continue;
+            if (!((float) mouseX > (scaledPoints = module.getScaledPoints(scaledResolution, true))[0] * module.masterScale() &&
+                    (float) mouseX < (scaledPoints[0] + module.width) * module.masterScale() &&
+                    (float) mouseY > scaledPoints[1] * module.masterScale() &&
+                    (float) mouseY < (scaledPoints[1] + module.height) * module.masterScale())) continue;
             //Mark
             boolean bl3 = !module.getSettingsList().isEmpty() &&
-                    (float)mouseX >= scaledPoints[0] * module.masterScale() &&
-                    (float)mouseX <= (scaledPoints[0] + (float)10) * module.masterScale() &&
-                    (float)mouseY >= (scaledPoints[1] + module.height - (float)10) * module.masterScale() &&
-                    (float)mouseY <= (scaledPoints[1] + module.height + 2.0f) * module.masterScale();
-            boolean bl = (float)mouseX > (scaledPoints[0] + module.width - (float)10) * module.masterScale() &&
-                    (float)mouseX < (scaledPoints[0] + module.width + 2.0f) * module.masterScale() &&
-                    (float)mouseY > (scaledPoints[1] + module.height - (float)10) * module.masterScale() &&
-                    (float)mouseY < (scaledPoints[1] + module.height + 2.0f) * module.masterScale();
+                    (float) mouseX >= scaledPoints[0] * module.masterScale() &&
+                    (float) mouseX <= (scaledPoints[0] + (float) 10) * module.masterScale() &&
+                    (float) mouseY >= (scaledPoints[1] + module.height - (float) 10) * module.masterScale() &&
+                    (float) mouseY <= (scaledPoints[1] + module.height + 2.0f) * module.masterScale();
+            boolean bl = (float) mouseX > (scaledPoints[0] + module.width - (float) 10) * module.masterScale() &&
+                    (float) mouseX < (scaledPoints[0] + module.width + 2.0f) * module.masterScale() &&
+                    (float) mouseY > (scaledPoints[1] + module.height - (float) 10) * module.masterScale() &&
+                    (float) mouseY < (scaledPoints[1] + module.height + 2.0f) * module.masterScale();
             boolean bl57 = !module.getSettingsList().isEmpty() &&
-                    (float)mouseX >= (scaledPoints[0] + module.width / 2 - 10.0f) * module.masterScale() &&
-                    (float)mouseX <= (scaledPoints[0] + module.width / 2 - 2.0F) * module.masterScale() &&
-                    (float)mouseY >= (scaledPoints[1] + module.height + 2.0F) * module.masterScale() &&
-                    (float)mouseY <= (scaledPoints[1] + module.height + 12.0f) * module.masterScale();
+                    (float) mouseX >= (scaledPoints[0] + module.width / 2 - 10.0f) * module.masterScale() &&
+                    (float) mouseX <= (scaledPoints[0] + module.width / 2 - 2.0F) * module.masterScale() &&
+                    (float) mouseY >= (scaledPoints[1] + module.height + 2.0F) * module.masterScale() &&
+                    (float) mouseY <= (scaledPoints[1] + module.height + 12.0f) * module.masterScale();
             boolean bl4 =
-                    (float)mouseX > (scaledPoints[0] + module.width / 2 + 0.0f) * module.masterScale() &&
-                            (float)mouseX < (scaledPoints[0] + module.width / 2 + 8.0f) * module.masterScale() &&
-                            (float)mouseY > (scaledPoints[1] + module.height + 2.0F) * module.masterScale() &&
-                            (float)mouseY < (scaledPoints[1] + module.height + 12.0f) * module.masterScale();
+                    (float) mouseX > (scaledPoints[0] + module.width / 2 + 0.0f) * module.masterScale() &&
+                            (float) mouseX < (scaledPoints[0] + module.width / 2 + 8.0f) * module.masterScale() &&
+                            (float) mouseY > (scaledPoints[1] + module.height + 2.0F) * module.masterScale() &&
+                            (float) mouseY < (scaledPoints[1] + module.height + 12.0f) * module.masterScale();
             boolean isModSizeSmall = module.width < 22 || module.height < 8;
             boolean d = isModSizeSmall ? !bl57 && !bl4 : !bl3 && !bl;
             if (n3 == 0 && d && module != CheatBreaker.getInstance().getModuleManager().miniMapMod) {
@@ -777,8 +781,8 @@ public class HudLayoutEditorGui extends GuiScreen {
                     this.removeModuleFromPositions(module);
                     bl5 = false;
                 }
-                float f4 = (float)mouseX - module.getXTranslation() * module.masterScale();
-                float f5 = (float)mouseY - module.getYTranslation() * module.masterScale();
+                float f4 = (float) mouseX - module.getXTranslation() * module.masterScale();
+                float f5 = (float) mouseY - module.getYTranslation() * module.masterScale();
                 this.mouseX2 = mouseX;
                 this.mouseY2 = mouseY;
                 this.IlIlIIIlllllIIIlIlIlIllII = false;
@@ -795,19 +799,19 @@ public class HudLayoutEditorGui extends GuiScreen {
             }
             if (!(n3 != 0 || this.allElements != null && this.allElements.isMouseInside(mouseX, mouseY))) {
                 if (isModSizeSmall ? bl57 : bl3) {
-                    Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.func_147674_a(new ResourceLocation("gui.button.press"), 1.0f));
-                    ((ModuleListElement)this.settingsElement).resetColor = false;
-                    ((ModuleListElement)this.settingsElement).module = module;
+                    Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("gui.button.press"), 1.0f));
+                    ((ModuleListElement) this.settingsElement).isCheatBreakerSettings = false;
+                    ((ModuleListElement) this.settingsElement).module = module;
                     this.currentScrollableElement = this.settingsElement;
                 } else if (isModSizeSmall ? bl4 : bl) {
-                    Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.func_147674_a(new ResourceLocation("gui.button.press"), 1.0f));
+                    Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("gui.button.press"), 1.0f));
                     module.setState(false);
                 }
             } else if (n3 == 1) {
-                Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.func_147674_a(new ResourceLocation("gui.button.press"), 1.0f));
+                Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("gui.button.press"), 1.0f));
                 this.undoList.add(new ModuleActionData(this, this.positions));
                 float[] snapPositions = AnchorHelper.getSnapPositions(module.getGuiAnchor());
-                if ((module == CheatBreaker.getInstance().getModuleManager().chatMod || module == CheatBreaker.getInstance().getModuleManager().playerListMod) && module.getGuiAnchor() == module.getDefaultGuiAnchor()) {
+                if ((module == CheatBreaker.getInstance().getModuleManager().chatMod/* || module == CheatBreaker.getInstance().getModuleManager().playerListMod*/) && module.getGuiAnchor() == module.getDefaultGuiAnchor()) {
                     module.setTranslations(module.defaultXTranslation, module.defaultYTranslation);
                 } else {
                     module.setTranslations(snapPositions[0], snapPositions[1]);
@@ -823,12 +827,12 @@ public class HudLayoutEditorGui extends GuiScreen {
         for (ModulesGuiButtonElement button : this.buttons) {
             if (n3 != 0 || !button.isMouseInside(n, n2) || allMenusClosed) continue;
             if (button.scrollableElement != null && this.allElements != button.scrollableElement && this.currentScrollableElement == null) {
-                Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.func_147674_a(new ResourceLocation("gui.button.press"), 1.0f));
+                Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("gui.button.press"), 1.0f));
                 this.currentScrollableElement = button.scrollableElement;
                 continue;
             }
             if (button.scrollableElement == null || this.currentScrollableElement != null) continue;
-            Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.func_147674_a(new ResourceLocation("gui.button.press"), 1.0f));
+            Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("gui.button.press"), 1.0f));
             allMenusClosed = true;
         }
     }
@@ -838,25 +842,25 @@ public class HudLayoutEditorGui extends GuiScreen {
             if (module.getGuiAnchor() == null) continue;
             float[] arrf = module.getScaledPoints(scaledResolution, true);
             boolean bl2 = !module.getSettingsList().isEmpty() &&
-                    (float)n >= arrf[0] * module.masterScale() &&
-                    (float)n <= (arrf[0] + (float)10) * module.masterScale() &&
-                    (float)n2 >= (arrf[1] + module.height - (float)10) * module.masterScale() &&
-                    (float)n2 <= (arrf[1] + module.height + 2.0f) * module.masterScale();
+                    (float) n >= arrf[0] * module.masterScale() &&
+                    (float) n <= (arrf[0] + (float) 10) * module.masterScale() &&
+                    (float) n2 >= (arrf[1] + module.height - (float) 10) * module.masterScale() &&
+                    (float) n2 <= (arrf[1] + module.height + 2.0f) * module.masterScale();
             boolean bl =
-                    (float)n > (arrf[0] + module.width - (float)10) * module.masterScale() &&
-                    (float)n < (arrf[0] + module.width + 2.0f) * module.masterScale() &&
-                    (float)n2 > (arrf[1] + module.height - (float)10) * module.masterScale() &&
-                    (float)n2 < (arrf[1] + module.height + 2.0f) * module.masterScale();
+                    (float) n > (arrf[0] + module.width - (float) 10) * module.masterScale() &&
+                            (float) n < (arrf[0] + module.width + 2.0f) * module.masterScale() &&
+                            (float) n2 > (arrf[1] + module.height - (float) 10) * module.masterScale() &&
+                            (float) n2 < (arrf[1] + module.height + 2.0f) * module.masterScale();
             boolean bl3 = !module.getSettingsList().isEmpty() &&
-                    (float)n >= (arrf[0] + module.width / 2 - 10.0f) * module.masterScale() &&
-                    (float)n <= (arrf[0] + module.width / 2 - 2.0F) * module.masterScale() &&
-                    (float)n2 >= (arrf[1] + module.height + 2.0F) * module.masterScale() &&
-                    (float)n2 <= (arrf[1] + module.height + 12.0f) * module.masterScale();
+                    (float) n >= (arrf[0] + module.width / 2 - 10.0f) * module.masterScale() &&
+                    (float) n <= (arrf[0] + module.width / 2 - 2.0F) * module.masterScale() &&
+                    (float) n2 >= (arrf[1] + module.height + 2.0F) * module.masterScale() &&
+                    (float) n2 <= (arrf[1] + module.height + 12.0f) * module.masterScale();
             boolean bl4 =
-                    (float)n > (arrf[0] + module.width / 2 + 0.0f) * module.masterScale() &&
-                            (float)n < (arrf[0] + module.width / 2 + 8.0f) * module.masterScale() &&
-                            (float)n2 > (arrf[1] + module.height + 2.0F) * module.masterScale() &&
-                            (float)n2 < (arrf[1] + module.height + 12.0f) * module.masterScale();
+                    (float) n > (arrf[0] + module.width / 2 + 0.0f) * module.masterScale() &&
+                            (float) n < (arrf[0] + module.width / 2 + 8.0f) * module.masterScale() &&
+                            (float) n2 > (arrf[1] + module.height + 2.0F) * module.masterScale() &&
+                            (float) n2 < (arrf[1] + module.height + 12.0f) * module.masterScale();
             if (!bl && !bl2 && !bl3 && !bl4) continue;
             return module;
         }
@@ -868,7 +872,7 @@ public class HudLayoutEditorGui extends GuiScreen {
         for (AbstractModule abstractModule : this.modules) {
             if (abstractModule.getGuiAnchor() == null) continue;
             float[] arrf = abstractModule.getScaledPoints(scaledResolution, true);
-            boolean bl2 = (float)n > arrf[0] * abstractModule.masterScale() && (float)n < (arrf[0] + abstractModule.width) * abstractModule.masterScale() && (float)n2 > arrf[1] * abstractModule.masterScale() && (float)n2 < (arrf[1] + abstractModule.height) * abstractModule.masterScale();
+            boolean bl2 = (float) n > arrf[0] * abstractModule.masterScale() && (float) n < (arrf[0] + abstractModule.width) * abstractModule.masterScale() && (float) n2 > arrf[1] * abstractModule.masterScale() && (float) n2 < (arrf[1] + abstractModule.height) * abstractModule.masterScale();
             bl = bl || bl2;
         }
         return bl;
@@ -896,7 +900,7 @@ public class HudLayoutEditorGui extends GuiScreen {
         module.scaleAndTranslate(scaledResolution);
         boolean bl2 = this.mouseX != -1;
         if (bl2) {
-            Rectangle rec = new Rectangle((int)(arrf[0] * module.masterScale() - 2.0f), (int)(arrf[1] * module.masterScale() - 2.0f), (int)(module.width * module.masterScale() + (float)4), (int)(module.height * module.masterScale() + (float)4));
+            Rectangle rec = new Rectangle((int) (arrf[0] * module.masterScale() - 2.0f), (int) (arrf[1] * module.masterScale() - 2.0f), (int) (module.width * module.masterScale() + (float) 4), (int) (module.height * module.masterScale() + (float) 4));
             n6 = Math.min(this.mouseX, mouseX);
             n5 = Math.min(this.mouseY, mouseY);
             n4 = Math.max(this.mouseX, mouseX) - n6;
@@ -908,15 +912,15 @@ public class HudLayoutEditorGui extends GuiScreen {
         boolean isModSizeSmall = module.width < 22 || module.height < 8;
         boolean isHoveringOverMod =
                 (float) mouseX > object[0] * module.masterScale() &&
-                (float) mouseX < (object[0] + module.width) * module.masterScale() &&
-                (float) mouseY > object[1] * module.masterScale() &&
-                (float) mouseY < (object[1] + module.height) * module.masterScale();
+                        (float) mouseX < (object[0] + module.width) * module.masterScale() &&
+                        (float) mouseY > object[1] * module.masterScale() &&
+                        (float) mouseY < (object[1] + module.height) * module.masterScale();
         boolean hasHoveredOverMod =
                 (float) mouseX > object[0] * module.masterScale() &&
                         (float) mouseX < (object[0] + module.width) * module.masterScale() &&
                         (float) mouseY > object[1] * module.masterScale() &&
                         (float) mouseY < (object[1] + module.height + 10.0F) * module.masterScale();
-        if (!this.showModSizeOutline && !(this.mc.currentScreen instanceof ProfileCreatorGui)) {
+        if (!this.showModSizeOutline) {
             if (this.getSelectedModules(module) != null || bl2) {
                 Gui.drawRectWithOutline(0.0f, 0.0f, module.width, module.height, 0.4f, 0x9F00FFFF, isHoveringOverMod ? 0x2aFFFFFF : 0x1AFFFFFF);
             } else {
@@ -925,23 +929,23 @@ public class HudLayoutEditorGui extends GuiScreen {
         }
         if (!this.showModSizeOutline && (isHoveringOverMod || isModSizeSmall && hasHoveredOverMod)) {
             n5 = !module.getSettingsList().isEmpty() &&
-                    (float)mouseX >= (object[0] + 2.0f) * module.masterScale() &&
-                    (float)mouseX <= (object[0] + (float)10) * module.masterScale() &&
-                    (float)mouseY >= (object[1] + module.height - (float)8) * module.masterScale() &&
-                    (float)mouseY <= (object[1] + module.height - 2.0f) * module.masterScale() ? 1 : 0;
-            n4 = (float)mouseX > (object[0] + module.width - (float)10) * module.masterScale() &&
-                    (float)mouseX < (object[0] + module.width - 2.0f) * module.masterScale() &&
-                    (float)mouseY > (object[1] + module.height - (float)8) * module.masterScale() &&
-                    (float)mouseY < (object[1] + module.height - 2.0f) * module.masterScale() ? 1 : 0;
+                    (float) mouseX >= (object[0] + 2.0f) * module.masterScale() &&
+                    (float) mouseX <= (object[0] + (float) 10) * module.masterScale() &&
+                    (float) mouseY >= (object[1] + module.height - (float) 8) * module.masterScale() &&
+                    (float) mouseY <= (object[1] + module.height - 2.0f) * module.masterScale() ? 1 : 0;
+            n4 = (float) mouseX > (object[0] + module.width - (float) 10) * module.masterScale() &&
+                    (float) mouseX < (object[0] + module.width - 2.0f) * module.masterScale() &&
+                    (float) mouseY > (object[1] + module.height - (float) 8) * module.masterScale() &&
+                    (float) mouseY < (object[1] + module.height - 2.0f) * module.masterScale() ? 1 : 0;
             int n53 = !module.getSettingsList().isEmpty() &&
-                    (float)mouseX >= (object[0] + module.width / 2 - 10.0f) * module.masterScale() &&
-                    (float)mouseX <= (object[0] + module.width / 2 - 2.0F) * module.masterScale() &&
-                    (float)mouseY >= (object[1] + module.height + 2.0F) * module.masterScale() &&
-                    (float)mouseY <= (object[1] + module.height + 10.0f) * module.masterScale() ? 1 : 0;
-            int n43 = (float)mouseX > (object[0] + module.width / 2 + 0.0F) * module.masterScale() &&
-                    (float)mouseX < (object[0] + module.width / 2 + 8.0f) * module.masterScale() &&
-                    (float)mouseY > (object[1] + module.height + 2.0F) * module.masterScale() &&
-                    (float)mouseY < (object[1] + module.height + 10.0f) * module.masterScale() ? 1 : 0;
+                    (float) mouseX >= (object[0] + module.width / 2 - 10.0f) * module.masterScale() &&
+                    (float) mouseX <= (object[0] + module.width / 2 - 2.0F) * module.masterScale() &&
+                    (float) mouseY >= (object[1] + module.height + 2.0F) * module.masterScale() &&
+                    (float) mouseY <= (object[1] + module.height + 10.0f) * module.masterScale() ? 1 : 0;
+            int n43 = (float) mouseX > (object[0] + module.width / 2 + 0.0F) * module.masterScale() &&
+                    (float) mouseX < (object[0] + module.width / 2 + 8.0f) * module.masterScale() &&
+                    (float) mouseY > (object[1] + module.height + 2.0F) * module.masterScale() &&
+                    (float) mouseY < (object[1] + module.height + 10.0f) * module.masterScale() ? 1 : 0;
             float cogXPos = isModSizeSmall ? module.width / 2 - 7.0F : 2.0f;
             float deleteXPos = isModSizeSmall ? module.width / 2 + 1 : module.width - 8.0F;
             float yPos = isModSizeSmall ? module.height + 2.0F : module.height - 7.5f;
@@ -956,10 +960,10 @@ public class HudLayoutEditorGui extends GuiScreen {
         float f3 = scale / module.masterScale();
         GL11.glScalef(f3, f3, f3);
         if (bl) {
-            n4 = this.dataHolder != null && this.dataHolder.module == module && this.dataHolder.screenLocation == ScreenLocation.LEFT_BOTTOM || n6 == 0 && (float)mouseX >= (object[0] + module.width - (float)5) * module.masterScale() && (float)mouseX <= (object[0] + module.width + (float)5) * module.masterScale() && (float)mouseY >= (object[1] - (float)5) * module.masterScale() && (float)mouseY <= (object[1] + (float)5) * module.masterScale() ? 1 : 0;
-            n3 = this.dataHolder != null && this.dataHolder.module == module && this.dataHolder.screenLocation == ScreenLocation.RIGHT_TOP || n6 == 0 && (float)mouseX >= (object[0] - (float)5) * module.masterScale() && (float)mouseX <= (object[0] + (float)5) * module.masterScale() && (float)mouseY >= (object[1] + module.height - (float)5) * module.masterScale() && (float)mouseY <= (object[1] + module.height + (float)5) * module.masterScale() ? 1 : 0;
-            boolean bl5 = this.dataHolder != null && this.dataHolder.module == module && this.dataHolder.screenLocation == ScreenLocation.RIGHT_BOTTOM || n6 == 0 && (float)mouseX >= (object[0] - (float)5) * module.masterScale() && (float)mouseX <= (object[0] + (float)5) * module.masterScale() && (float)mouseY >= (object[1] - (float)5) * module.masterScale() && (float)mouseY <= (object[1] + (float)5) * module.masterScale();
-            boolean bl6 = this.dataHolder != null && this.dataHolder.module == module && this.dataHolder.screenLocation == ScreenLocation.LEFT_TOP || n6 == 0 && (float)mouseX >= (object[0] + module.width - (float)5) * module.masterScale() && (float)mouseX <= (object[0] + module.width + (float)5) * module.masterScale() && (float)mouseY >= (object[1] + module.height - (float)5) * module.masterScale() && (float)mouseY <= (object[1] + module.height + (float)5) * module.masterScale();
+            n4 = this.dataHolder != null && this.dataHolder.module == module && this.dataHolder.screenLocation == ScreenLocation.LEFT_BOTTOM || n6 == 0 && (float) mouseX >= (object[0] + module.width - (float) 5) * module.masterScale() && (float) mouseX <= (object[0] + module.width + (float) 5) * module.masterScale() && (float) mouseY >= (object[1] - (float) 5) * module.masterScale() && (float) mouseY <= (object[1] + (float) 5) * module.masterScale() ? 1 : 0;
+            n3 = this.dataHolder != null && this.dataHolder.module == module && this.dataHolder.screenLocation == ScreenLocation.RIGHT_TOP || n6 == 0 && (float) mouseX >= (object[0] - (float) 5) * module.masterScale() && (float) mouseX <= (object[0] + (float) 5) * module.masterScale() && (float) mouseY >= (object[1] + module.height - (float) 5) * module.masterScale() && (float) mouseY <= (object[1] + module.height + (float) 5) * module.masterScale() ? 1 : 0;
+            boolean bl5 = this.dataHolder != null && this.dataHolder.module == module && this.dataHolder.screenLocation == ScreenLocation.RIGHT_BOTTOM || n6 == 0 && (float) mouseX >= (object[0] - (float) 5) * module.masterScale() && (float) mouseX <= (object[0] + (float) 5) * module.masterScale() && (float) mouseY >= (object[1] - (float) 5) * module.masterScale() && (float) mouseY <= (object[1] + (float) 5) * module.masterScale();
+            boolean bl6 = this.dataHolder != null && this.dataHolder.module == module && this.dataHolder.screenLocation == ScreenLocation.LEFT_TOP || n6 == 0 && (float) mouseX >= (object[0] + module.width - (float) 5) * module.masterScale() && (float) mouseX <= (object[0] + module.width + (float) 5) * module.masterScale() && (float) mouseY >= (object[1] + module.height - (float) 5) * module.masterScale() && (float) mouseY <= (object[1] + module.height + (float) 5) * module.masterScale();
             GL11.glPushMatrix();
             float f4 = 4;
             if (this.mouseX == -1 && bl5) {
@@ -978,22 +982,22 @@ public class HudLayoutEditorGui extends GuiScreen {
             GL11.glPopMatrix();
             bl3 = this.mouseX == -1 && (bl5 || n4 != 0 || n3 != 0 || bl6);
         }
-        n4 = arrf[1] - (float)CheatBreaker.getInstance().ubuntuMedium16px.getHeight() - (float)6 < 0.0f ? 1 : 0;
-        float f5 = n4 != 0 ? module.height * module.masterScale() / scale : (float)(-CheatBreaker.getInstance().ubuntuMedium16px.getHeight() - 4);
+        n4 = arrf[1] - (float) CheatBreaker.getInstance().ubuntuMedium16px.getHeight() - (float) 6 < 0.0f ? 1 : 0;
+        float f5 = n4 != 0 ? module.height * module.masterScale() / scale : (float) (-CheatBreaker.getInstance().ubuntuMedium16px.getHeight() - 4);
         if ((Boolean) CheatBreaker.getInstance().getGlobalSettings().showModName.getValue()) {
             String name = module.getName() + (module.hiddenFromHud ? EnumChatFormatting.GRAY + " (Hidden)" : "");
             switch (module.getPosition()) {
                 case LEFT:
                     float f6 = 0.0f;
-                    CheatBreaker.getInstance().ubuntuMedium16px.drawStringWithShadow(name, f6, f5, -1);
+                    CheatBreaker.getInstance().ubuntuMedium16px.drawStringWithShadow(module.getName(), f6, f5, -1);
                     break;
                 case CENTER:
                     float f7 = module.width * module.masterScale() / scale / 2.0f;
-                    CheatBreaker.getInstance().ubuntuMedium16px.drawCenteredStringWithShadow(name, f7, f5, -1);
+                    CheatBreaker.getInstance().ubuntuMedium16px.drawCenteredStringWithShadow(module.getName(), f7, f5, -1);
                     break;
                 case RIGHT:
-                    float f8 = module.width * module.masterScale() / scale - (float)CheatBreaker.getInstance().ubuntuMedium16px.getStringWidth(name);
-                    CheatBreaker.getInstance().ubuntuMedium16px.drawStringWithShadow(name, f8, f5, -1);
+                    float f8 = module.width * module.masterScale() / scale - (float) CheatBreaker.getInstance().ubuntuMedium16px.getStringWidth(module.getName());
+                    CheatBreaker.getInstance().ubuntuMedium16px.drawStringWithShadow(module.getName(), f8, f5, -1);
             }
         }
         GL11.glPopMatrix();
@@ -1004,20 +1008,22 @@ public class HudLayoutEditorGui extends GuiScreen {
     private void lIIIIlIIllIIlIIlIIIlIIllI(ScaledResolution scaledResolution) {
         if (!Mouse.isButtonDown(1) && draggingModule != null) {
             for (ModulePosition position : this.positions) {
-                if (position.module != draggingModule || !(Boolean) CheatBreaker.getInstance().getGlobalSettings().snapModules.getValue()) continue;
+                if (position.module != draggingModule || !(Boolean) CheatBreaker.getInstance().getGlobalSettings().snapModules.getValue())
+                    continue;
                 Object var5_5 = null;
                 for (AbstractModule abstractModule : this.modules) {
                     float[] positionScaledPoints = position.module.getScaledPoints(scaledResolution, true);
                     float centerHorizontalSnap = this.width / 2 - (positionScaledPoints[0] + position.module.width / 2) * position.module.masterScale();
-                    float centerVerticalSnap = this.height / 2  - (positionScaledPoints[1] + position.module.height / 2) * position.module.masterScale();
-                    float snappingStrength = (float)CheatBreaker.getInstance().getGlobalSettings().snappingStrength.getValue();
-                    if (centerVerticalSnap >= (float)(-snappingStrength) && centerVerticalSnap <= (float)snappingStrength) {
+                    float centerVerticalSnap = this.height / 2 - (positionScaledPoints[1] + position.module.height / 2) * position.module.masterScale();
+                    float snappingStrength = (float) CheatBreaker.getInstance().getGlobalSettings().snappingStrength.getValue();
+                    if (centerVerticalSnap >= -snappingStrength && centerVerticalSnap <= snappingStrength) {
                         RenderUtil.drawRoundedRect(0.0, this.height / 2 - 0.25f, this.width, this.height / 2 + 0.25f, 0.0, -3596854);
                     }
-                    if (centerHorizontalSnap >= (float)(-snappingStrength) && centerHorizontalSnap <= (float)snappingStrength) {
+                    if (centerHorizontalSnap >= -snappingStrength && centerHorizontalSnap <= snappingStrength) {
                         RenderUtil.drawRoundedRect(this.width / 2 - 0.25f, 0.0, this.width / 2 + 0.25f, this.height, 0.0, -3596854);
                     }
-                    if (this.getSelectedModules(abstractModule) != null || abstractModule.getGuiAnchor() == null || !abstractModule.isEnabled() || abstractModule == CheatBreaker.getInstance().getModuleManager().miniMapMod || !abstractModule.notRenderHUD && !abstractModule.isRenderHud() || var5_5 != null && var5_5 != abstractModule) continue;
+                    if (this.getSelectedModules(abstractModule) != null || abstractModule.getGuiAnchor() == null || !abstractModule.isEnabled() || abstractModule == CheatBreaker.getInstance().getModuleManager().miniMapMod || !abstractModule.notRenderHUD && !abstractModule.isRenderHud() || var5_5 != null && var5_5 != abstractModule)
+                        continue;
                     float[] moduleScaledPoints = abstractModule.getScaledPoints(scaledResolution, true);
                     boolean highlightNeighborMods = false;
                     float f2 = moduleScaledPoints[0] * abstractModule.masterScale() - positionScaledPoints[0] * position.module.masterScale();
@@ -1028,35 +1034,35 @@ public class HudLayoutEditorGui extends GuiScreen {
                     float f7 = (moduleScaledPoints[1] + abstractModule.height) * abstractModule.masterScale() - (positionScaledPoints[1] + position.module.height) * position.module.masterScale();
                     float f8 = (moduleScaledPoints[1] + abstractModule.height) * abstractModule.masterScale() - positionScaledPoints[1] * position.module.masterScale();
                     float f9 = moduleScaledPoints[1] * abstractModule.masterScale() - (positionScaledPoints[1] + position.module.height) * position.module.masterScale();
-                    if (f2 >= (float)(-snappingStrength) && f2 <= (float)snappingStrength) {
+                    if (f2 >= -snappingStrength && f2 <= snappingStrength) {
                         highlightNeighborMods = true;
                         RenderUtil.drawRoundedRect(moduleScaledPoints[0] * abstractModule.masterScale() - 0.6666667f * 0.75f, 0.0, moduleScaledPoints[0] * abstractModule.masterScale(), this.height, 0.0, -3596854);
                     }
-                    if (f3 >= (float)(-snappingStrength) && f3 <= (float)snappingStrength) {
+                    if (f3 >= -snappingStrength && f3 <= snappingStrength) {
                         highlightNeighborMods = true;
                         RenderUtil.drawRoundedRect((moduleScaledPoints[0] + abstractModule.width) * abstractModule.masterScale(), 0.0, (moduleScaledPoints[0] + abstractModule.width) * abstractModule.masterScale() + 1.7272727f * 0.28947368f, this.height, 0.0, -3596854);
                     }
-                    if (f5 >= (float)(-snappingStrength) && f5 <= (float)snappingStrength) {
+                    if (f5 >= -snappingStrength && f5 <= snappingStrength) {
                         highlightNeighborMods = true;
                         RenderUtil.drawRoundedRect(moduleScaledPoints[0] * abstractModule.masterScale(), 0.0, moduleScaledPoints[0] * abstractModule.masterScale() + 0.29775283f * 1.6792452f, this.height, 0.0, 0xFFC91DCA);
                     }
-                    if (f4 >= (float)(-snappingStrength) && f4 <= (float)snappingStrength) {
+                    if (f4 >= -snappingStrength && f4 <= snappingStrength) {
                         highlightNeighborMods = true;
                         RenderUtil.drawRoundedRect((moduleScaledPoints[0] + abstractModule.width) * abstractModule.masterScale(), 0.0, (moduleScaledPoints[0] + abstractModule.width) * abstractModule.masterScale() + 1.5238096f * 0.328125f, this.height, 0.0, -3596854);
                     }
-                    if (f6 >= (float)(-snappingStrength) && f6 <= (float)snappingStrength) {
+                    if (f6 >= -snappingStrength && f6 <= snappingStrength) {
                         highlightNeighborMods = true;
                         RenderUtil.drawRoundedRect(0.0, moduleScaledPoints[1] * abstractModule.masterScale(), this.width, moduleScaledPoints[1] * abstractModule.masterScale() + 0.3888889f * 1.2857143f, 0.0, -3596854);
                     }
-                    if (f7 >= (float)(-snappingStrength) && f7 <= (float)snappingStrength) {
+                    if (f7 >= -snappingStrength && f7 <= snappingStrength) {
                         highlightNeighborMods = true;
                         RenderUtil.drawRoundedRect(0.0, (moduleScaledPoints[1] + abstractModule.height) * abstractModule.masterScale(), this.width, (moduleScaledPoints[1] + abstractModule.height) * abstractModule.masterScale() + 0.51724136f * 0.9666667f, 0.0, -3596854);
                     }
-                    if (f9 >= (float)(-snappingStrength) && f9 <= (float)snappingStrength) {
+                    if (f9 >= -snappingStrength && f9 <= snappingStrength) {
                         highlightNeighborMods = true;
                         RenderUtil.drawRoundedRect(0.0, moduleScaledPoints[1] * abstractModule.masterScale(), this.width, moduleScaledPoints[1] * abstractModule.masterScale() + 0.16666667f * 3.0f, 0.0, -3596854);
                     }
-                    if (f8 >= (float)(-snappingStrength) && f8 <= (float)snappingStrength) {
+                    if (f8 >= -snappingStrength && f8 <= snappingStrength) {
                         highlightNeighborMods = true;
                         RenderUtil.drawRoundedRect(0.0, (moduleScaledPoints[1] + abstractModule.height) * abstractModule.masterScale() - 0.5810811f * 0.8604651f, this.width, (moduleScaledPoints[1] + abstractModule.height) * abstractModule.masterScale(), 0.0, -3596854);
                     }
@@ -1075,8 +1081,8 @@ public class HudLayoutEditorGui extends GuiScreen {
         float f3 = 2.0f;
         if (f2 + arrf[0] * abstractModule.masterScale() < f3) {
             f2 = -arrf[0] * abstractModule.masterScale() + f3;
-        } else if (f2 + arrf[0] * abstractModule.masterScale() + (float)n > (float)this.width - f3) {
-            f2 = (float)this.width - arrf[0] * abstractModule.masterScale() - (float)n - f3;
+        } else if (f2 + arrf[0] * abstractModule.masterScale() + (float) n > (float) this.width - f3) {
+            f2 = (float) this.width - arrf[0] * abstractModule.masterScale() - (float) n - f3;
         }
         return f2;
     }
@@ -1086,8 +1092,8 @@ public class HudLayoutEditorGui extends GuiScreen {
         float f3 = 2.0f;
         if (f2 + arrf[1] * abstractModule.masterScale() < f3) {
             f2 = -arrf[1] * abstractModule.masterScale() + f3;
-        } else if (f2 + arrf[1] * abstractModule.masterScale() + (float)n > (float)this.height - f3) {
-            f2 = (float)this.height - arrf[1] * abstractModule.masterScale() - (float)n - f3;
+        } else if (f2 + arrf[1] * abstractModule.masterScale() + (float) n > (float) this.height - f3) {
+            f2 = (float) this.height - arrf[1] * abstractModule.masterScale() - (float) n - f3;
         }
         return f2;
     }
@@ -1096,29 +1102,29 @@ public class HudLayoutEditorGui extends GuiScreen {
         if (modulePosition.module.getGuiAnchor() == null || !modulePosition.module.isEnabled() || modulePosition.module == CheatBreaker.getInstance().getModuleManager().miniMapMod || !modulePosition.module.notRenderHUD && !modulePosition.module.isRenderHud()) {
             return;
         }
-        float f = (float)n - modulePosition.x;
-        float f2 = (float)n2 - modulePosition.y;
-        if (!(this.IlIlIIIlllllIIIlIlIlIllII || modulePosition.module != draggingModule || (float)n == this.mouseX2 && (float)n2 == this.mouseY2)) {
+        float f = (float) n - modulePosition.x;
+        float f2 = (float) n2 - modulePosition.y;
+        if (!(this.IlIlIIIlllllIIIlIlIlIllII || modulePosition.module != draggingModule || (float) n == this.mouseX2 && (float) n2 == this.mouseY2)) {
             if (this.undoList.size() > 50) {
                 this.undoList.remove(0);
             }
             this.undoList.add(new ModuleActionData(this, this.positions));
-            CheatBreaker.getInstance().createNewProfile();
+            CheatBreaker.getInstance().getConfigManager().createNewProfile();
             this.IlIlIIIlllllIIIlIlIlIllII = true;
         }
         float[] arrf = modulePosition.module.getScaledPoints(scaledResolution, false);
         if (!Mouse.isButtonDown(1) && this.IlIlIIIlllllIIIlIlIlIllII && modulePosition.module == draggingModule) {
             float f3 = f;
             float f4 = f2;
-            f = this.lIIIIlIIllIIlIIlIIIlIIllI(modulePosition.module, f, arrf, (int)(modulePosition.module.width * modulePosition.module.masterScale()));
-            f2 = this.lIIIIIIIIIlIllIIllIlIIlIl(modulePosition.module, f2, arrf, (int)(modulePosition.module.height * modulePosition.module.masterScale()));
+            f = this.lIIIIlIIllIIlIIlIIIlIIllI(modulePosition.module, f, arrf, (int) (modulePosition.module.width * modulePosition.module.masterScale()));
+            f2 = this.lIIIIIIIIIlIllIIllIlIIlIl(modulePosition.module, f2, arrf, (int) (modulePosition.module.height * modulePosition.module.masterScale()));
             float f5 = f3 - f;
             float f6 = f4 - f2;
             for (ModulePosition positions : this.positions) {
                 if (positions == modulePosition) continue;
                 arrf = positions.module.getScaledPoints(scaledResolution, false);
-                float f7 = this.lIIIIlIIllIIlIIlIIIlIIllI(positions.module, positions.module.getXTranslation() - f5, arrf, (int)(positions.module.width * positions.module.masterScale()));
-                float f8 = this.lIIIIIIIIIlIllIIllIlIIlIl(positions.module, positions.module.getYTranslation() - f6, arrf, (int)(positions.module.height * positions.module.masterScale()));
+                float f7 = this.lIIIIlIIllIIlIIlIIIlIIllI(positions.module, positions.module.getXTranslation() - f5, arrf, (int) (positions.module.width * positions.module.masterScale()));
+                float f8 = this.lIIIIIIIIIlIllIIllIlIIlIl(positions.module, positions.module.getYTranslation() - f6, arrf, (int) (positions.module.height * positions.module.masterScale()));
                 positions.module.setTranslations(f7, f8);
             }
         }
@@ -1153,7 +1159,7 @@ public class HudLayoutEditorGui extends GuiScreen {
     }
 
     public static float getFPSTransitionSpeed(float f) {
-        float f2 = f / (float)(Minecraft.debugFPS + 1);
+        float f2 = f / (float) (Minecraft.debugFPS + 1);
         return Math.max(f2, 1.0f);
     }
 
@@ -1168,20 +1174,12 @@ public class HudLayoutEditorGui extends GuiScreen {
     private void setSelectedModulesPosition(ScaledResolution scaledResolution, int n, int n2) {
         for (ModulePosition position : this.positions) {
             if (position.module == null || position.module.getGuiAnchor() == null) continue;
-            position.x = (float)n - position.module.getXTranslation();
-            position.y = (float)n2 - position.module.getYTranslation();
+            position.x = (float) n - position.module.getXTranslation();
+            position.y = (float) n2 - position.module.getYTranslation();
         }
     }
 
     private void removeModuleFromPositions(AbstractModule abstractModule) {
         this.positions.removeIf(cBModulePosition -> cBModulePosition.module == abstractModule);
-    }
-
-    private void debugOutputHud(ScaledResolution res) {
-        for (AbstractModule module : this.modules) {
-            if (this.getSelectedModules(module) != null) {
-                this.mc.fontRenderer.drawString(module.getGuiAnchor() + ", " + module.getXTranslation() + ", " + module.getYTranslation(), module.getScaledPoints(res, true)[0] * module.masterScale(), module.getScaledPoints(res, true)[1] * module.masterScale() + module.height * module.masterScale() + 1.0f, -1, true);
-            }
-        }
     }
 }

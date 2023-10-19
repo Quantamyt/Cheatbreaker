@@ -1,8 +1,8 @@
 package com.cheatbreaker.client.module.impl.normal.hud;
 
 
-import com.cheatbreaker.client.event.impl.GuiDrawEvent;
-import com.cheatbreaker.client.event.impl.PreviewDrawEvent;
+import com.cheatbreaker.client.event.impl.render.GuiDrawEvent;
+import com.cheatbreaker.client.event.impl.render.PreviewDrawEvent;
 import com.cheatbreaker.client.module.AbstractModule;
 import com.cheatbreaker.client.module.data.CustomizationLevel;
 import com.cheatbreaker.client.module.data.Setting;
@@ -11,6 +11,7 @@ import com.cheatbreaker.client.ui.module.HudLayoutEditorGui;
 import com.cheatbreaker.client.ui.util.RenderUtil;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.Gui;
+import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.entity.boss.BossStatus;
 import net.minecraft.util.ResourceLocation;
 import org.lwjgl.opengl.GL11;
@@ -18,8 +19,10 @@ import org.lwjgl.opengl.GL11;
 import java.awt.*;
 
 /**
- * Displays the current Minecraft Boss' health and name.
+ * @Module - ModuleBossBar
  * @see AbstractModule
+ *
+ * This module displays the current Minecraft Boss' health.
  */
 public class ModuleBossBar extends AbstractModule {
     private final Setting textColor;
@@ -36,7 +39,7 @@ public class ModuleBossBar extends AbstractModule {
     private final Setting outlineBossBarColor;
 
     public ModuleBossBar() {
-        super("Boss bar");
+        super("Boss Bar");
         this.setDefaultAnchor(GuiAnchor.MIDDLE_TOP);
         this.notRenderHUD = false;
         this.renderText = new Setting(this, "Render Text").setValue(true).setCustomizationLevel(CustomizationLevel.SIMPLE);
@@ -59,7 +62,7 @@ public class ModuleBossBar extends AbstractModule {
     }
 
     public void onPreviewDraw(PreviewDrawEvent event) {
-        if (!this.isRenderHud()) return;
+        if (!this.isRenderHud() || (this.hiddenFromHud && !(this.mc.currentScreen instanceof HudLayoutEditorGui))) return;
         GL11.glPushMatrix();
         this.scaleAndTranslate(event.getScaledResolution());
         if (BossStatus.bossName == null || BossStatus.statusBarTime <= 0) {
@@ -69,7 +72,7 @@ public class ModuleBossBar extends AbstractModule {
     }
 
     public void onGuiDraw(GuiDrawEvent event) {
-        if (!this.isRenderHud() || (this.hiddenFromHud && !(this.mc.currentScreen instanceof HudLayoutEditorGui))) return;
+        if (!this.isRenderHud()) return;
         GL11.glPushMatrix();
         this.scaleAndTranslate(event.getScaledResolution());
         if (BossStatus.bossName != null && BossStatus.statusBarTime > 0) {
@@ -80,7 +83,7 @@ public class ModuleBossBar extends AbstractModule {
     }
 
     public void render(String bossName, float healthScale, int x, int y) {
-        GL11.glEnable(GL11.GL_BLEND);
+        GlStateManager.enableBlend();
         int barColor = this.bossBarColor.getColorValue();
         if (this.bossTexture.getValue().equals("Texture Pack")) {
             GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
@@ -90,7 +93,7 @@ public class ModuleBossBar extends AbstractModule {
             this.mc.getTextureManager().bindTexture(new ResourceLocation("client/icons/bossbar/" + this.bossTexture.getValue().toString().toLowerCase() + ".png"));
         }
 
-        FontRenderer font = this.mc.fontRenderer;
+        FontRenderer font = this.mc.fontRendererObj;
         float width = this.bossTexture.getValue().equals("Custom") ? this.barWidth.getFloatValue() : 182;
         float x2 = !(Boolean) renderText.getValue() || font.getStringWidth(bossName) < width ? x : x + (font.getStringWidth(bossName) - width) * this.textPosition.getFloatValue() / 100.0F;
         int y2 = y;
@@ -105,19 +108,20 @@ public class ModuleBossBar extends AbstractModule {
                 }
                 RenderUtil.drawGradientRectWithOutline(x2, y2, x2 + width, y2 + this.barHeight.getFloatValue(), this.outlineBossBarColor.getColorValue(), 0, 0);
             } else {
-                this.mc.ingameGUI.drawTexturedModalRect(x2, y2, 0, 74, (int)width, 5);
-                this.mc.ingameGUI.drawTexturedModalRect(x2, y2, 0, 74, (int)width, 5);
+                this.mc.ingameGUI.drawTexturedModalRect(x2, y2, 0, 74, (int) width, 5);
+                this.mc.ingameGUI.drawTexturedModalRect(x2, y2, 0, 74, (int) width, 5);
                 if (remainingHealth > 0) {
-                    this.mc.ingameGUI.drawTexturedModalRect(x2, y2, 0, 79, (int)remainingHealth, 5);
+                    this.mc.ingameGUI.drawTexturedModalRect(x2, y2, 0, 79, (int) remainingHealth, 5);
                 }
             }
         }
         GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
-        if ((Boolean) renderText.getValue()) font.drawString(bossName, x + this.width / 2 - (float)(font.getStringWidth(bossName) / 2), y - 10, this.textColor.getColorValue(), (Boolean)this.textShadow.getValue());
+        if ((Boolean) renderText.getValue())
+            font.drawString(bossName, x + this.width / 2 - (float) (font.getStringWidth(bossName) / 2), y - 10, this.textColor.getColorValue(), (Boolean) this.textShadow.getValue());
         float barHeight = (Boolean) renderHealth.getValue() ? this.bossTexture.getValue().equals("Custom") ? this.barHeight.getFloatValue() : 5.0F : 0.0F;
         float textHeight = (Boolean) renderText.getValue() ? 9.0F : 0.0F;
         float extraHeight = (Boolean) renderText.getValue() && (Boolean) renderHealth.getValue() ? 1.0F : 0.0F;
-        this.setDimensions((Boolean) renderHealth.getValue() ? (Boolean) renderText.getValue() ? Math.max(font.getStringWidth(bossName), width) : width : (float)(font.getStringWidth(bossName)), barHeight + textHeight + extraHeight);
-        GL11.glDisable(GL11.GL_BLEND);
+        this.setDimensions((Boolean) renderHealth.getValue() ? (Boolean) renderText.getValue() ? Math.max(font.getStringWidth(bossName), width) : width : (float) (font.getStringWidth(bossName)), barHeight + textHeight + extraHeight);
+        GlStateManager.disableBlend();
     }
 }

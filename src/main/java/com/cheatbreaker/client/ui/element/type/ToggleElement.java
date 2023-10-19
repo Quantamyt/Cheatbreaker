@@ -14,7 +14,7 @@ import net.minecraft.util.ResourceLocation;
 import org.lwjgl.opengl.GL11;
 
 public class ToggleElement extends AbstractModulesGuiElement {
-//    private final Setting setting;
+    //    private final Setting setting;
     private final ResourceLocation rightArrowIcon = new ResourceLocation("client/icons/left.png");
     private final ResourceLocation leftArrowIcon = new ResourceLocation("client/icons/right.png");
     private int optionValueIndex = 0;
@@ -73,7 +73,7 @@ public class ToggleElement extends AbstractModulesGuiElement {
             this.optionValueIndex = bl ? 1 : 2;
             this.animationSpeed = 0.0f;
             this.optionValue = (Boolean) this.setting.getValue() ? "ON" : "OFF";
-            Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.func_147674_a(new ResourceLocation("gui.button.press"), 1.0f));
+            Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("gui.button.press"), 1.0f));
             this.setting.setValue(!((Boolean) this.setting.getValue()));
             if (this.setting == CheatBreaker.getInstance().getGlobalSettings().enableTeamView && !(Boolean) CheatBreaker.getInstance().getGlobalSettings().enableTeamView.getValue()) {
                 CheatBreaker.getInstance().getModuleManager().teammatesMod.setEnabled(false);

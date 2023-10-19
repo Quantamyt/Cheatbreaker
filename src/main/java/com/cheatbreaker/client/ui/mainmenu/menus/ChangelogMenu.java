@@ -6,7 +6,6 @@ import com.cheatbreaker.client.ui.mainmenu.GradientTextButton;
 import com.cheatbreaker.client.ui.mainmenu.MainMenuBase;
 import com.cheatbreaker.client.ui.mainmenu.buttons.ChangeLogButton;
 import com.cheatbreaker.client.ui.util.RenderUtil;
-import com.google.common.collect.ImmutableList;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import lombok.SneakyThrows;
@@ -53,7 +52,7 @@ public class ChangelogMenu extends MainMenuBase {
     }
 
     @Override
-    public void handleMouseInput() {
+    public void handleMouseInput() throws IOException {
         super.handleMouseInput();
         this.scrollableElement.handleElementMouse();
     }
@@ -90,7 +89,7 @@ public class ChangelogMenu extends MainMenuBase {
     public void mouseClicked(float f, float f2, int n) {
         super.mouseClicked(f, f2, n);
         if (this.backButton.isMouseInside(f, f2)) {
-            Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.func_147674_a(new ResourceLocation("gui.button.press"), 1.0f));
+            Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("gui.button.press"), 1.0f));
             this.mc.displayGuiScreen(new MainMenu());
         } else if (this.scrollableElement.isMouseInside(f, f2)) {
             this.scrollableElement.handleElementMouseClicked(f, f2, n, true);

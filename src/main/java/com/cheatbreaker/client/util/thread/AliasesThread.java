@@ -16,6 +16,9 @@ import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.Map;
 
+/**
+ * Used to get all past names of a player.
+ */
 public class AliasesThread extends Thread {
     private final AliasesElement aliasesElement;
     private final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("MM/dd/yyyy");
@@ -50,7 +53,7 @@ public class AliasesThread extends Thread {
             Collections.reverse(this.aliasesElement.getAliases());
             this.aliasesElement.setElementSize(this.aliasesElement.getXPosition(), this.aliasesElement.getYPosition(),
                     this.aliasesElement.getWidth(), this.aliasesElement.getHeight() +
-                            (float)(this.aliasesElement.getAliases().size() * 10) - (float)10);
+                            (float) (this.aliasesElement.getAliases().size() * 10) - (float) 10);
         } catch (Exception exception) {
             exception.printStackTrace();
         }

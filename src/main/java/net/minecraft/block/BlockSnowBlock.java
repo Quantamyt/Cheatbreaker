@@ -2,39 +2,39 @@ package net.minecraft.block;
 
 import java.util.Random;
 import net.minecraft.block.material.Material;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.init.Items;
 import net.minecraft.item.Item;
+import net.minecraft.util.BlockPos;
 import net.minecraft.world.EnumSkyBlock;
 import net.minecraft.world.World;
 
-public class BlockSnowBlock extends Block {
-
-
-    protected BlockSnowBlock() {
+public class BlockSnowBlock extends Block
+{
+    protected BlockSnowBlock()
+    {
         super(Material.craftedSnow);
         this.setTickRandomly(true);
         this.setCreativeTab(CreativeTabs.tabBlock);
     }
 
-    public Item getItemDropped(int p_149650_1_, Random p_149650_2_, int p_149650_3_) {
+    public Item getItemDropped(IBlockState state, Random rand, int fortune)
+    {
         return Items.snowball;
     }
 
-    /**
-     * Returns the quantity of items to drop on block destruction.
-     */
-    public int quantityDropped(Random p_149745_1_) {
+    public int quantityDropped(Random random)
+    {
         return 4;
     }
 
-    /**
-     * Ticks the block if it's been scheduled
-     */
-    public void updateTick(World p_149674_1_, int p_149674_2_, int p_149674_3_, int p_149674_4_, Random p_149674_5_) {
-        if (p_149674_1_.getSavedLightValue(EnumSkyBlock.Block, p_149674_2_, p_149674_3_, p_149674_4_) > 11) {
-            this.dropBlockAsItem(p_149674_1_, p_149674_2_, p_149674_3_, p_149674_4_, p_149674_1_.getBlockMetadata(p_149674_2_, p_149674_3_, p_149674_4_), 0);
-            p_149674_1_.setBlockToAir(p_149674_2_, p_149674_3_, p_149674_4_);
+    public void updateTick(World worldIn, BlockPos pos, IBlockState state, Random rand)
+    {
+        if (worldIn.getLightFor(EnumSkyBlock.BLOCK, pos) > 11)
+        {
+            this.dropBlockAsItem(worldIn, pos, worldIn.getBlockState(pos), 0);
+            worldIn.setBlockToAir(pos);
         }
     }
 }

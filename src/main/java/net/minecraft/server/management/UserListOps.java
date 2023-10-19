@@ -3,52 +3,53 @@ package net.minecraft.server.management;
 import com.google.gson.JsonObject;
 import com.mojang.authlib.GameProfile;
 import java.io.File;
-import java.util.Iterator;
 
-public class UserListOps extends UserList {
-
-
-    public UserListOps(File p_i1152_1_) {
-        super(p_i1152_1_);
+public class UserListOps extends UserList<GameProfile, UserListOpsEntry>
+{
+    public UserListOps(File saveFile)
+    {
+        super(saveFile);
     }
 
-    protected UserListEntry func_152682_a(JsonObject p_152682_1_) {
-        return new UserListOpsEntry(p_152682_1_);
+    protected UserListEntry<GameProfile> createEntry(JsonObject entryData)
+    {
+        return new UserListOpsEntry(entryData);
     }
 
-    public String[] func_152685_a() {
-        String[] var1 = new String[this.func_152688_e().size()];
-        int var2 = 0;
-        UserListOpsEntry var4;
+    public String[] getKeys()
+    {
+        String[] astring = new String[this.getValues().size()];
+        int i = 0;
 
-        for (Iterator var3 = this.func_152688_e().values().iterator(); var3.hasNext(); var1[var2++] = ((GameProfile)var4.func_152640_f()).getName()) {
-            var4 = (UserListOpsEntry)var3.next();
+        for (UserListOpsEntry userlistopsentry : this.getValues().values())
+        {
+            astring[i++] = ((GameProfile)userlistopsentry.getValue()).getName();
         }
 
-        return var1;
+        return astring;
     }
 
-    protected String func_152699_b(GameProfile p_152699_1_) {
-        return p_152699_1_.getId().toString();
+    public boolean bypassesPlayerLimit(GameProfile profile)
+    {
+        UserListOpsEntry userlistopsentry = (UserListOpsEntry)this.getEntry(profile);
+        return userlistopsentry != null ? userlistopsentry.bypassesPlayerLimit() : false;
     }
 
-    public GameProfile func_152700_a(String p_152700_1_) {
-        Iterator var2 = this.func_152688_e().values().iterator();
-        UserListOpsEntry var3;
+    protected String getObjectKey(GameProfile obj)
+    {
+        return obj.getId().toString();
+    }
 
-        do {
-            if (!var2.hasNext()) {
-                return null;
+    public GameProfile getGameProfileFromName(String username)
+    {
+        for (UserListOpsEntry userlistopsentry : this.getValues().values())
+        {
+            if (username.equalsIgnoreCase(((GameProfile)userlistopsentry.getValue()).getName()))
+            {
+                return (GameProfile)userlistopsentry.getValue();
             }
-
-            var3 = (UserListOpsEntry)var2.next();
         }
-        while (!p_152700_1_.equalsIgnoreCase(((GameProfile)var3.func_152640_f()).getName()));
 
-        return (GameProfile)var3.func_152640_f();
-    }
-
-    protected String func_152681_a(Object p_152681_1_) {
-        return this.func_152699_b((GameProfile)p_152681_1_);
+        return null;
     }
 }

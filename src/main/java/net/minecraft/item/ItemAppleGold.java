@@ -7,46 +7,49 @@ import net.minecraft.potion.Potion;
 import net.minecraft.potion.PotionEffect;
 import net.minecraft.world.World;
 
-public class ItemAppleGold extends ItemFood {
-
-
-    public ItemAppleGold(int p_i45341_1_, float p_i45341_2_, boolean p_i45341_3_) {
-        super(p_i45341_1_, p_i45341_2_, p_i45341_3_);
+public class ItemAppleGold extends ItemFood
+{
+    public ItemAppleGold(int amount, float saturation, boolean isWolfFood)
+    {
+        super(amount, saturation, isWolfFood);
         this.setHasSubtypes(true);
     }
 
-    public boolean hasEffect(ItemStack p_77636_1_) {
-        return p_77636_1_.getItemDamage() > 0;
+    public boolean hasEffect(ItemStack stack)
+    {
+        return stack.getMetadata() > 0;
     }
 
-    /**
-     * Return an item rarity from EnumRarity
-     */
-    public EnumRarity getRarity(ItemStack p_77613_1_) {
-        return p_77613_1_.getItemDamage() == 0 ? EnumRarity.rare : EnumRarity.epic;
+    public EnumRarity getRarity(ItemStack stack)
+    {
+        return stack.getMetadata() == 0 ? EnumRarity.RARE : EnumRarity.EPIC;
     }
 
-    protected void onFoodEaten(ItemStack p_77849_1_, World p_77849_2_, EntityPlayer p_77849_3_) {
-        if (!p_77849_2_.isClient) {
-            p_77849_3_.addPotionEffect(new PotionEffect(Potion.field_76444_x.id, 2400, 0));
+    protected void onFoodEaten(ItemStack stack, World worldIn, EntityPlayer player)
+    {
+        if (!worldIn.isRemote)
+        {
+            player.addPotionEffect(new PotionEffect(Potion.absorption.id, 2400, 0));
         }
 
-        if (p_77849_1_.getItemDamage() > 0) {
-            if (!p_77849_2_.isClient) {
-                p_77849_3_.addPotionEffect(new PotionEffect(Potion.regeneration.id, 600, 4));
-                p_77849_3_.addPotionEffect(new PotionEffect(Potion.resistance.id, 6000, 0));
-                p_77849_3_.addPotionEffect(new PotionEffect(Potion.fireResistance.id, 6000, 0));
+        if (stack.getMetadata() > 0)
+        {
+            if (!worldIn.isRemote)
+            {
+                player.addPotionEffect(new PotionEffect(Potion.regeneration.id, 600, 4));
+                player.addPotionEffect(new PotionEffect(Potion.resistance.id, 6000, 0));
+                player.addPotionEffect(new PotionEffect(Potion.fireResistance.id, 6000, 0));
             }
-        } else {
-            super.onFoodEaten(p_77849_1_, p_77849_2_, p_77849_3_);
+        }
+        else
+        {
+            super.onFoodEaten(stack, worldIn, player);
         }
     }
 
-    /**
-     * This returns the sub items
-     */
-    public void getSubItems(Item p_150895_1_, CreativeTabs p_150895_2_, List p_150895_3_) {
-        p_150895_3_.add(new ItemStack(p_150895_1_, 1, 0));
-        p_150895_3_.add(new ItemStack(p_150895_1_, 1, 1));
+    public void getSubItems(Item itemIn, CreativeTabs tab, List<ItemStack> subItems)
+    {
+        subItems.add(new ItemStack(itemIn, 1, 0));
+        subItems.add(new ItemStack(itemIn, 1, 1));
     }
 }

@@ -1,16 +1,18 @@
 package com.cheatbreaker.client.util.friend;
 
-import net.minecraft.util.EnumChatFormatting;
+import com.cheatbreaker.client.CheatBreaker;
+import com.cheatbreaker.client.util.friend.data.Friend;
+import com.cheatbreaker.client.util.friend.data.FriendRequest;
 import net.minecraft.client.Minecraft;
+import net.minecraft.util.EnumChatFormatting;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
+/**
+ * Manages everything to do with friends.
+ */
 public class FriendsManager {
     private final Map<String, Friend> friendsMap = new HashMap<String, Friend>();
     private final Map<String, FriendRequest> friendRequestsMap = new HashMap<String, FriendRequest>();
@@ -18,6 +20,10 @@ public class FriendsManager {
     private final Map<String, List<String>> messages = new HashMap<String, List<String>>();
     private final Map<String, List<String>> unreadMessages = new HashMap<String, List<String>>();
     private final DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss");
+
+    public FriendsManager() {
+        CheatBreaker.getInstance().logger.info(CheatBreaker.getInstance().loggerPrefix + "Created Friends Manager");
+    }
 
     public void addUnreadMessage(String var1, String var2) {
         Friend var3 = this.getFriend(var1);
@@ -36,7 +42,7 @@ public class FriendsManager {
         Friend var3 = this.getFriend(var1);
         if (var3 != null) {
             if (!this.readMessages.containsKey(var1)) {
-                this.readMessages.put(var1,  new ArrayList<>());
+                this.readMessages.put(var1, new ArrayList<>());
             }
             this.readMessages.get(var1).add(var2);
         }

@@ -14,12 +14,13 @@ public class DashThread extends Thread {
             try {
                 while (true) {
                     Station station;
-                    if ((station = CheatBreaker.getInstance().getDashManager().getCurrentStation()) != null && station.getStartTime() != null && Duration.between(station.getStartTime(), LocalDateTime.now()).toMillis() / 1000L >= (long)(station.getDuration() + 2)) {
+                    if ((station = CheatBreaker.getInstance().getDashManager().getCurrentStation()) != null && station.getStartTime() != null && Duration.between(station.getStartTime(), LocalDateTime.now()).toMillis() / 1000L >= (long) (station.getDuration() + 2)) {
                         station.getData();
                         Thread.sleep(4000L);
                     }
                     Thread.sleep(1000L);
                 }
+
             } catch (Exception exception) {
                 exception.printStackTrace();
             }

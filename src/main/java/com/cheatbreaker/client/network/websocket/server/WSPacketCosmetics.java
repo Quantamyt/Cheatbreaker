@@ -2,22 +2,29 @@ package com.cheatbreaker.client.network.websocket.server;
 
 import com.cheatbreaker.client.cosmetic.Cosmetic;
 import com.cheatbreaker.client.network.websocket.WSNetHandler;
+import com.cheatbreaker.client.network.websocket.WSPacket;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import net.minecraft.network.PacketBuffer;
-import com.cheatbreaker.client.network.websocket.WSPacket;
 
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * @WSPacket WSPacketCosmetics
+ * @see WSPacket
+ *
+ * This packet receives all cosmetics being sent to the client.
+ */
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
 public class WSPacketCosmetics extends WSPacket {
     private List<Cosmetic> cosmetics = new ArrayList<>();
-
     private String playerId;
+    private int emoteId;
+
     private String username;
     private boolean join;
     private int color;
@@ -30,6 +37,7 @@ public class WSPacketCosmetics extends WSPacket {
     @Override
     public void read(PacketBuffer in) {
         this.playerId = in.readStringFromBuffer(52);
+
         int cosmeticsSize = in.readInt();
 
         for (int i = 0; i < cosmeticsSize; i++) {

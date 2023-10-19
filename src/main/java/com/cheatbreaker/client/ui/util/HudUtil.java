@@ -3,13 +3,18 @@ package com.cheatbreaker.client.ui.util;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
+import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.client.renderer.WorldRenderer;
+import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Items;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.src.Config;
 import net.minecraft.util.ResourceLocation;
+import net.optifine.CustomColors;
 import org.lwjgl.opengl.GL11;
 
 public final class HudUtil {
@@ -66,12 +71,13 @@ public final class HudUtil {
     public static void drawTexturedModalRect(int n, int n2, int n3, int n4, int n5, int n6, float f) {
         float f2 = 1.1355932f * 0.0034398322f;
         float f3 = 0.0015345983f * 2.5454545f;
-        Tessellator tessellator = Tessellator.instance;
-        tessellator.startDrawingQuads();
-        tessellator.addVertexWithUV(n + 0, n2 + n6, f, (float)(n3 + 0) * f2, (float)(n4 + n6) * f3);
-        tessellator.addVertexWithUV(n + n5, n2 + n6, f, (float)(n3 + n5) * f2, (float)(n4 + n6) * f3);
-        tessellator.addVertexWithUV(n + n5, n2 + 0, f, (float)(n3 + n5) * f2, (float)(n4 + 0) * f3);
-        tessellator.addVertexWithUV(n + 0, n2 + 0, f, (float)(n3 + 0) * f2, (float)(n4 + 0) * f3);
+        Tessellator tessellator = Tessellator.getInstance();
+        WorldRenderer worldrenderer = tessellator.getWorldRenderer();
+        worldrenderer.begin(7, DefaultVertexFormats.POSITION_TEX);
+        worldrenderer.pos(n + 0, n2 + n6, f).tex((float) (n3 + 0) * f2, (float) (n4 + n6) * f3).endVertex();
+        worldrenderer.pos(n + n5, n2 + n6, f).tex((float) (n3 + n5) * f2, (float) (n4 + n6) * f3).endVertex();
+        worldrenderer.pos(n + n5, n2 + 0, f).tex((float) (n3 + n5) * f2, (float) (n4 + 0) * f3).endVertex();
+        worldrenderer.pos(n + 0, n2 + 0, f).tex((float) (n3 + 0) * f2, (float) (n4 + 0) * f3).endVertex();
         tessellator.draw();
     }
 
@@ -83,20 +89,34 @@ public final class HudUtil {
         if (itemStack != null && (bl || bl2)) {
             int n3;
             if (itemStack.isItemDamaged() && bl) {
-                n3 = (int)Math.round((double)13 - (double)itemStack.getItemDamageForDisplay() * (double)13 / (double)itemStack.getMaxDamage());
-                int n4 = (int)Math.round((double)255 - (double)itemStack.getItemDamageForDisplay() * (double)255 / (double)itemStack.getMaxDamage());
-                GL11.glDisable(2896);
-                GL11.glDisable(2929);
-                GL11.glDisable(3553);
-                Tessellator tessellator = Tessellator.instance;
+                n3 = (int) Math.round((double) 13 - (double) itemStack.getItemDamage() * (double) 13 / (double) itemStack.getMaxDamage());
+                int n4 = (int) Math.round((double) 255 - (double) itemStack.getItemDamage() * (double) 255 / (double) itemStack.getMaxDamage());
+                GlStateManager.disableLighting();
+                GlStateManager.disableBlend();
+                GlStateManager.disableTexture2D();
+                Tessellator tessellator = Tessellator.getInstance();
                 int n5 = 255 - n4 << 16 | n4 << 8;
                 int n6 = (255 - n4) / 4 << 16 | 0x3F00;
-                HudUtil.renderQuad(tessellator, n + 2, n2 + 13, 13, 2, 0);
-                HudUtil.renderQuad(tessellator, n + 2, n2 + 13, 12, 1, n6);
-                HudUtil.renderQuad(tessellator, n + 2, n2 + 13, n3, 1, n5);
-                GL11.glEnable(3553);
-                GL11.glEnable(2896);
-                GL11.glEnable(2929);
+                HudUtil.renderQuad(tessellator, n + 2, n2 + 13, 13, 2, 0, 0, 0, 255);
+                HudUtil.renderQuad(tessellator, n + 2, n2 + 13, 12, 1, (255 - n4) / 4, 64, 0, 255);
+                int j = 255 - n4;
+                int k = n4;
+                int l = 0;
+
+                if (Config.isCustomColors()) {
+                    int i1 = CustomColors.getDurabilityColor(n4);
+
+                    if (i1 >= 0) {
+                        j = i1 >> 16 & 255;
+                        k = i1 >> 8 & 255;
+                        l = i1 >> 0 & 255;
+                    }
+                }
+
+                HudUtil.renderQuad(tessellator, n + 2, n2 + 13, n3, 1, j, k, l, 255);
+                GlStateManager.enableTexture2D();
+                GlStateManager.enableLighting();
+                GlStateManager.enableBlend();
                 GL11.glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
             }
             if (bl2) {
@@ -108,23 +128,23 @@ public final class HudUtil {
                 }
                 if (n3 > 1) {
                     String string = "" + n3;
-                    GL11.glDisable(2896);
-                    GL11.glDisable(2929);
-                    fontRenderer.drawStringWithShadow(string, (float)(n + 19 - 2 - fontRenderer.getStringWidth(string)), (float)(n2 + 6 + 3), 0xFFFFFF);
-                    GL11.glEnable(2896);
-                    GL11.glEnable(2929);
+                    GlStateManager.disableLighting();
+                    GlStateManager.disableBlend();
+                    fontRenderer.drawStringWithShadow(string, (float) (n + 19 - 2 - fontRenderer.getStringWidth(string)), (float) (n2 + 6 + 3), 0xFFFFFF);
+                    GlStateManager.enableLighting();
+                    GlStateManager.disableBlend();
                 }
             }
         }
     }
 
-    public static void renderQuad(Tessellator tessellator, int n, int n2, int n3, int n4, int n5) {
-        tessellator.startDrawingQuads();
-        tessellator.setColorOpaque_I(n5);
-        tessellator.addVertex(n + 0, n2 + 0, 0.0);
-        tessellator.addVertex(n + 0, n2 + n4, 0.0);
-        tessellator.addVertex(n + n3, n2 + n4, 0.0);
-        tessellator.addVertex(n + n3, n2 + 0, 0.0);
+    public static void renderQuad(Tessellator tessellator, int n, int n2, int n3, int n4, int red, int green, int blue, int alpha) {
+        WorldRenderer worldrenderer = tessellator.getWorldRenderer();
+        worldrenderer.begin(7, DefaultVertexFormats.POSITION_COLOR);
+        worldrenderer.pos(n + 0, n2 + 0, 0.0).color(red, green, blue, alpha).endVertex();
+        worldrenderer.pos(n + 0, n2 + n4, 0.0).color(red, green, blue, alpha).endVertex();
+        worldrenderer.pos(n + n3, n2 + n4, 0.0).color(red, green, blue, alpha).endVertex();
+        worldrenderer.pos(n + n3, n2 + 0, 0.0).color(red, green, blue, alpha).endVertex();
         tessellator.draw();
     }
 
@@ -135,7 +155,8 @@ public final class HudUtil {
     public static int countInInventory(EntityPlayer entityPlayer, Item item, int n) {
         int n2 = 0;
         for (int i = 0; i < entityPlayer.inventory.mainInventory.length; ++i) {
-            if (entityPlayer.inventory.mainInventory[i] == null || !item.equals(entityPlayer.inventory.mainInventory[i].getItem()) || n != -1 && entityPlayer.inventory.mainInventory[i].getItemDamage() != n) continue;
+            if (entityPlayer.inventory.mainInventory[i] == null || !item.equals(entityPlayer.inventory.mainInventory[i].getItem()) || n != -1 && entityPlayer.inventory.mainInventory[i].getItemDamage() != n)
+                continue;
             n2 += entityPlayer.inventory.mainInventory[i].stackSize;
         }
         return n2;

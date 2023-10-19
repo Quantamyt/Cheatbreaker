@@ -1,57 +1,34 @@
 package com.cheatbreaker.client.audio.music;
 
-
+import com.cheatbreaker.client.CheatBreaker;
 import com.cheatbreaker.client.audio.music.data.Station;
+import com.cheatbreaker.client.audio.music.threads.DashQueueThread;
 import com.cheatbreaker.client.audio.music.threads.DashThread;
 import com.cheatbreaker.client.audio.music.util.DashUtil;
-import com.cheatbreaker.client.audio.music.threads.DashQueueThread;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.List;
 
+/**
+ * Manages anything to do with the in-game dash music player.
+ */
+@Getter
 public class DashManager {
     private final List<Station> stations = DashUtil.dashHelpers();
     private final DashQueueThread dashQueueThread = new DashQueueThread();
     private final DashThread dashThread;
-    private Station station;
+    @Setter private Station currentStation;
 
     public DashManager() {
+        CheatBreaker.getInstance().logger.info(CheatBreaker.getInstance().loggerPrefix + "Created Dash Manager");
+
         this.dashQueueThread.start();
         this.dashThread = new DashThread();
         this.dashThread.start();
         if (this.stations.size() > 0) {
-            this.station = this.stations.get(0);
-            this.dashQueueThread.offerStation(this.station);
+            this.currentStation = this.stations.get(0);
+            this.dashQueueThread.offerStation(this.currentStation);
         }
-    }
-
-    public void setStation(Station station) {
-        station.endStream();
-        this.station = station;
-    }
-
-    public void endStream() {
-        if (this.station != null) {
-            this.station.endStream();
-        }
-    }
-
-    public List<Station> getStations() {
-        return this.stations;
-    }
-
-    public DashQueueThread getDashQueueThread() {
-        return this.dashQueueThread;
-    }
-
-    public DashThread getDashThread() {
-        return this.dashThread;
-    }
-
-    public Station getCurrentStation() {
-        return this.station;
-    }
-
-    public void setCurrentStation(Station station) {
-        this.station = station;
     }
 }

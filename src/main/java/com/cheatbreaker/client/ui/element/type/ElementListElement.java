@@ -8,7 +8,7 @@ import java.util.List;
 public class ElementListElement<T extends AbstractElement> extends AbstractElement {
     protected final List<T> elements = new ArrayList();
 
-    public ElementListElement(List list) {
+    public ElementListElement(List<T> list) {
         this.elements.addAll(list);
     }
 

@@ -1,35 +1,35 @@
 package com.cheatbreaker.client.network.plugin.obj;
 
+import lombok.Getter;
+
+/**
+ * @see com.cheatbreaker.client.network.plugin.server.CBPacketServerRule
+ *
+ * This defines the server rules for Voice Chat, and other things.
+ */
 public enum ServerRule {
     VOICE_ENABLED("voiceEnabled", Boolean.class),
     MINIMAP_STATUS("minimapStatus", String.class),
     SERVER_HANDLES_WAYPOINTS("serverHandlesWaypoints", Boolean.class),
     COMPETITIVE_GAMEMODE("competitiveGame", Boolean.class),
 
-    LEGACY_ENCHANTING("legacyEnchanting", Boolean.class), //Lunar
-    LEGACY_COMBAT("legacyCombat", Boolean.class); // Lunar To stop erroring
-    private final String rule;
-    private final Class value;
+    // These are from Lunar Client, mainly to stop constant errors.
+    LEGACY_ENCHANTING("legacyEnchanting", Boolean.class),
+    LEGACY_COMBAT("legacyCombat", Boolean.class);
 
-    ServerRule(String var3, Class var4) {
-        this.rule = var3;
-        this.value = var4;
+    @Getter private final String ruleName;
+    @Getter private final Class<?> ruleValue;
+    ServerRule(String ruleName, Class<?> ruleValue) {
+        this.ruleName = ruleName;
+        this.ruleValue = ruleValue;
     }
 
-    public static ServerRule getRule(String string) {
-        ServerRule serverRule = null;
-        for (ServerRule serverRule2 : ServerRule.values()) {
-            if (!serverRule2.getCommandName().equals(string)) continue;
-            serverRule = serverRule2;
+    public static ServerRule getRuleByName(String name) {
+        ServerRule ruleToGet = null;
+        for (ServerRule rule : ServerRule.values()) {
+            if (!rule.getRuleName().equals(name)) continue;
+            ruleToGet = rule;
         }
-        return serverRule;
-    }
-
-    public String getCommandName() {
-        return this.rule;
-    }
-
-    public Class getValue() {
-        return this.value;
+        return ruleToGet;
     }
 }

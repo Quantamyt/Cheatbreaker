@@ -1,56 +1,55 @@
 package net.minecraft.block;
 
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.dispenser.IBlockSource;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.BlockPos;
 import net.minecraft.world.World;
 
-public class BlockSourceImpl implements IBlockSource {
+public class BlockSourceImpl implements IBlockSource
+{
     private final World worldObj;
-    private final int xPos;
-    private final int yPos;
-    private final int zPos;
+    private final BlockPos pos;
 
-
-    public BlockSourceImpl(World p_i1365_1_, int p_i1365_2_, int p_i1365_3_, int p_i1365_4_) {
-        this.worldObj = p_i1365_1_;
-        this.xPos = p_i1365_2_;
-        this.yPos = p_i1365_3_;
-        this.zPos = p_i1365_4_;
+    public BlockSourceImpl(World worldIn, BlockPos posIn)
+    {
+        this.worldObj = worldIn;
+        this.pos = posIn;
     }
 
-    public World getWorld() {
+    public World getWorld()
+    {
         return this.worldObj;
     }
 
-    public double getX() {
-        return (double)this.xPos + 0.5D;
+    public double getX()
+    {
+        return (double)this.pos.getX() + 0.5D;
     }
 
-    public double getY() {
-        return (double)this.yPos + 0.5D;
+    public double getY()
+    {
+        return (double)this.pos.getY() + 0.5D;
     }
 
-    public double getZ() {
-        return (double)this.zPos + 0.5D;
+    public double getZ()
+    {
+        return (double)this.pos.getZ() + 0.5D;
     }
 
-    public int getXInt() {
-        return this.xPos;
+    public BlockPos getBlockPos()
+    {
+        return this.pos;
     }
 
-    public int getYInt() {
-        return this.yPos;
+    public int getBlockMetadata()
+    {
+        IBlockState iblockstate = this.worldObj.getBlockState(this.pos);
+        return iblockstate.getBlock().getMetaFromState(iblockstate);
     }
 
-    public int getZInt() {
-        return this.zPos;
-    }
-
-    public int getBlockMetadata() {
-        return this.worldObj.getBlockMetadata(this.xPos, this.yPos, this.zPos);
-    }
-
-    public TileEntity getBlockTileEntity() {
-        return this.worldObj.getTileEntity(this.xPos, this.yPos, this.zPos);
+    public <T extends TileEntity> T getBlockTileEntity()
+    {
+        return (T)this.worldObj.getTileEntity(this.pos);
     }
 }

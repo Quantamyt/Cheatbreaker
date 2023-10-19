@@ -1,6 +1,6 @@
 package com.cheatbreaker.client.ui.fading;
 
-import java.awt.Color;
+import java.awt.*;
 
 public class ColorFade extends ExponentialFade {
     private int startColor;
@@ -34,10 +34,10 @@ public class ColorFade extends ExponentialFade {
         }
         if (this.isZeroOrLess()) {
             float f = super.getFadeAmount();
-            int n = (int)Math.abs(f * (float)this.startColorObj.getRed() + (1.0f - f) * (float)this.endColorObj.getRed());
-            int n2 = (int)Math.abs(f * (float)this.startColorObj.getGreen() + (1.0f - f) * (float)this.endColorObj.getGreen());
-            int n3 = (int)Math.abs(f * (float)this.startColorObj.getBlue() + (1.0f - f) * (float)this.endColorObj.getBlue());
-            int n4 = (int)Math.abs(f * (float)this.startColorObj.getAlpha() + (1.0f - f) * (float)this.endColorObj.getAlpha());
+            int n = (int) Math.abs(f * (float) this.startColorObj.getRed() + (1.0f - f) * (float) this.endColorObj.getRed());
+            int n2 = (int) Math.abs(f * (float) this.startColorObj.getGreen() + (1.0f - f) * (float) this.endColorObj.getGreen());
+            int n3 = (int) Math.abs(f * (float) this.startColorObj.getBlue() + (1.0f - f) * (float) this.endColorObj.getBlue());
+            int n4 = (int) Math.abs(f * (float) this.startColorObj.getAlpha() + (1.0f - f) * (float) this.endColorObj.getAlpha());
             color = new Color(n, n2, n3, n4);
         }
         return color;

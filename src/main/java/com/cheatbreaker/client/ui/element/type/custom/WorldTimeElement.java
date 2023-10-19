@@ -30,7 +30,7 @@ public class WorldTimeElement extends AbstractModulesGuiElement {
     @Override
     public void handleMouseClick(int mouseX, int mouseY, int button) {
         int n4 = 170;
-        boolean bl = (float) mouseX > (float)(this.x + 170) * this.scale && (float) mouseX < (float)(this.x + 170 + n4 - 2) * this.scale && (float) mouseY > (float)(this.y + 4 + this.yOffset) * this.scale && (float) mouseY < (float)(this.y + 20 + this.yOffset) * this.scale;
+        boolean bl = (float) mouseX > (float) (this.x + 170) * this.scale && (float) mouseX < (float) (this.x + 170 + n4 - 2) * this.scale && (float) mouseY > (float) (this.y + 4 + this.yOffset) * this.scale && (float) mouseY < (float) (this.y + 20 + this.yOffset) * this.scale;
         if (button == 0 && bl) {
             this.interacting = true;
         }

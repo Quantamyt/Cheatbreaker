@@ -3,59 +3,56 @@ package net.minecraft.block;
 import java.util.List;
 import net.minecraft.block.material.MapColor;
 import net.minecraft.block.material.Material;
-import net.minecraft.client.renderer.texture.IIconRegister;
+import net.minecraft.block.properties.IProperty;
+import net.minecraft.block.properties.PropertyEnum;
+import net.minecraft.block.state.BlockState;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.creativetab.CreativeTabs;
+import net.minecraft.item.EnumDyeColor;
 import net.minecraft.item.Item;
-import net.minecraft.item.ItemDye;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.IIcon;
 
-public class BlockColored extends Block {
-    private IIcon[] field_150033_a;
-    
+public class BlockColored extends Block
+{
+    public static final PropertyEnum<EnumDyeColor> COLOR = PropertyEnum.<EnumDyeColor>create("color", EnumDyeColor.class);
 
-    public BlockColored(Material p_i45398_1_) {
-        super(p_i45398_1_);
+    public BlockColored(Material materialIn)
+    {
+        super(materialIn);
+        this.setDefaultState(this.blockState.getBaseState().withProperty(COLOR, EnumDyeColor.WHITE));
         this.setCreativeTab(CreativeTabs.tabBlock);
     }
 
-    /**
-     * Gets the block's texture. Args: side, meta
-     */
-    public IIcon getIcon(int p_149691_1_, int p_149691_2_) {
-        return this.field_150033_a[p_149691_2_ % this.field_150033_a.length];
+    public int damageDropped(IBlockState state)
+    {
+        return ((EnumDyeColor)state.getValue(COLOR)).getMetadata();
     }
 
-    /**
-     * Determines the damage on the item the block drops. Used in cloth and wood.
-     */
-    public int damageDropped(int p_149692_1_) {
-        return p_149692_1_;
-    }
-
-    public static int func_150032_b(int p_150032_0_) {
-        return func_150031_c(p_150032_0_);
-    }
-
-    public static int func_150031_c(int p_150031_0_) {
-        return ~p_150031_0_ & 15;
-    }
-
-    public void getSubBlocks(Item p_149666_1_, CreativeTabs p_149666_2_, List p_149666_3_) {
-        for (int var4 = 0; var4 < 16; ++var4) {
-            p_149666_3_.add(new ItemStack(p_149666_1_, 1, var4));
+    public void getSubBlocks(Item itemIn, CreativeTabs tab, List<ItemStack> list)
+    {
+        for (EnumDyeColor enumdyecolor : EnumDyeColor.values())
+        {
+            list.add(new ItemStack(itemIn, 1, enumdyecolor.getMetadata()));
         }
     }
 
-    public void registerBlockIcons(IIconRegister p_149651_1_) {
-        this.field_150033_a = new IIcon[16];
-
-        for (int var2 = 0; var2 < this.field_150033_a.length; ++var2) {
-            this.field_150033_a[var2] = p_149651_1_.registerIcon(this.getTextureName() + "_" + ItemDye.field_150921_b[func_150031_c(var2)]);
-        }
+    public MapColor getMapColor(IBlockState state)
+    {
+        return ((EnumDyeColor)state.getValue(COLOR)).getMapColor();
     }
 
-    public MapColor getMapColor(int p_149728_1_) {
-        return MapColor.func_151644_a(p_149728_1_);
+    public IBlockState getStateFromMeta(int meta)
+    {
+        return this.getDefaultState().withProperty(COLOR, EnumDyeColor.byMetadata(meta));
+    }
+
+    public int getMetaFromState(IBlockState state)
+    {
+        return ((EnumDyeColor)state.getValue(COLOR)).getMetadata();
+    }
+
+    protected BlockState createBlockState()
+    {
+        return new BlockState(this, new IProperty[] {COLOR});
     }
 }

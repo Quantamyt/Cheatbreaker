@@ -1,21 +1,19 @@
 package com.cheatbreaker.client.config;
 
 import com.cheatbreaker.client.CheatBreaker;
+import com.cheatbreaker.client.audio.music.util.DashUtil;
 import com.cheatbreaker.client.module.data.CustomizationLevel;
 import com.cheatbreaker.client.module.data.Setting;
-import com.cheatbreaker.client.audio.music.util.DashUtil;
 import com.cheatbreaker.client.ui.element.module.ModuleListElement;
 import com.cheatbreaker.client.ui.element.type.ColorPickerColorElement;
 import com.cheatbreaker.client.ui.mainmenu.MainMenuBase;
 import com.cheatbreaker.client.ui.module.HudLayoutEditorGui;
-import com.cheatbreaker.client.util.CBDebugOutput;
 import com.cheatbreaker.client.util.render.serverlist.UnsafeServerAction;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.settings.GameSettings;
 import net.minecraft.client.settings.KeyBinding;
-import net.minecraft.src.Config;
 import org.apache.commons.lang3.ArrayUtils;
 import org.lwjgl.input.Keyboard;
 
@@ -35,20 +33,16 @@ public class GlobalSettings {
     @Getter private final List<String[]> unsafeServers = new ArrayList<>();
 
     public boolean isDebug = false;
-
-    public String webapiCrashReportUpload = "http://server.noxiuam.gq/crashReport";
-    public String webapiDebugUpload = "http://moosecbapi.000webhostapp.com/debug-upload.php";
-    public String webapiCosmetics = "https://cheatbreaker.com/api/cosmetic/";
-    public String webapiCosmeticsAll = "https://cheatbreaker.com/api/cosmetic/all";
-    public String mojangStatusURL = "https://mojan.ga/api/check"; // Previously https://status.mojang.com/check, however, that server is no longer available.
+    public boolean SHOW_MODIFIERS = true;
 
     public int sessionCheckInteral = 60;
 
-    public boolean SHOW_MODIFIERS = true;
+    public String webapiCrashReportUpload = "http://server.noxiuam.gq/crashReport";
+    public String webapiDebugUpload = "http://moosecbapi.000webhostapp.com/debug-upload.php";
+    public String mojangStatusURL = "https://mojan.ga/api/check";
 
-    private final Setting debugSettingsLabel;
-    public Setting showDebugOutput;
-
+    //    private final Setting debugSettingsLabel;
+//    public Setting showDebugOutput;
     private final Setting audioSettingsLabel;
     //    public Setting microphone;
     public Setting radioVolume;
@@ -63,8 +57,8 @@ public class GlobalSettings {
     public Setting fullBright;
     public Setting entityShadows;
     public Setting hideGroundedArrows;
-    public Setting hideFoliage;
     public Setting hideStuckArrows;
+    public Setting hideFoliage;
     public Setting hideMovingArrows;
     public Setting hidePlacedSkulls;
 
@@ -83,28 +77,33 @@ public class GlobalSettings {
     public Setting showOffScreenMarker;
 
 //    private final Setting generalSettingsLabel;
+    public Setting compactMode;
+    public static Setting darkMode;
+    //    public Setting lookView;
+    public Setting customizationLevel;
 
     private final Setting displaySettingsLabel;
     public Setting borderlessFullscreen;
     public Setting unfullscreenWhenUnfocused;
 
     private final Setting hudEditorSettingsLabel;
-    public Setting compactMode;
-    public static Setting darkMode;
-    public Setting customizationLevel;
     public Setting snapModules;
     public Setting snappingStrength;
     public Setting showModName;
 //    public Setting useBackgroundOverlay;
 
+    private final Setting moduleCommandSettingsLabel;
+    public Setting enableModuleCommands;
+    public Setting hideCallbackMessages;
+
     private final Setting renderSettingsLabel;
     public Setting showHudInDebug;
     public Setting showPotionInfo;
+    public Setting showServerBasedHitCooldowns;
     public Setting achievements;
-    public Setting shiftPotionInfo;
     public Setting guiBlur;
     public Setting containerBackground;
-    public Setting bottomSkyLayer;
+    public Setting shiftPotionInfo;
 
     private final Setting streamerModeSettingsLabel;
     public Setting streamerMode;
@@ -127,10 +126,8 @@ public class GlobalSettings {
     public Setting packListBackgroundColor;
 
     private final Setting scalingSettingsLabel;
-    public Setting modScale;
-    public Setting modScaleMultiplier;
-    public Setting hotbarScale;
-    public Setting hotbarScaleMultiplier;
+    public Setting guiScale;
+    public Setting globalGuiScale;
     public Setting scaleModsDownSmallerResoltion;
 
     private final Setting screenshotSettingsLabel;
@@ -158,35 +155,42 @@ public class GlobalSettings {
     public Setting showServer;
     public Setting showAccount;
 
+
     private final Setting colorSettingsLabel;
     public Setting resetColors;
     public Setting defaultColor;
     public Setting emoteRadialColor;
-    @Getter @Setter private Setting currentMenuSetting;
+    @Getter @Setter
+    private Setting currentMenuSetting;
 
     public List<ColorPickerColorElement> favouriteColors = new ArrayList<>();
     public List<ColorPickerColorElement> recentColors = new ArrayList<>();
 
+    /**
+     * Sets up all the global settings
+     */
     public GlobalSettings() {
-//        String[] microphones = CheatBreaker.getMicrophoneList();
+        CheatBreaker.getInstance().logger.info(CheatBreaker.getInstance().loggerPrefix + "Created settings");
+
+//        String[] microphones = CheatBreaker.getInstance().getAudioManager().getMicrophoneArray();
 //        StringBuilder availableMicrophones = new StringBuilder();
 //        for (String microphone : microphones) {
 //            availableMicrophones.append("\n- ").append(microphone);
 //        }
-        this.debugSettingsLabel = new Setting(this.settingsList, "label").setValue("Debug Settings").setCondition(() -> CBDebugOutput.uuids.contains(Minecraft.getMinecraft().getSession().getUniqueID()));
-        this.showDebugOutput = new Setting(this.settingsList, "Show Debug Output", "Show any debug information.").setValue(false).setCondition(() -> CBDebugOutput.uuids.contains(Minecraft.getMinecraft().getSession().getUniqueID()));
+//        this.debugSettingsLabel = new Setting(this.settingsList, "label").setValue("Debug Settings");
+//        this.showDebugOutput = new Setting(this.settingsList, "Show Debug Output", "Show any debug information.").setValue(false);
         this.audioSettingsLabel = new Setting(this.settingsList, "label").setValue("Audio Settings");
 //        this.microphone = microphones.length > 0 ? new Setting(this.settingsList, "Microphone", "Change the microphone for voice chat." +
 //                "\n" +
 //                "\nAvailable microphones:" + availableMicrophones).setValue(microphones[0]).acceptedValues(microphones).onChange(var0 -> {
 //            try {
-//                System.out.println(CheatBreaker.getInstance().getLoggerPrefix() + "Updated audio device!");
-//                Message.h(CheatBreaker.getMicrophone((String)var0));
+//                System.out.println("[CB] Updated audio device!");
+//                Message.h(CheatBreaker.getInstance().getAudioManager().getMicrophone((String)var0));
 //            } catch (UnsatisfiedLinkError ignored) {}
 //        }) : new Setting(this.settingsList, "Microphone", "Change the microphone for voice chat (none detected).").setValue("Unknown").acceptedValue("Unknown").onChange(var0 -> {
 //            try {
-//                System.out.println(CheatBreaker.getInstance().getLoggerPrefix() + "Updated audio device!");
-//                Message.h(CheatBreaker.getMicrophone((String)var0));
+//                System.out.println("[CB] Updated audio device!");
+//                Message.h(CheatBreaker.getInstance().getAudioManager().getMicrophone((String)var0));
 //            } catch (UnsatisfiedLinkError ignored) {}
 //        });
         this.muteCBSounds = new Setting(this.settingsList, "Mute CheatBreaker sounds", "Mute notification sounds generated from CheatBreaker.").setValue(false);
@@ -210,22 +214,36 @@ public class GlobalSettings {
 
         this.fpsBoostSettingsLabel = new Setting(this.settingsList, "label").setValue("FPS Boost");
         this.enableFpsBoost = new Setting(this.settingsList, "Enable FPS Boost", "Enables all FPS boost settings in this category.").setValue(true);
-        this.slowChunkLoading = new Setting(this.settingsList, "Slow chunk loading", "Determines how fast chunks should load as a percentage." +
-                "\n§e§oHigher values may increase performance!" +
-                "\n§6§oHigher values will make chunks load slower." +
-                "\n" +
-                "\n§276% - 100%:§r Slowest chunk loading speed (Higher FPS)." +
-                "\n§a51% - 75%:§r Slow chunk loading speed (High FPS)." +
-                "\n§e50%:§r Medium chunk loading speed (Medium FPS)." +
-                "\n§626% - 49%:§r Fast chunk loading speed (Low FPS)." +
-                "\n§c0.1% - 25%:§r Faster chunk loading speed (Lower FPS)." +
-                "\n§b0%:§r Vanilla chunk loading speed (Lowest FPS).").setMinMax(0.0f, 100.0f).setValue(70.0f).setUnit("%").setCenterLabel("MEDIUM").setIcons("fps-inverse-52", "fps-52").setCondition(() -> (Boolean) this.enableFpsBoost.getValue());
-        this.fullBright = new Setting(this.settingsList, "Fullbright", "Set the brightness/gamma to the max.").setValue(true).setCondition(() -> (Boolean) this.enableFpsBoost.getValue());
-        this.entityShadows = new Setting(this.settingsList, "Entity Shadows", "Draws a shadow below entities.").setValue(true);
+//        this.slowChunkLoading = new Setting(this.settingsList, "Slow chunk loading", "Determines how fast chunks should load as a percentage." +
+//                "\n§e§oHigher values may increase performance!" +
+//                "\n§6§oHigher values will make chunks load slower." +
+//                "\n" +
+//                "\n§276% - 100%:§r Slowest chunk loading speed (Higher FPS)." +
+//                "\n§a51% - 75%:§r Slow chunk loading speed (High FPS)." +
+//                "\n§e50%:§r Medium chunk loading speed (Medium FPS)." +
+//                "\n§626% - 49%:§r Fast chunk loading speed (Low FPS)." +
+//                "\n§c0.1% - 25%:§r Faster chunk loading speed (Lower FPS)." +
+//                "\n§b0%:§r Vanilla chunk loading speed (Lowest FPS).").setMinMax(0.0f, 100.0f).setValue(70.0f).setUnit("%").setCenterLabel("MEDIUM").setIcons("fps-inverse-52", "fps-52").setCondition(() -> (Boolean) this.enableFpsBoost.getValue());
+        this.fullBright = new Setting(this.settingsList, "Fullbright", "Set the brightness/gamma to the max.").setValue(true).setCondition(() -> (Boolean) this.enableFpsBoost.getValue()).onChange(value -> {
+
+            float gamma = Minecraft.getMinecraft().gameSettings.gammaSetting;
+            if (gamma != 1000F) {
+                if (Minecraft.getMinecraft().gameSettings.oldGammaSetting < 1F)
+                    gamma = 1F;
+
+                Minecraft.getMinecraft().gameSettings.oldGammaSetting = gamma;
+                Minecraft.getMinecraft().gameSettings.saveOptions();
+            }
+
+            Minecraft.getMinecraft().gameSettings.gammaSetting =
+                    (fullBright.getBooleanValue() ? 1000F : Minecraft.getMinecraft().gameSettings.oldGammaSetting);
+
+        });
+        this.entityShadows = new Setting(this.settingsList, "Entity Shadows", "Draws a shadow below entities.").setValue(true).onChange(value -> Minecraft.getMinecraft().getRenderManager().options.entityShadows = Boolean.parseBoolean(value.toString()));
         this.hideGroundedArrows = new Setting(this.settingsList, "Hide Grounded Arrows").setValue(false);
-        this.hideFoliage = new Setting(this.settingsList, "Hide Foliage", "Hides things like tall grass, flowers, and shrubs").setValue(false).onChange(e -> CheatBreaker.getInstance().getMc().renderGlobal.loadRenderers());
         this.hideStuckArrows = new Setting(this.settingsList, "Hide Stuck Arrows").setValue(false);
         this.hideMovingArrows = new Setting(this.settingsList, "Hide Moving Arrows").setValue(false);
+        this.hideFoliage = new Setting(this.settingsList, "Hide Foliage", "Hides things like tall grass, flowers, and shrubs").setValue(false).onChange(e -> CheatBreaker.getInstance().getMc().renderGlobal.loadRenderers());
         this.hidePlacedSkulls = new Setting(this.settingsList, "Hide Placed Skulls").setValue(false);
         this.fpsLimitSettingsLabel = new Setting(this.settingsList, "label").setValue("FPS Limiting Settings");
         this.useCustomFPSLimiter = new Setting(this.settingsList, "Use Custom FPS Limiter", "Overrides the default FPS limiter with a custom one." +
@@ -249,7 +267,6 @@ public class GlobalSettings {
                 "\n1: 2018" +
                 "\n2: 2016").setMinMax(0, 2).setValue(1);
 //        this.lookView = new Setting(this.settingsList, "Look View").setValue("Third").acceptedStringValues("Third", "Reverse", "First");
-
         this.displaySettingsLabel = new Setting(this.settingsList, "label").setValue("Display Settings");
         this.borderlessFullscreen = new Setting(this.settingsList, "Borderless Fullscreen").setValue(false).onChange(value -> {
             if (Minecraft.getMinecraft().isFullScreen() && Minecraft.getMinecraft().currentScreen instanceof HudLayoutEditorGui) {
@@ -259,7 +276,7 @@ public class GlobalSettings {
                 HudLayoutEditorGui hudEditor = new HudLayoutEditorGui();
                 Minecraft.getMinecraft().displayGuiScreen(hudEditor);
                 hudEditor.currentScrollableElement = hudEditor.settingsElement;
-                ((ModuleListElement) HudLayoutEditorGui.instance.settingsElement).resetColor = true;
+                ((ModuleListElement) HudLayoutEditorGui.instance.settingsElement).isCheatBreakerSettings = true;
                 HudLayoutEditorGui.instance.settingsElement.scrollAmount = CheatBreaker.getInstance().getModuleManager().lastSettingScrollPos;
             }
         });
@@ -280,16 +297,18 @@ public class GlobalSettings {
         this.snapModules = new Setting(this.settingsList, "Snap mods to other mods (GUI)").setValue(true).setCustomizationLevel(CustomizationLevel.SIMPLE);
         this.snappingStrength = new Setting(this.settingsList, "Snapping Strength").setValue(2.0F).setMinMax(1.0F, 10.0F).setUnit("px").setCustomizationLevel(CustomizationLevel.MEDIUM).setCondition(() -> (Boolean) this.snapModules.getValue());
 
+        this.moduleCommandSettingsLabel = new Setting(this.settingsList, "label").setValue("Mod Command Settings").setCustomizationLevel(CustomizationLevel.MEDIUM);
+        this.enableModuleCommands = new Setting(this.settingsList, "Enable Mod Commands").setValue(true).setCustomizationLevel(CustomizationLevel.MEDIUM);
+        this.hideCallbackMessages = new Setting(this.settingsList, "Hide Callback Messages").setValue(false).setCustomizationLevel(CustomizationLevel.MEDIUM);
+
         this.renderSettingsLabel = new Setting(this.settingsList, "label").setValue("Render Settings");
         this.showPotionInfo = new Setting(this.settingsList, "Show Potion info in inventory").setValue(true).setCondition(() -> CheatBreaker.getInstance().getModuleManager().potionEffectsMod.isEnabled());
         this.shiftPotionInfo = new Setting(this.settingsList, "Potion info shifts inventory", "Choose to make the potion info shift the inventory position.").setValue(false);
         this.achievements = new Setting(this.settingsList, "Show Achievements").setValue(true);
         this.showHudInDebug = new Setting(this.settingsList, "Show HUD while in debug view", "Show the CheatBreaker HUD when the debug view is open.").setValue(false);
-        this.guiBlur = new Setting(this.settingsList, "GUI Blur", "Blurs the menus.").onChange(value -> {
-            Minecraft.getMinecraft().entityRenderer.loadGuiBlurShader();
-        }).setValue(false);
+        this.guiBlur = new Setting(this.settingsList, "GUI Blur", "Blurs the menus.").onChange(value -> Minecraft.getMinecraft().entityRenderer.loadGuiBlurShader()).setValue(false);
         this.containerBackground = new Setting(this.settingsList, "Container Background").setValue("CheatBreaker").acceptedStringValues("Vanilla", "CheatBreaker", "None");
-        this.bottomSkyLayer = new Setting(this.settingsList, "Show Bottom Sky Layer").setValue("No Custom Sky").acceptedStringValues("OFF", "No Custom Sky", "ON").setCondition(Config::isSkyEnabled);
+        this.showServerBasedHitCooldowns = new Setting(this.settingsList, "Server Based 1.9 Combat Indicator", "On some servers, a hit cooldown is shown because of the newer versions of the game,\nthis gives you the ability to toggle it.").setValue(true);
 
         this.streamerModeSettingsLabel = new Setting(this.settingsList, "label").setValue("Streamer Mode Settings");
         this.streamerMode = new Setting(this.settingsList, "Streamer Mode", "Enables Streamer Mode Features").setValue(false);
@@ -319,10 +338,8 @@ public class GlobalSettings {
         this.excludeThrowKeybind = new Setting(this.settingsList, "Exclude Block/Throw Keybind").setValue(true).setCondition(() -> (Boolean) this.keybindFix.getValue());
 
         this.scalingSettingsLabel = new Setting(this.settingsList, "label").setValue("Scaling Settings");
-        this.modScale = new Setting(this.settingsList, "Mod Scale").setValue("Default").acceptedStringValues("Default", "Small", "Normal", "Large", "Auto");
-        this.modScaleMultiplier = new Setting(this.settingsList, "Mod Scale Multiplier").setValue(1.0F).setMinMax(0.25F, 2.0F).setUnit("x");
-        this.hotbarScale = new Setting(this.settingsList, "Hotbar Scale").setValue("Default").acceptedStringValues("Default", "Small", "Normal", "Large", "Auto");
-        this.hotbarScaleMultiplier = new Setting(this.settingsList, "Hotbar Scale Multiplier").setValue(1.0F).setMinMax(0.25F, 2.0F).setUnit("x");
+        this.guiScale = new Setting(this.settingsList, "Mod Scale").setValue("Default").acceptedStringValues("Default", "Small", "Normal", "Large", "Auto");
+        this.globalGuiScale = new Setting(this.settingsList, "Mod Scale Multiplier").setValue(1.0F).setMinMax(0.25F, 2.0F).setUnit("x");
         this.scaleModsDownSmallerResoltion = new Setting(this.settingsList, "Use Legacy Scaling").setValue(false);
 
         this.screenshotSettingsLabel = new Setting(this.settingsList, "label").setValue("Screenshot Settings").setCustomizationLevel(CustomizationLevel.MEDIUM);
@@ -362,14 +379,11 @@ public class GlobalSettings {
         this.colorSettingsLabel = new Setting(this.settingsList, "label").setValue("Color Settings");
         this.resetColors = new Setting(this.settingsList, "Apply Default Color When Enabling Mods").setValue(true);
         this.defaultColor = new Setting(this.settingsList, "Default color", "Change the default color that will be displayed when mods are enabled.").setValue(-1).setMinMax(Integer.MIN_VALUE, Integer.MAX_VALUE);
-        this.emoteRadialColor = new Setting(this.settingsList, "Emote Radial color", "Change the color for the highlighted radial in emotes.").setValue(0x8033334D).setMinMax(Integer.MIN_VALUE, Integer.MAX_VALUE).setCustomizationLevel(CustomizationLevel.MEDIUM);
-//        this.pinnedServers.add(new String[]{"Minemen Club [NA]", "na.minemen.club"});
-//        this.pinnedServers.add(new String[]{"Minemen Club [EU]", "eu.minemen.club"});
+        //this.emoteRadialColor = new Setting(this.settingsList, "Emote Radial color", "Change the color for the highlighted radial in emotes.").setValue(0x8033334D).setMinMax(Integer.MIN_VALUE, Integer.MAX_VALUE).setCustomizationLevel(CustomizationLevel.MEDIUM);
+        // this.pinnedServers.add(new String[]{"Minemen Club [NA]", "na.minemen.club"});
+        this.pinnedServers.add(new String[]{"Minemen Club [EU]", "eu.minemen.club"});
         this.unsafeServers.add(new String[]{"warnedserver.us", "This server is a test IP for warned servers", String.valueOf(UnsafeServerAction.WARN)});
         this.unsafeServers.add(new String[]{"blockedserver.us", "This server is a test IP for blocked servers", String.valueOf(UnsafeServerAction.BLOCK)});
-
-        this.unsafeServers.add(new String[]{"bridge.rip", "Bridge Network is unsafe.", String.valueOf(UnsafeServerAction.WARN)});
-        this.unsafeServers.add(new String[]{"potpvp.com", "Potpvp is unsafe.", String.valueOf(UnsafeServerAction.WARN)});
 
         GameSettings gameSettings = Minecraft.getMinecraft().gameSettings;
 //        this.keyBindVoicePushToTalk = new KeyBinding("Voice Chat", 47, "CheatBreaker Client", true);
@@ -378,14 +392,20 @@ public class GlobalSettings {
         this.keyBindDragToLook = new KeyBinding("Drag to look", 56, "CheatBreaker Client", true);
         this.keyBindBackLook = new KeyBinding("Back look", 0, "CheatBreaker Client", true);
         this.keyBindFrontLook = new KeyBinding("Front look", 0, "CheatBreaker Client", true);
-       this.keyBindEmote = new KeyBinding("Emote", Keyboard.KEY_B, "CheatBreaker Client", true);
-        gameSettings.keyBindings = ArrayUtils.addAll(gameSettings.keyBindings, /*this.keyBindVoicePushToTalk, */this.keyBindOpenMenu, /*this.keyBindOpenVoiceMenu, */this.keyBindDragToLook, this.keyBindBackLook, this.keyBindFrontLook, this.keyBindEmote );
+        this.keyBindEmote = new KeyBinding("Emote", Keyboard.KEY_B, "CheatBreaker Client", true);
+        gameSettings.keyBindings = ArrayUtils.addAll(gameSettings.keyBindings, /*this.keyBindVoicePushToTalk, */this.keyBindOpenMenu, /*this.keyBindOpenVoiceMenu, */this.keyBindDragToLook, this.keyBindBackLook, this.keyBindFrontLook, this.keyBindEmote);
     }
 
+    /**
+     * Gets the current menu the player is in.
+     */
     public MainMenuBase.MenuTypes getCurrentMenu() {
         return MainMenuBase.MenuTypes.values()[(int) currentMenuSetting.getValue()];
     }
 
+    /**
+     * Returns if a color is already a favorite color or not.
+     */
     public boolean isFavouriteColor(int colorValue) {
         ColorPickerColorElement var3;
         Iterator<ColorPickerColorElement> var2 = this.favouriteColors.iterator();
@@ -398,10 +418,16 @@ public class GlobalSettings {
         return true;
     }
 
+    /**
+     * Removes a favorite color from the player's config.
+     */
     public void removeFavouriteColor(int colorValue) {
         this.favouriteColors.removeIf(var1x -> var1x.color == colorValue);
     }
 
+    /**
+     * Update's the Discord RPC.
+     */
     private void updateRPC() {
         try {
             if (Minecraft.getMinecraft().currentScreen instanceof HudLayoutEditorGui) {

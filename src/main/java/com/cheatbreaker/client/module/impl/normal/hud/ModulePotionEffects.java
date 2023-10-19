@@ -1,14 +1,15 @@
 package com.cheatbreaker.client.module.impl.normal.hud;
 
-import com.cheatbreaker.client.event.impl.GuiDrawEvent;
-import com.cheatbreaker.client.event.impl.PreviewDrawEvent;
-import com.cheatbreaker.client.event.impl.TickEvent;
+import com.cheatbreaker.client.event.impl.render.GuiDrawEvent;
+import com.cheatbreaker.client.event.impl.render.PreviewDrawEvent;
+import com.cheatbreaker.client.event.impl.tick.TickEvent;
 import com.cheatbreaker.client.module.AbstractModule;
 import com.cheatbreaker.client.module.data.CustomizationLevel;
 import com.cheatbreaker.client.module.data.Setting;
 import com.cheatbreaker.client.ui.module.*;
 import com.cheatbreaker.client.ui.util.RenderUtil;
 import com.google.common.collect.ImmutableMap;
+import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.potion.Potion;
 import net.minecraft.potion.PotionEffect;
@@ -19,10 +20,6 @@ import org.lwjgl.opengl.GL11;
 import java.util.*;
 import java.util.regex.Pattern;
 
-/**
- * Displays the user's active potion effects.
- * @see AbstractModule
- */
 public class ModulePotionEffects extends AbstractModule {
     private final Setting componentOptionsLabel;
     private final Setting showIcon;
@@ -33,7 +30,6 @@ public class ModulePotionEffects extends AbstractModule {
     private final Setting showLevelOne;
     private final Setting maximumRomanNumeral;
     private final Setting duration;
-    private final Setting compact;
 
     private final Setting generalOptionsLabel;
     private final Setting showWhileTyping;
@@ -104,7 +100,6 @@ public class ModulePotionEffects extends AbstractModule {
         this.showLevelOne = new Setting(this, "Show Level 1").setValue(false).setCustomizationLevel(CustomizationLevel.ADVANCED).setCondition(() -> this.effectName.getBooleanValue() && this.effectAmplifierText.getBooleanValue());
         this.maximumRomanNumeral = new Setting(this, "Max Roman Numeral").setValue(10).setMinMax(1, 255).setCustomizationLevel(CustomizationLevel.ADVANCED).setCondition(() -> this.effectName.getBooleanValue() && this.effectAmplifierText.getBooleanValue() && this.romanNumerals.getBooleanValue());
         this.duration = new Setting(this, "Duration").setValue(true).setCustomizationLevel(CustomizationLevel.MEDIUM);
-        this.compact = new Setting(this, "Compact").setValue(false).setCustomizationLevel(CustomizationLevel.MEDIUM);
 
         this.generalOptionsLabel = new Setting(this, "label").setValue("General Options").setCustomizationLevel(CustomizationLevel.SIMPLE);
         this.showWhileTyping = new Setting(this, "Show While Typing").setValue(true).setCustomizationLevel(CustomizationLevel.ADVANCED);
@@ -126,12 +121,12 @@ public class ModulePotionEffects extends AbstractModule {
 
         this.excludingOptionsLabel = new Setting(this, "label").setValue("Excluding Options").setCustomizationLevel(CustomizationLevel.MEDIUM);
         this.excludePerm = new Setting(this, "Exclude Permanent Effects").setValue(false).setCustomizationLevel(CustomizationLevel.MEDIUM);
-        this.excludeSetDuration = new Setting(this, "Exclude Set Duration", "Exclude all active effects above a set duration.").setValue("OFF").acceptedStringValues(this.excludeOptions).setCustomizationLevel(CustomizationLevel.MEDIUM);
+        this.excludeSetDuration = new Setting(this, "Exclude Set Duration", "Exclude all active effects above a set duration.").setValue("OFF").acceptedStringValues("OFF", "Effects Above", "Effects Below", "Effects At", "Effects Not At").setCustomizationLevel(CustomizationLevel.MEDIUM);
         this.excludedDuration = new Setting(this, "Excluded Duration", "The duration effects are excluded").setValue(30.0F).setMinMax(2.0F, 90.0F).setUnit("s").setCustomizationLevel(CustomizationLevel.MEDIUM).setCondition(() -> !this.excludeSetDuration.getValue().equals("OFF"));
-        this.excludeSetAmplifier = new Setting(this, "Exclude Set Amplifier", "Exclude all active effects below a set amplifier.").setValue("OFF").acceptedStringValues(this.excludeOptions).setCustomizationLevel(CustomizationLevel.MEDIUM);
+        this.excludeSetAmplifier = new Setting(this, "Exclude Set Amplifier", "Exclude all active effects below a set amplifier.").setValue("OFF").acceptedStringValues("OFF", "Effects Above", "Effects Below", "Effects At", "Effects Not At").setCustomizationLevel(CustomizationLevel.MEDIUM);
         this.excludedAmplifier = new Setting(this, "Excluded Amplifier", "The duration effects are excluded").setValue(10).setMinMax(0, 20).setCustomizationLevel(CustomizationLevel.MEDIUM).setCondition(() -> !this.excludeSetAmplifier.getValue().equals("OFF"));
         this.excludeHelpfulHarmfulEffects = new Setting(this, "Exclude Helpful/Harmful Effects").setValue("OFF").acceptedStringValues("OFF", "Only Helpful", "Only Harmful").setCustomizationLevel(CustomizationLevel.MEDIUM);
-        this.excludeSpecificEffects = new Setting(this, "Exclude Specific Effects").setValue(new ArrayList<>()).acceptedValues(new Integer[]{Potion.moveSpeed.id, Potion.moveSlowdown.id, Potion.digSpeed.id, Potion.digSlowdown.id, Potion.damageBoost.id, Potion.jump.id, Potion.confusion.id, Potion.regeneration.id, Potion.resistance.id, Potion.fireResistance.id, Potion.waterBreathing.id, Potion.invisibility.id, Potion.blindness.id, Potion.nightVision.id, Potion.hunger.id, Potion.weakness.id, Potion.poison.id, Potion.wither.id, Potion.field_76444_x.id}).setCustomizationLevel(CustomizationLevel.MEDIUM);
+        this.excludeSpecificEffects = new Setting(this, "Exclude Specific Effects").setValue(new ArrayList<>()).acceptedValues(new Integer[]{Potion.moveSpeed.id, Potion.moveSlowdown.id, Potion.digSpeed.id, Potion.digSlowdown.id, Potion.damageBoost.id, Potion.jump.id, Potion.confusion.id, Potion.regeneration.id, Potion.resistance.id, Potion.fireResistance.id, Potion.waterBreathing.id, Potion.invisibility.id, Potion.blindness.id, Potion.nightVision.id, Potion.hunger.id, Potion.weakness.id, Potion.poison.id, Potion.wither.id, Potion.absorption.id}).setCustomizationLevel(CustomizationLevel.MEDIUM);
 
         this.colorOptionsLabel = new Setting(this, "label").setValue("Color Options").setCustomizationLevel(CustomizationLevel.SIMPLE).setCondition(() -> this.effectName.getBooleanValue() || this.duration.getBooleanValue());
         this.texturePackOverrideColors = new Setting(this, "Override Name Color With Pack Format").setValue(true).setCustomizationLevel(CustomizationLevel.MEDIUM).setCondition(() -> this.effectName.getBooleanValue() && this.effectNameText.getBooleanValue());
@@ -143,6 +138,7 @@ public class ModulePotionEffects extends AbstractModule {
         this.setPreviewIcon(new ResourceLocation("client/icons/mods/speed_icon.png"), 28, 28);
         this.setDescription("Displays your active potion effects.");
         this.setCreators("bspkrs", "jadedcat");
+        this.setAliases("Potion Status", "Status Effects");
         this.addEvent(TickEvent.class, this::onTick);
         this.addEvent(PreviewDrawEvent.class, this::onPreviewDraw);
         this.addEvent(GuiDrawEvent.class, this::onGuiDraw);
@@ -196,14 +192,13 @@ public class ModulePotionEffects extends AbstractModule {
     }
 
     private void info(List<PotionEffect> effects) {
-        GL11.glEnable(GL11.GL_BLEND);
+        GlStateManager.enableBlend();
         Position cBPositionEnum = this.getPosition();
         int height = 0;
         int width = 0;
         float potionSpacing = this.effectSpacing.getFloatValue();
-        float spacing = potionSpacing + (this.showIcon.getBooleanValue() || this.effectName.getBooleanValue() && this.duration.getBooleanValue() ? 18.0f : this.mc.fontRenderer.FONT_HEIGHT - 1);
+        float spacing = potionSpacing + (this.showIcon.getBooleanValue() || this.effectName.getBooleanValue() && this.duration.getBooleanValue() ? 18.0f : this.mc.fontRendererObj.FONT_HEIGHT - 1);
         float iconPos = this.showIcon.getBooleanValue() ? 20.0F : 0.0F;
-        int spaceCharWidth = this.mc.fontRenderer.getStringWidth(" ");
         this.sortEffects(effects);
 
         for (PotionEffect potionEffect : effects) {
@@ -213,34 +208,33 @@ public class ModulePotionEffects extends AbstractModule {
                 boolean showingDuringBlink = this.showEffectDuringBlink(potionEffect.getDuration());
                 boolean packOverride = this.texturePackOverrideColors.getBooleanValue();
                 int effectWidth = 0;
-                int effectY = this.duration.getBooleanValue() && !this.compact.getBooleanValue() ? 0 : this.showIcon.getBooleanValue() || this.compact.getBooleanValue() ? 5 : 0;
+                int effectY = this.duration.getBooleanValue() ? 0 : this.showIcon.getBooleanValue() ? 5 : 0;
                 String effectName = (this.effectNameText.getBooleanValue() ? StatCollector.translateToLocal(potionEffect.getEffectName()) : "") + (this.effectAmplifierText.getBooleanValue() ? this.amplifierNumerals(potionEffect.getAmplifier()) : "");
                 if (this.effectName.getBooleanValue() && (showingDuringBlink || !this.effectNameBlink.getBooleanValue())) {
-                    effectWidth = this.mc.fontRenderer.getStringWidth(effectName) + (int) iconPos;
+                    effectWidth = this.mc.fontRendererObj.getStringWidth(effectName) + (int) iconPos;
                     int potionColor = potionColor(this.nameColor.getColorValue(), this.colorNameBasedOnEffect.getValue(), potionEffect);
                     if (cBPositionEnum == Position.RIGHT) {
-                        this.mc.fontRenderer.drawString((packOverride ? effectName : stripColor(effectName)) + "§r", this.getWidth() - (float) effectWidth, (float) height + effectY, potionColor, this.textShadow.getBooleanValue());
+                        this.mc.fontRendererObj.drawString((packOverride ? effectName : stripColor(effectName)) + "§r", this.getWidth() - (float) effectWidth, (float) height + effectY, potionColor, this.textShadow.getBooleanValue());
                     } else if (cBPositionEnum == Position.LEFT) {
-                        this.mc.fontRenderer.drawString((packOverride ? effectName : stripColor(effectName)) + "§r", iconPos, (float) height + effectY, potionColor, this.textShadow.getBooleanValue());
+                        this.mc.fontRendererObj.drawString((packOverride ? effectName : stripColor(effectName)) + "§r", iconPos, (float) height + effectY, potionColor, this.textShadow.getBooleanValue());
                     } else if (cBPositionEnum == Position.CENTER) {
-                        this.mc.fontRenderer.drawString((packOverride ? effectName : stripColor(effectName)) + "§r", this.getWidth() / 2.0f - (float) (effectWidth / 2) + (this.compact.getBooleanValue() ? iconPos / 2 - 2.0F : iconPos), (float) height + effectY, potionColor, this.textShadow.getBooleanValue());
+                        this.mc.fontRendererObj.drawString((packOverride ? effectName : stripColor(effectName)) + "§r", this.getWidth() / 2.0f - (float) (effectWidth / 2) + iconPos, (float) height + effectY, potionColor, this.textShadow.getBooleanValue());
                     }
                     if (effectWidth > width) {
                         width = effectWidth;
                     }
                 }
                 string = Potion.getDurationString(potionEffect);
-                int durationWidth = this.duration.getBooleanValue() ? this.mc.fontRenderer.getStringWidth(string) + (int)iconPos : 18;
-                int durationY = (this.effectName.getBooleanValue() && !effectName.isEmpty()) && !this.compact.getBooleanValue() ? 10 : this.showIcon.getBooleanValue() || this.compact.getBooleanValue() ? 5 : 0;
-                boolean compactReq = this.compact.getBooleanValue() && this.effectName.getBooleanValue() && (this.effectNameText.getBooleanValue() || this.effectAmplifierText.getBooleanValue()) && !effectName.isEmpty();
+                int durationWidth = this.duration.getBooleanValue() ? this.mc.fontRendererObj.getStringWidth(string) + (int) iconPos : 18;
+                int durationY = this.effectName.getBooleanValue() && !effectName.isEmpty() ? 10 : this.showIcon.getBooleanValue() ? 5 : 0;
                 if (this.duration.getBooleanValue() && (showingDuringBlink || !this.durationBlink.getBooleanValue())) {
                     int potionColor = potionColor(this.durationColor.getColorValue(), this.colorDurationBasedOnEffect.getValue(), potionEffect);
                     if (cBPositionEnum == Position.RIGHT) {
-                        this.mc.fontRenderer.drawString(string + "§r", this.getWidth() - (float) durationWidth - (compactReq ? effectWidth - iconPos + spaceCharWidth : 0.0f), (float) (height + durationY), potionColor, this.textShadow.getBooleanValue());
+                        this.mc.fontRendererObj.drawString(string + "§r", this.getWidth() - (float) durationWidth, (float) (height + durationY), potionColor, this.textShadow.getBooleanValue());
                     } else if (cBPositionEnum == Position.LEFT) {
-                        this.mc.fontRenderer.drawString(string + "§r", compactReq ? effectWidth + spaceCharWidth : iconPos, (float) (height + durationY), potionColor, this.textShadow.getBooleanValue());
+                        this.mc.fontRendererObj.drawString(string + "§r", iconPos, (float) (height + durationY), potionColor, this.textShadow.getBooleanValue());
                     } else if (cBPositionEnum == Position.CENTER) {
-                        this.mc.fontRenderer.drawString(string + "§r", this.getWidth() / 2.0f + (compactReq ? effectWidth / 2 + 2.0F - (iconPos / 2) : - (float) (durationWidth / 2) + iconPos), (float) (height + durationY), potionColor, this.textShadow.getBooleanValue());
+                        this.mc.fontRendererObj.drawString(string + "§r", this.getWidth() / 2.0f - (float) (durationWidth / 2) + iconPos, (float) (height + durationY), potionColor, this.textShadow.getBooleanValue());
                     }
                 }
                 if ((potion = Potion.potionTypes[potionEffect.getPotionID()]).hasStatusIcon() && this.showIcon.getBooleanValue() && (showingDuringBlink || !this.effectIconBlink.getBooleanValue())) {
@@ -252,20 +246,17 @@ public class ModulePotionEffects extends AbstractModule {
                     } else if (cBPositionEnum == Position.RIGHT) {
                         RenderUtil.drawTexturedModalRect(this.getWidth() - (float) 20, (float) height, (float) (index % 8 * 18), (float) (198 + index / 8 * 18), 18, 18);
                     } else if (cBPositionEnum == Position.CENTER) {
-                        RenderUtil.drawTexturedModalRect(this.getWidth() / 2.0f - (float) ((this.effectName.getBooleanValue() ? effectWidth : durationWidth)/ 2) - (compactReq ? iconPos / 2 + 2.0F : 0.0F), (float) height, (float) (index % 8 * 18), (float) (198 + index / 8 * 18), 18, 18);
+                        RenderUtil.drawTexturedModalRect(this.getWidth() / 2.0f - (float) ((this.effectName.getBooleanValue() ? effectWidth : durationWidth) / 2), (float) height, (float) (index % 8 * 18), (float) (198 + index / 8 * 18), 18, 18);
                     }
                 }
                 if (durationWidth > width) {
                     width = durationWidth;
                 }
-                if ((durationWidth / 2 + effectWidth) + spaceCharWidth > width && this.compact.getBooleanValue()) {
-                    width = (durationWidth / 2 + effectWidth) + spaceCharWidth;
-                }
                 height += spacing;
             }
         }
         this.setDimensions(width, height - potionSpacing);
-        GL11.glDisable(GL11.GL_BLEND);
+        GlStateManager.disableBlend();
     }
 
     private boolean showEffectDuringBlink(float duration) {
@@ -279,24 +270,24 @@ public class ModulePotionEffects extends AbstractModule {
         return true;
     }
 
-    private int potionColor(int staticColor, Object option, PotionEffect effect) {
-        int time = effect.getDuration();
+    private int potionColor(int staticColor, Object option, PotionEffect effects) {
+        int time = effects.getDuration();
         int value;
         switch ((String) option) {
             case "Effect":
-                Potion var9 = Potion.potionTypes[effect.getPotionID()];
+                Potion var9 = Potion.potionTypes[effects.getPotionID()];
                 switch (this.colorType.getStringValue()) {
                     case "Default":
-                        value = potionColorDefault.get(effect.getPotionID());
+                        value = potionColorDefault.get(effects.getPotionID());
                         break;
                     case "Potion Colors":
-                        value = potionColorPotionColors.get(effect.getPotionID());
+                        value = potionColorPotionColors.get(effects.getPotionID());
                         break;
                     case "Color Codes":
-                        value = potionColorColorCodes.get(effect.getPotionID());
+                        value = potionColorColorCodes.get(effects.getPotionID());
                         break;
                     case "Vibrant":
-                        value = potionColorsVibrant.get(effect.getPotionID());
+                        value = potionColorsVibrant.get(effects.getPotionID());
                         break;
                     default:
                         if (!var9.isBadEffect()) {
@@ -321,7 +312,7 @@ public class ModulePotionEffects extends AbstractModule {
                 value = staticColor;
         }
         int opacity = value >> 24 & 0xFF;
-        opacity = (int)((float)opacity * (excludePotions(effect) ? 0.5F : 1.0F));
+        opacity = (int) ((float) opacity * (excludePotions(effects) ? 0.5F : 1.0F));
         return value & 0xFFFFFF | opacity << 24;
     }
 
@@ -355,6 +346,16 @@ public class ModulePotionEffects extends AbstractModule {
             return true;
         } else {
             return this.excludeSpecificEffects.getArrayListValue().contains(effect.getPotionID());
+        }
+    }
+
+    private boolean excludeArrayOptions(Setting setting, int realValue, float sliderValue) {
+        switch (setting.getStringValue()) {
+            case "Effects Above": return realValue > sliderValue;
+            case "Effects Below": return realValue < sliderValue;
+            case "Effects At": return realValue == sliderValue;
+            case "Effects Not At": return realValue != sliderValue;
+            default: return false;
         }
     }
 

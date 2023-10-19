@@ -8,6 +8,7 @@ public class GlStateManager {
     private static final GlStateManager.BlendState blendState = new GlStateManager.BlendState();
 
     private static int activeShadeModel = 7425;
+
     public static void color(float colorRed, float colorGreen, float colorBlue, float colorAlpha) {
         if (colorRed != colorState.red || colorGreen != colorState.green || colorBlue != colorState.blue || colorAlpha != colorState.alpha) {
             colorState.red = colorRed;
@@ -17,6 +18,7 @@ public class GlStateManager {
             GL11.glColor4f(colorRed, colorGreen, colorBlue, colorAlpha);
         }
     }
+
     public static void shadeModel(int mode) {
         if (mode != activeShadeModel) {
             activeShadeModel = mode;
@@ -49,6 +51,7 @@ public class GlStateManager {
             OpenGlHelper.glBlendFunc(srcFactor, dstFactor, srcFactorAlpha, dstFactorAlpha);
         }
     }
+
     static class Color {
         public float red = 1.0F;
         public float green = 1.0F;
@@ -65,6 +68,7 @@ public class GlStateManager {
             this.alpha = alphaIn;
         }
     }
+
     static class BlendState {
         public GlStateManager.BooleanState field_179213_a;
         public int srcFactor;
@@ -80,6 +84,7 @@ public class GlStateManager {
             this.dstFactorAlpha = 0;
         }
     }
+
     static class BooleanState {
         private final int capability;
         private boolean currentState = false;

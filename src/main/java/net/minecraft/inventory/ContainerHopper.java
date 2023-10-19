@@ -4,69 +4,78 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.item.ItemStack;
 
-public class ContainerHopper extends Container {
-    private final IInventory field_94538_a;
+public class ContainerHopper extends Container
+{
+    private final IInventory hopperInventory;
 
+    public ContainerHopper(InventoryPlayer playerInventory, IInventory hopperInventoryIn, EntityPlayer player)
+    {
+        this.hopperInventory = hopperInventoryIn;
+        hopperInventoryIn.openInventory(player);
+        int i = 51;
 
-    public ContainerHopper(InventoryPlayer p_i1814_1_, IInventory p_i1814_2_) {
-        this.field_94538_a = p_i1814_2_;
-        p_i1814_2_.openInventory();
-        byte var3 = 51;
-        int var4;
-
-        for (var4 = 0; var4 < p_i1814_2_.getSizeInventory(); ++var4) {
-            this.addSlotToContainer(new Slot(p_i1814_2_, var4, 44 + var4 * 18, 20));
+        for (int j = 0; j < hopperInventoryIn.getSizeInventory(); ++j)
+        {
+            this.addSlotToContainer(new Slot(hopperInventoryIn, j, 44 + j * 18, 20));
         }
 
-        for (var4 = 0; var4 < 3; ++var4) {
-            for (int var5 = 0; var5 < 9; ++var5) {
-                this.addSlotToContainer(new Slot(p_i1814_1_, var5 + var4 * 9 + 9, 8 + var5 * 18, var4 * 18 + var3));
+        for (int l = 0; l < 3; ++l)
+        {
+            for (int k = 0; k < 9; ++k)
+            {
+                this.addSlotToContainer(new Slot(playerInventory, k + l * 9 + 9, 8 + k * 18, l * 18 + i));
             }
         }
 
-        for (var4 = 0; var4 < 9; ++var4) {
-            this.addSlotToContainer(new Slot(p_i1814_1_, var4, 8 + var4 * 18, 58 + var3));
+        for (int i1 = 0; i1 < 9; ++i1)
+        {
+            this.addSlotToContainer(new Slot(playerInventory, i1, 8 + i1 * 18, 58 + i));
         }
     }
 
-    public boolean canInteractWith(EntityPlayer p_75145_1_) {
-        return this.field_94538_a.isUseableByPlayer(p_75145_1_);
+    public boolean canInteractWith(EntityPlayer playerIn)
+    {
+        return this.hopperInventory.isUseableByPlayer(playerIn);
     }
 
-    /**
-     * Called when a player shift-clicks on a slot. You must override this or you will crash when someone does that.
-     */
-    public ItemStack transferStackInSlot(EntityPlayer p_82846_1_, int p_82846_2_) {
-        ItemStack var3 = null;
-        Slot var4 = (Slot)this.inventorySlots.get(p_82846_2_);
+    public ItemStack transferStackInSlot(EntityPlayer playerIn, int index)
+    {
+        ItemStack itemstack = null;
+        Slot slot = (Slot)this.inventorySlots.get(index);
 
-        if (var4 != null && var4.getHasStack()) {
-            ItemStack var5 = var4.getStack();
-            var3 = var5.copy();
+        if (slot != null && slot.getHasStack())
+        {
+            ItemStack itemstack1 = slot.getStack();
+            itemstack = itemstack1.copy();
 
-            if (p_82846_2_ < this.field_94538_a.getSizeInventory()) {
-                if (!this.mergeItemStack(var5, this.field_94538_a.getSizeInventory(), this.inventorySlots.size(), true)) {
+            if (index < this.hopperInventory.getSizeInventory())
+            {
+                if (!this.mergeItemStack(itemstack1, this.hopperInventory.getSizeInventory(), this.inventorySlots.size(), true))
+                {
                     return null;
                 }
-            } else if (!this.mergeItemStack(var5, 0, this.field_94538_a.getSizeInventory(), false)) {
+            }
+            else if (!this.mergeItemStack(itemstack1, 0, this.hopperInventory.getSizeInventory(), false))
+            {
                 return null;
             }
 
-            if (var5.stackSize == 0) {
-                var4.putStack(null);
-            } else {
-                var4.onSlotChanged();
+            if (itemstack1.stackSize == 0)
+            {
+                slot.putStack((ItemStack)null);
+            }
+            else
+            {
+                slot.onSlotChanged();
             }
         }
 
-        return var3;
+        return itemstack;
     }
 
-    /**
-     * Called when the container is closed.
-     */
-    public void onContainerClosed(EntityPlayer p_75134_1_) {
-        super.onContainerClosed(p_75134_1_);
-        this.field_94538_a.closeInventory();
+    public void onContainerClosed(EntityPlayer playerIn)
+    {
+        super.onContainerClosed(playerIn);
+        this.hopperInventory.closeInventory(playerIn);
     }
 }

@@ -1,20 +1,26 @@
 package com.cheatbreaker.client.network.websocket.client;
 
 import com.cheatbreaker.client.network.websocket.WSNetHandler;
-import net.minecraft.network.PacketBuffer;
 import com.cheatbreaker.client.network.websocket.WSPacket;
+import net.minecraft.network.PacketBuffer;
 import net.minecraft.util.CryptManager;
 
-import java.security.PublicKey;
 import javax.crypto.SecretKey;
+import java.security.PublicKey;
 
+/**
+ * @WSPacket WSPacketClientJoinServerResponse
+ * @see WSPacket
+ *
+ * This packet sends encrypted data when it joins the server.
+ */
 public class WSPacketClientJoinServerResponse extends WSPacket {
-    private byte[] secretKey = new byte[0];
-    private byte[] publicKey = new byte[0];
+    private final byte[] secretKey;
+    private final byte[] publicKey;
 
-    public WSPacketClientJoinServerResponse(SecretKey secretKey, PublicKey publicKey, byte[] arrby) {
+    public WSPacketClientJoinServerResponse(SecretKey secretKey, PublicKey publicKey, byte[] data) {
         this.secretKey = CryptManager.encryptData(publicKey, secretKey.getEncoded());
-        this.publicKey = CryptManager.encryptData(publicKey, arrby);
+        this.publicKey = CryptManager.encryptData(publicKey, data);
     }
 
     @Override

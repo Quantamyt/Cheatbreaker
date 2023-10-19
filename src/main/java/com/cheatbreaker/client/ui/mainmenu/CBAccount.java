@@ -5,7 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import net.minecraft.util.ResourceLocation;
 
-@AllArgsConstructor @Getter
+@AllArgsConstructor
+@Getter
 public class CBAccount {
     private String clientToken;
     private String username;
@@ -20,7 +21,7 @@ public class CBAccount {
         this.accessToken = accessToken;
         this.displayName = displayName;
         this.uuid = uuid;
-        this.headIcon = CheatBreaker.getInstance().getHeadIcon(displayName, uuid);
+        this.headIcon = CheatBreaker.getInstance().getHeadIcon(displayName);
     }
 
     public void setAccessToken(String string) {

@@ -18,133 +18,116 @@ public class ServerData {
      */
     public String domain;
     public int port;
-
-    /**
-     * (better variable name would be 'hostname') server name as displayed in the server browser's second line (grey
-     * text)
-     */
     public String serverMOTD;
-
-    /** last server ping that showed up in the server browser */
     public long pingToServer;
-    public int version = 5;
-
-    /** Game version for this server. */
-    public String gameVersion = "1.7.10";;
+    public int version = 47;
+    public String gameVersion = "1.8.9";
     public boolean field_78841_f;
     public String playerList;
     private ServerData.ServerResourceMode resourceMode = ServerData.ServerResourceMode.PROMPT;
-    private String field_147411_m;
-    private boolean field_152588_l;
+    private String serverIcon;
+    private boolean lanServer;
+
     public boolean dontSave = false;
     public boolean pinged = false;
     public boolean lunarServer = false;
 
-    public ServerData(boolean dontSave, String serverName, String serverIP) {
-        this(serverName, serverIP);
+    public ServerData(boolean dontSave, String name, String ip, boolean isLan) {
+        this.serverName = name;
+        this.serverIP = ip;
+        this.lanServer = isLan;
         this.dontSave = dontSave;
     }
 
-    public ServerData(String p_i1193_1_, String p_i1193_2_) {
-        this.serverName = p_i1193_1_;
-        this.serverIP = p_i1193_2_;
+    public ServerData(String name, String ip, boolean isLan) {
+        this.serverName = name;
+        this.serverIP = ip;
+        this.lanServer = isLan;
     }
 
     public boolean isCheatBreakerServer() {
         return version == -1332;
     }
 
-    public ServerData(String p_i46395_1_, String p_i46395_2_, boolean p_i46395_3_) {
-        this(p_i46395_1_, p_i46395_2_);
-        this.field_152588_l = p_i46395_3_;
-    }
-
-    /**
-     * Returns an NBTTagCompound with the server's name, IP and maybe acceptTextures.
-     */
     public NBTTagCompound getNBTCompound() {
-        NBTTagCompound var1 = new NBTTagCompound();
-        var1.setString("name", this.serverName);
-        var1.setString("ip", this.serverIP);
+        NBTTagCompound nbttagcompound = new NBTTagCompound();
+        nbttagcompound.setString("name", this.serverName);
+        nbttagcompound.setString("ip", this.serverIP);
 
-        if (this.field_147411_m != null) {
-            var1.setString("icon", this.field_147411_m);
+        if (this.serverIcon != null) {
+            nbttagcompound.setString("icon", this.serverIcon);
         }
 
         if (this.resourceMode == ServerData.ServerResourceMode.ENABLED) {
-            var1.setBoolean("acceptTextures", true);
+            nbttagcompound.setBoolean("acceptTextures", true);
         } else if (this.resourceMode == ServerData.ServerResourceMode.DISABLED) {
-            var1.setBoolean("acceptTextures", false);
+            nbttagcompound.setBoolean("acceptTextures", false);
         }
 
-        return var1;
+        return nbttagcompound;
     }
 
-    public ServerData.ServerResourceMode func_152586_b() {
+    public ServerData.ServerResourceMode getResourceMode() {
         return this.resourceMode;
     }
 
-    public void func_152584_a(ServerData.ServerResourceMode p_152584_1_) {
-        this.resourceMode = p_152584_1_;
+    public void setResourceMode(ServerData.ServerResourceMode mode) {
+        this.resourceMode = mode;
     }
 
-    /**
-     * Takes an NBTTagCompound with 'name' and 'ip' keys, returns a ServerData instance.
-     */
-    public static ServerData getServerDataFromNBTCompound(NBTTagCompound p_78837_0_) {
-        ServerData var1 = new ServerData(p_78837_0_.getString("name"), p_78837_0_.getString("ip"));
+    public static ServerData getServerDataFromNBTCompound(NBTTagCompound nbtCompound) {
+        ServerData serverdata = new ServerData(nbtCompound.getString("name"), nbtCompound.getString("ip"), false);
 
-        if (p_78837_0_.func_150297_b("icon", 8)) {
-            var1.setBase64EncodedIconData(p_78837_0_.getString("icon"));
+        if (nbtCompound.hasKey("icon", 8)) {
+            serverdata.setBase64EncodedIconData(nbtCompound.getString("icon"));
         }
 
-        if (p_78837_0_.func_150297_b("acceptTextures", 1)) {
-            if (p_78837_0_.getBoolean("acceptTextures")) {
-                var1.func_152584_a(ServerData.ServerResourceMode.ENABLED);
+        if (nbtCompound.hasKey("acceptTextures", 1)) {
+            if (nbtCompound.getBoolean("acceptTextures")) {
+                serverdata.setResourceMode(ServerData.ServerResourceMode.ENABLED);
             } else {
-                var1.func_152584_a(ServerData.ServerResourceMode.DISABLED);
+                serverdata.setResourceMode(ServerData.ServerResourceMode.DISABLED);
             }
         } else {
-            var1.func_152584_a(ServerData.ServerResourceMode.PROMPT);
+            serverdata.setResourceMode(ServerData.ServerResourceMode.PROMPT);
         }
 
-        return var1;
+        return serverdata;
     }
 
     public String getBase64EncodedIconData() {
-        return this.field_147411_m;
+        return this.serverIcon;
     }
 
-    public void setBase64EncodedIconData(String p_147407_1_) {
-        this.field_147411_m = p_147407_1_;
+    public void setBase64EncodedIconData(String icon) {
+        this.serverIcon = icon;
     }
 
-    public void func_152583_a(ServerData p_152583_1_) {
-        this.serverIP = p_152583_1_.serverIP;
-        this.serverName = p_152583_1_.serverName;
-        this.func_152584_a(p_152583_1_.func_152586_b());
-        this.field_147411_m = p_152583_1_.field_147411_m;
+    public boolean isOnLAN() {
+        return this.lanServer;
     }
 
-    public boolean func_152585_d() {
-        return this.field_152588_l;
+    public void copyFrom(ServerData serverDataIn) {
+        this.serverIP = serverDataIn.serverIP;
+        this.serverName = serverDataIn.serverName;
+        this.setResourceMode(serverDataIn.getResourceMode());
+        this.serverIcon = serverDataIn.serverIcon;
+        this.lanServer = serverDataIn.lanServer;
     }
 
-    public enum ServerResourceMode {
-        ENABLED("ENABLED", 0, "enabled"),
-        DISABLED("DISABLED", 1, "disabled"),
-        PROMPT("PROMPT", 2, "prompt");
-        private final IChatComponent field_152594_d;
+    public static enum ServerResourceMode {
+        ENABLED("enabled"),
+        DISABLED("disabled"),
+        PROMPT("prompt");
 
-        private static final ServerData.ServerResourceMode[] $VALUES = new ServerData.ServerResourceMode[]{ENABLED, DISABLED, PROMPT};
+        private final IChatComponent motd;
 
-
-        ServerResourceMode(String p_i1053_1_, int p_i1053_2_, String p_i1053_3_) {
-            this.field_152594_d = new ChatComponentTranslation("addServer.resourcePack." + p_i1053_3_);
+        private ServerResourceMode(String name) {
+            this.motd = new ChatComponentTranslation("addServer.resourcePack." + name, new Object[0]);
         }
 
-        public IChatComponent func_152589_a() {
-            return this.field_152594_d;
+        public IChatComponent getMotd() {
+            return this.motd;
         }
     }
 }

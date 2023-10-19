@@ -7,6 +7,9 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import javazoom.jl.decoder.JavaLayerUtils;
+import javazoom.jl.player.Player;
+
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -14,10 +17,6 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.List;
-
-
-import javazoom.jl.decoder.JavaLayerUtils;
-import javazoom.jl.player.Player;
 
 public class DashUtil {
     private static final String dashApiStations = "https://dash-api.com/api/v3/allData.php";

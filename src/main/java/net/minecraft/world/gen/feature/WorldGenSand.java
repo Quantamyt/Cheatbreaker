@@ -4,38 +4,48 @@ import java.util.Random;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.init.Blocks;
+import net.minecraft.util.BlockPos;
 import net.minecraft.world.World;
 
-public class WorldGenSand extends WorldGenerator {
-    private final Block field_150517_a;
+public class WorldGenSand extends WorldGenerator
+{
+    private Block block;
+    private int radius;
 
-    /** The maximum radius used when generating a patch of blocks. */
-    private final int radius;
-
-
-    public WorldGenSand(Block p_i45462_1_, int p_i45462_2_) {
-        this.field_150517_a = p_i45462_1_;
+    public WorldGenSand(Block p_i45462_1_, int p_i45462_2_)
+    {
+        this.block = p_i45462_1_;
         this.radius = p_i45462_2_;
     }
 
-    public boolean generate(World p_76484_1_, Random p_76484_2_, int p_76484_3_, int p_76484_4_, int p_76484_5_) {
-        if (p_76484_1_.getBlock(p_76484_3_, p_76484_4_, p_76484_5_).getMaterial() != Material.water) {
+    public boolean generate(World worldIn, Random rand, BlockPos position)
+    {
+        if (worldIn.getBlockState(position).getBlock().getMaterial() != Material.water)
+        {
             return false;
-        } else {
-            int var6 = p_76484_2_.nextInt(this.radius - 2) + 2;
-            byte var7 = 2;
+        }
+        else
+        {
+            int i = rand.nextInt(this.radius - 2) + 2;
+            int j = 2;
 
-            for (int var8 = p_76484_3_ - var6; var8 <= p_76484_3_ + var6; ++var8) {
-                for (int var9 = p_76484_5_ - var6; var9 <= p_76484_5_ + var6; ++var9) {
-                    int var10 = var8 - p_76484_3_;
-                    int var11 = var9 - p_76484_5_;
+            for (int k = position.getX() - i; k <= position.getX() + i; ++k)
+            {
+                for (int l = position.getZ() - i; l <= position.getZ() + i; ++l)
+                {
+                    int i1 = k - position.getX();
+                    int j1 = l - position.getZ();
 
-                    if (var10 * var10 + var11 * var11 <= var6 * var6) {
-                        for (int var12 = p_76484_4_ - var7; var12 <= p_76484_4_ + var7; ++var12) {
-                            Block var13 = p_76484_1_.getBlock(var8, var12, var9);
+                    if (i1 * i1 + j1 * j1 <= i * i)
+                    {
+                        for (int k1 = position.getY() - j; k1 <= position.getY() + j; ++k1)
+                        {
+                            BlockPos blockpos = new BlockPos(k, k1, l);
+                            Block block = worldIn.getBlockState(blockpos).getBlock();
 
-                            if (var13 == Blocks.dirt || var13 == Blocks.grass) {
-                                p_76484_1_.setBlock(var8, var12, var9, this.field_150517_a, 0, 2);
+                            if (block == Blocks.dirt || block == Blocks.grass)
+                            {
+                                worldIn.setBlockState(blockpos, this.block.getDefaultState(), 2);
                             }
                         }
                     }

@@ -11,7 +11,7 @@ public class ChatHandler {
         if (minecraft != null && minecraft.ingameGUI != null && minecraft.ingameGUI.getChatGUI() != null) {
             ChatComponentText textComponent = new ChatComponentText(message);
             textComponent.setBranded(true);
-            minecraft.ingameGUI.getChatGUI().func_146227_a(textComponent);
+            minecraft.ingameGUI.getChatGUI().printChatMessage(textComponent);
         }
     }
 }

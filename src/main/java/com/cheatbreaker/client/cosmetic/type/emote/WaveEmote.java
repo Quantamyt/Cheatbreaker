@@ -4,7 +4,7 @@ import com.cheatbreaker.client.cosmetic.Emote;
 import com.cheatbreaker.client.ui.fading.CosineFade;
 import com.cheatbreaker.client.ui.fading.FloatFade;
 import net.minecraft.client.entity.AbstractClientPlayer;
-import net.minecraft.client.model.ModelBiped;
+import net.minecraft.client.model.ModelPlayer;
 
 public class WaveEmote extends Emote {
     private final FloatFade name = new FloatFade(250L);
@@ -19,12 +19,12 @@ public class WaveEmote extends Emote {
     public void tickEmote(AbstractClientPlayer player, float partialTicks) {
     }
 
-    public void playEmote(AbstractClientPlayer player, ModelBiped model, float partialTicks) {
+    public void playEmote(AbstractClientPlayer player, ModelPlayer model, float partialTicks) {
         float var4 = 1.0F;
         float var5 = 0.5F;
         if (this.name.getDuration() > this.duration.llIIllIlIlllllIlIllIIlIll()) {
             var4 = this.name.getFadeAmount();
-        } else if (this.duration.IlIlllIIIIllIllllIllIIlIl() <= this.resourceLoc.getDuration()) {
+        } else if (this.duration.getRemainingTime() <= this.resourceLoc.getDuration()) {
             if (!this.resourceLoc.isTimeNotAtZero()) {
                 this.resourceLoc.startAnimation();
             }
@@ -39,8 +39,11 @@ public class WaveEmote extends Emote {
             var5 = this.waveTransitionTime.getFadeAmount();
         }
 
-        model.bipedLeftArm.rotateAngleX = (float)Math.toRadians(-150.0F * var4);
-        model.bipedLeftArm.rotateAngleZ = (float)Math.toRadians(40.0F * var5 - 20.0F);
+        model.bipedLeftArm.rotateAngleX = (float) Math.toRadians(-150.0F * var4);
+        model.bipedLeftArm.rotateAngleZ = (float) Math.toRadians(40.0F * var5 - 20.0F);
+
+        model.bipedLeftArmwear.rotateAngleX = (float) Math.toRadians(-150.0F * var4);
+        model.bipedLeftArmwear.rotateAngleZ = (float) Math.toRadians(40.0F * var5 - 20.0F);
     }
 }
 

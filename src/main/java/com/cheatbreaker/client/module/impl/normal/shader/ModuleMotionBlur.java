@@ -1,6 +1,6 @@
 package com.cheatbreaker.client.module.impl.normal.shader;
 
-import com.cheatbreaker.client.event.impl.TickEvent;
+import com.cheatbreaker.client.event.impl.tick.TickEvent;
 import com.cheatbreaker.client.module.AbstractModule;
 import com.cheatbreaker.client.module.data.CustomizationLevel;
 import com.cheatbreaker.client.module.data.Setting;
@@ -39,18 +39,22 @@ public class ModuleMotionBlur extends AbstractModule {
         ShaderGroup shaderGroup = Minecraft.getMinecraft().entityRenderer.getShaderGroup();
         try {
             if (this.mc.entityRenderer.isShaderActive() && this.mc.thePlayer != null) {
-                for (Shader shader : shaderGroup.getShaders()) {
-                    ShaderUniform uniform = shader.getShaderManager().func_147991_a("Phosphor");
+                for (Shader shader : shaderGroup.getListShaders()) { // Previously getShaders()
+                    ShaderUniform uniform = shader.getShaderManager().getShaderUniform("Phosphor");
                     if (uniform == null) continue;
-                    float amount = 1.0f - this.amount.getFloatValue() / 100.0F * 0.9F;
-                    if (this.oldBlur.getBooleanValue()) {
-                        amount = 0.7F + this.amount.getFloatValue() / 1000.0F * 3.0F - 0.01F;
+                    float f = (float) this.amount.getValue() / 100.0f * 0.9F;
+                    if (f >= 1.0f) {
+                        f = 0.99f;
                     }
-                    int color = this.oldBlur.getBooleanValue() ? this.color.getColorValue() : -1;
-                    float red = (float)(color >> 16 & 0xFF) / 255.0F;
-                    float green = (float)(color >> 8 & 0xFF) / 255.0F;
-                    float blue = (float)(color & 0xFF) / 255.0F;
-                    uniform.func_148095_a(amount * red, amount * green, amount * blue);
+                    float amount = 1.0f - f;
+                    if ((Boolean) this.oldBlur.getValue()) {
+                        amount = 0.7F + (float) this.amount.getValue() / 1000.0F * 3.0F - 0.01F;
+                    }
+                    int color = (Boolean) oldBlur.getValue() ? this.color.getColorValue() : -1;
+                    float red = (float) (color >> 16 & 0xFF) / (float) 255;
+                    float green = (float) (color >> 8 & 0xFF) / (float) 255;
+                    float blue = (float) (color & 0xFF) / (float) 255;
+                    uniform.set(amount * red, amount * green, amount * blue);
                 }
             }
         } catch (IllegalArgumentException e) {

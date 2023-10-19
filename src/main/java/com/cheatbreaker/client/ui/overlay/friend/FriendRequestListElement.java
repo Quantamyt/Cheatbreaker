@@ -1,24 +1,23 @@
 package com.cheatbreaker.client.ui.overlay.friend;
 
-import com.cheatbreaker.client.*;
+import com.cheatbreaker.client.CheatBreaker;
 import com.cheatbreaker.client.network.websocket.client.WSPacketClientRequestsStatus;
 import com.cheatbreaker.client.network.websocket.shared.WSPacketFriendRequest;
-import com.cheatbreaker.client.ui.element.type.FlatButtonElement;
 import com.cheatbreaker.client.ui.element.type.ElementListElement;
+import com.cheatbreaker.client.ui.element.type.FlatButtonElement;
 import com.cheatbreaker.client.ui.element.type.InputFieldElement;
 import com.cheatbreaker.client.ui.element.type.ScrollableElement;
 import com.cheatbreaker.client.ui.overlay.CBAlert;
 import com.cheatbreaker.client.ui.overlay.OverlayGui;
 import com.cheatbreaker.client.ui.util.RenderUtil;
 import com.google.common.collect.ImmutableList;
-import java.util.ArrayList;
-import java.util.List;
-
-
-import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.client.audio.PositionedSoundRecord;
+import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.ResourceLocation;
 import org.lwjgl.opengl.GL11;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class FriendRequestListElement extends ElementListElement<FriendRequestElement> {
     private final InputFieldElement filterTextField;
@@ -44,12 +43,12 @@ public class FriendRequestListElement extends ElementListElement<FriendRequestEl
     @Override
     public void setElementSize(float f, float y, float width, float height) {
         super.setElementSize(f, y, width, height);
-        this.scrollbar.setElementSize(f + width - (float)4, y, (float)4, height);
+        this.scrollbar.setElementSize(f + width - (float) 4, y, (float) 4, height);
         int n = 22;
         int n2 = 0;
         for (FriendRequestElement friendRequestElement : this.elements) {
             if (!this.handleElementMouseClicked(friendRequestElement)) continue;
-            friendRequestElement.setElementSize(f, y + (float)14 + (float)(n2 * 22), width, 22);
+            friendRequestElement.setElementSize(f, y + (float) 14 + (float) (n2 * 22), width, 22);
             ++n2;
         }
         float f5 = 14 + this.elements.size() * 22 + 30;
@@ -57,9 +56,9 @@ public class FriendRequestListElement extends ElementListElement<FriendRequestEl
             f5 = height;
         }
         this.filterTextField.setElementSize(0.0f, y, width, 13);
-        this.usernameTextField.setElementSize(0.0f, y + f5 - (float)13, width - (float)35, 13);
-        this.addButton.setElementSize(width - (float)35, y + f5 - (float)13, (float)35, 13);
-        this.toggleIncomingRequestsButton.setElementSize(0.0f, y + f5 - (float)26, width, 13);
+        this.usernameTextField.setElementSize(0.0f, y + f5 - (float) 13, width - (float) 35, 13);
+        this.addButton.setElementSize(width - (float) 35, y + f5 - (float) 13, (float) 35, 13);
+        this.toggleIncomingRequestsButton.setElementSize(0.0f, y + f5 - (float) 26, width, 13);
         this.scrollbar.setScrollAmount(f5);
     }
 
@@ -77,16 +76,16 @@ public class FriendRequestListElement extends ElementListElement<FriendRequestEl
             OverlayGui.getInstance().getFriendRequestsElement().setElementSize();
             this.requestElements.clear();
         }
-        if (!CheatBreaker.getInstance().getWSNetHandler().isOpen()) {
-            CheatBreaker.getInstance().playBold18px.drawCenteredString("Connection lost", this.xPosition + this.width / 2.0f, this.yPosition + (float)10, -1);
-            CheatBreaker.getInstance().playRegular14px.drawCenteredString("Please try again later.", this.xPosition + this.width / 2.0f, this.yPosition + (float)22, -1);
+        if (!CheatBreaker.getInstance().getWsNetHandler().isOpen()) {
+            CheatBreaker.getInstance().playBold18px.drawCenteredString("Connection lost", this.xPosition + this.width / 2.0f, this.yPosition + (float) 10, -1);
+            CheatBreaker.getInstance().playRegular14px.drawCenteredString("Please try again later.", this.xPosition + this.width / 2.0f, this.yPosition + (float) 22, -1);
         } else {
             GL11.glPushMatrix();
             GL11.glEnable(3089);
             OverlayGui overlayGui = OverlayGui.getInstance();
             this.scrollbar.drawScrollable(f, f2, bl);
-            RenderUtil.startScissorBox((int)this.xPosition, (int)this.yPosition, (int)(this.xPosition + this.width), (int)(this.yPosition + this.height),
-                    (float)((int)((float)overlayGui.getScaledResolution().getScaleFactor() * overlayGui.getScaleFactor())), (int)overlayGui.getScaledHeight());
+            RenderUtil.startScissorBox((int) this.xPosition, (int) this.yPosition, (int) (this.xPosition + this.width), (int) (this.yPosition + this.height),
+                    (float) ((int) ((float) overlayGui.getScaledResolution().getScaleFactor() * overlayGui.getScaleFactor())), (int) overlayGui.getScaledHeight());
             GL11.glDisable(3089);
             GL11.glPopMatrix();
             ImmutableList<FriendRequestElement> friendList = ImmutableList.copyOf(this.elements);
@@ -95,7 +94,7 @@ public class FriendRequestListElement extends ElementListElement<FriendRequestEl
                 friendRequestElement.drawElementHover(f, f2 - this.scrollbar.getHeight(), bl);
             }
             if (friendList.isEmpty()) {
-                CheatBreaker.getInstance().playBold18px.drawCenteredString("No friend requests", this.xPosition + this.width / 2.0f, this.yPosition + (float)30, -1);
+                CheatBreaker.getInstance().playBold18px.drawCenteredString("No friend requests", this.xPosition + this.width / 2.0f, this.yPosition + (float) 30, -1);
             }
             this.filterTextField.drawElementHover(f, f2 - this.scrollbar.getHeight(), true);
             this.usernameTextField.drawElementHover(f, f2, true);
@@ -157,7 +156,7 @@ public class FriendRequestListElement extends ElementListElement<FriendRequestEl
             this.sendRequest();
         }
         if (this.toggleIncomingRequestsButton.isMouseInside(f, f2 - this.scrollbar.getPosition())) {
-            CheatBreaker.getInstance().getWSNetHandler().sendPacket(new WSPacketClientRequestsStatus(!CheatBreaker.getInstance().isAcceptingFriendRequests()));
+            CheatBreaker.getInstance().getWsNetHandler().sendPacket(new WSPacketClientRequestsStatus(!CheatBreaker.getInstance().isAcceptingFriendRequests()));
             CheatBreaker.getInstance().setAcceptingFriendRequests(!CheatBreaker.getInstance().isAcceptingFriendRequests());
             return false;
         }
@@ -172,10 +171,10 @@ public class FriendRequestListElement extends ElementListElement<FriendRequestEl
 
     private void sendRequest() {
         if (!this.usernameTextField.getText().isEmpty()) {
-            this.mc.getSoundHandler().playSound(PositionedSoundRecord.func_147674_a(new ResourceLocation("gui.button.press"), 1.0f));
+            this.mc.getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("gui.button.press"), 1.0f));
             String string = this.usernameTextField.getText();
             if (string.matches("([a-zA-Z0-9_]+)") && string.length() <= 16) {
-                CheatBreaker.getInstance().getWSNetHandler().sendPacket(new WSPacketFriendRequest("", this.usernameTextField.getText()));
+                CheatBreaker.getInstance().getWsNetHandler().sendPacket(new WSPacketFriendRequest("", this.usernameTextField.getText()));
                 this.usernameTextField.setText("");
             } else {
                 CBAlert.displayMessage(EnumChatFormatting.RED + "Error!", "Incorrect username.");

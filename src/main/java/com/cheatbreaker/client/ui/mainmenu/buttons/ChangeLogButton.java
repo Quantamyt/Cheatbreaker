@@ -4,7 +4,7 @@ import com.cheatbreaker.client.CheatBreaker;
 import com.cheatbreaker.client.ui.fading.ColorFade;
 import com.cheatbreaker.client.ui.mainmenu.AbstractElement;
 import com.cheatbreaker.client.ui.mainmenu.menus.ChangelogDetailMenu;
-import com.cheatbreaker.client.util.render.wordwrap.WordWrap;
+import com.cheatbreaker.client.util.lang.WordWrap;
 import net.minecraft.client.audio.PositionedSoundRecord;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.util.EnumChatFormatting;
@@ -46,10 +46,9 @@ public class ChangeLogButton extends AbstractElement {
     @Override
     public boolean handleElementMouseClicked(float f, float f2, int n, boolean bl) {
         if (this.isMouseInside(f, f2)) {
-            this.mc.getSoundHandler().playSound(PositionedSoundRecord.func_147674_a(new ResourceLocation("gui.button.press"), 1.0f));
+            this.mc.getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("gui.button.press"), 1.0f));
             this.mc.displayGuiScreen(new ChangelogDetailMenu(this.title, this.author, this.description));
         }
         return false;
     }
 }
-

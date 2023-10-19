@@ -2,102 +2,118 @@ package net.minecraft.inventory;
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.ChatComponentText;
+import net.minecraft.util.ChatComponentTranslation;
+import net.minecraft.util.IChatComponent;
 
-public class InventoryCraftResult implements IInventory {
-    /** A list of one item containing the result of the crafting formula */
-    private final ItemStack[] stackResult = new ItemStack[1];
+public class InventoryCraftResult implements IInventory
+{
+    private ItemStack[] stackResult = new ItemStack[1];
 
-
-    /**
-     * Returns the number of slots in the inventory.
-     */
-    public int getSizeInventory() {
+    public int getSizeInventory()
+    {
         return 1;
     }
 
-    /**
-     * Returns the stack in slot i
-     */
-    public ItemStack getStackInSlot(int p_70301_1_) {
+    public ItemStack getStackInSlot(int index)
+    {
         return this.stackResult[0];
     }
 
-    /**
-     * Returns the name of the inventory
-     */
-    public String getInventoryName() {
+    public String getName()
+    {
         return "Result";
     }
 
-    /**
-     * Returns if the inventory name is localized
-     */
-    public boolean isInventoryNameLocalized() {
+    public boolean hasCustomName()
+    {
         return false;
     }
 
-    /**
-     * Removes from an inventory slot (first arg) up to a specified number (second arg) of items and returns them in a
-     * new stack.
-     */
-    public ItemStack decrStackSize(int p_70298_1_, int p_70298_2_) {
-        if (this.stackResult[0] != null) {
-            ItemStack var3 = this.stackResult[0];
+    public IChatComponent getDisplayName()
+    {
+        return (IChatComponent)(this.hasCustomName() ? new ChatComponentText(this.getName()) : new ChatComponentTranslation(this.getName(), new Object[0]));
+    }
+
+    public ItemStack decrStackSize(int index, int count)
+    {
+        if (this.stackResult[0] != null)
+        {
+            ItemStack itemstack = this.stackResult[0];
             this.stackResult[0] = null;
-            return var3;
-        } else {
+            return itemstack;
+        }
+        else
+        {
             return null;
         }
     }
 
-    /**
-     * When some containers are closed they call this on each slot, then drop whatever it returns as an EntityItem -
-     * like when you close a workbench GUI.
-     */
-    public ItemStack getStackInSlotOnClosing(int p_70304_1_) {
-        if (this.stackResult[0] != null) {
-            ItemStack var2 = this.stackResult[0];
+    public ItemStack removeStackFromSlot(int index)
+    {
+        if (this.stackResult[0] != null)
+        {
+            ItemStack itemstack = this.stackResult[0];
             this.stackResult[0] = null;
-            return var2;
-        } else {
+            return itemstack;
+        }
+        else
+        {
             return null;
         }
     }
 
-    /**
-     * Sets the given item stack to the specified slot in the inventory (can be crafting or armor sections).
-     */
-    public void setInventorySlotContents(int p_70299_1_, ItemStack p_70299_2_) {
-        this.stackResult[0] = p_70299_2_;
+    public void setInventorySlotContents(int index, ItemStack stack)
+    {
+        this.stackResult[0] = stack;
     }
 
-    /**
-     * Returns the maximum stack size for a inventory slot.
-     */
-    public int getInventoryStackLimit() {
+    public int getInventoryStackLimit()
+    {
         return 64;
     }
 
-    /**
-     * Called when an the contents of an Inventory change, usually
-     */
-    public void onInventoryChanged() {}
+    public void markDirty()
+    {
+    }
 
-    /**
-     * Do not make give this method the name canInteractWith because it clashes with Container
-     */
-    public boolean isUseableByPlayer(EntityPlayer p_70300_1_) {
+    public boolean isUseableByPlayer(EntityPlayer player)
+    {
         return true;
     }
 
-    public void openInventory() {}
+    public void openInventory(EntityPlayer player)
+    {
+    }
 
-    public void closeInventory() {}
+    public void closeInventory(EntityPlayer player)
+    {
+    }
 
-    /**
-     * Returns true if automation is allowed to insert the given stack (ignoring stack size) into the given slot.
-     */
-    public boolean isItemValidForSlot(int p_94041_1_, ItemStack p_94041_2_) {
+    public boolean isItemValidForSlot(int index, ItemStack stack)
+    {
         return true;
+    }
+
+    public int getField(int id)
+    {
+        return 0;
+    }
+
+    public void setField(int id, int value)
+    {
+    }
+
+    public int getFieldCount()
+    {
+        return 0;
+    }
+
+    public void clear()
+    {
+        for (int i = 0; i < this.stackResult.length; ++i)
+        {
+            this.stackResult[i] = null;
+        }
     }
 }

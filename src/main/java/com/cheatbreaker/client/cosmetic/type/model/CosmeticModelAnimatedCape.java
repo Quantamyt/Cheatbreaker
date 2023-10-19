@@ -5,7 +5,7 @@ import net.minecraft.client.model.ModelBiped;
 public class CosmeticModelAnimatedCape extends ModelBiped {
 
     public CosmeticModelAnimatedCape() {
-        // todo: do this
+
     }
 
 }

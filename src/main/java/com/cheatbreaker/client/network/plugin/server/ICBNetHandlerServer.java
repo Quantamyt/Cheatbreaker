@@ -6,9 +6,11 @@ import com.cheatbreaker.client.network.plugin.client.PacketVoiceChannelSwitch;
 import com.cheatbreaker.client.network.plugin.client.PacketVoiceMute;
 
 public interface ICBNetHandlerServer extends ICBNetHandler {
+
     void handleClientVoice(PacketClientVoice var1);
 
     void handleVoiceChannelSwitch(PacketVoiceChannelSwitch var1);
 
     void handleVoiceMute(PacketVoiceMute var1);
+
 }

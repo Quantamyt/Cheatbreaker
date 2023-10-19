@@ -2,11 +2,13 @@
     "targets": [
         "swap"
     ],
-    "passes": [ {
+    "passes": [
+        {
             "name": "sobel",
             "intarget": "minecraft:main",
             "outtarget": "swap"
-        }, {
+        },
+        {
             "name": "blit",
             "intarget": "swap",
             "outtarget": "minecraft:main"

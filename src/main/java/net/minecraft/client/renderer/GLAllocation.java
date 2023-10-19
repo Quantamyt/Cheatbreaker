@@ -4,65 +4,56 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.util.glu.GLU;
 
-public class GLAllocation {
-    private static final Map mapDisplayLists = new HashMap();
-    private static final List listDummy = new ArrayList();
+public class GLAllocation
+{
 
+    public static synchronized int generateDisplayLists(int range)
+    {
+        int i = GL11.glGenLists(range);
 
-    /**
-     * Generates the specified number of display lists and returns the first index.
-     */
-    public static synchronized int generateDisplayLists(int p_74526_0_) {
-        int var1 = GL11.glGenLists(p_74526_0_);
-        mapDisplayLists.put(Integer.valueOf(var1), Integer.valueOf(p_74526_0_));
-        return var1;
-    }
+        if (i == 0)
+        {
+            int j = GL11.glGetError();
+            String s = "No error code reported";
 
-    public static synchronized void deleteDisplayLists(int p_74523_0_) {
-        GL11.glDeleteLists(p_74523_0_, ((Integer)mapDisplayLists.remove(Integer.valueOf(p_74523_0_))).intValue());
-    }
+            if (j != 0)
+            {
+                s = GLU.gluErrorString(j);
+            }
 
-    /**
-     * Deletes all textures and display lists. Called when Minecraft is shutdown to free up resources.
-     */
-    public static synchronized void deleteTexturesAndDisplayLists() {
-        Iterator var0 = mapDisplayLists.entrySet().iterator();
-
-        while (var0.hasNext()) {
-            Entry var1 = (Entry)var0.next();
-            GL11.glDeleteLists(((Integer)var1.getKey()).intValue(), ((Integer)var1.getValue()).intValue());
+            throw new IllegalStateException("glGenLists returned an ID of 0 for a count of " + range + ", GL error (" + j + "): " + s);
         }
-
-        mapDisplayLists.clear();
+        else
+        {
+            return i;
+        }
     }
 
-    /**
-     * Creates and returns a direct byte buffer with the specified capacity. Applies native ordering to speed up access.
-     */
-    public static synchronized ByteBuffer createDirectByteBuffer(int p_74524_0_) {
-        return ByteBuffer.allocateDirect(p_74524_0_).order(ByteOrder.nativeOrder());
+    public static synchronized void deleteDisplayLists(int list, int range)
+    {
+        GL11.glDeleteLists(list, range);
     }
 
-    /**
-     * Creates and returns a direct int buffer with the specified capacity. Applies native ordering to speed up access.
-     */
-    public static IntBuffer createDirectIntBuffer(int p_74527_0_) {
-        return createDirectByteBuffer(p_74527_0_ << 2).asIntBuffer();
+    public static synchronized void deleteDisplayLists(int list)
+    {
+        GL11.glDeleteLists(list, 1);
     }
 
-    /**
-     * Creates and returns a direct float buffer with the specified capacity. Applies native ordering to speed up
-     * access.
-     */
-    public static FloatBuffer createDirectFloatBuffer(int p_74529_0_) {
-        return createDirectByteBuffer(p_74529_0_ << 2).asFloatBuffer();
+    public static synchronized ByteBuffer createDirectByteBuffer(int capacity)
+    {
+        return ByteBuffer.allocateDirect(capacity).order(ByteOrder.nativeOrder());
+    }
+
+    public static IntBuffer createDirectIntBuffer(int capacity)
+    {
+        return createDirectByteBuffer(capacity << 2).asIntBuffer();
+    }
+
+    public static FloatBuffer createDirectFloatBuffer(int capacity)
+    {
+        return createDirectByteBuffer(capacity << 2).asFloatBuffer();
     }
 }

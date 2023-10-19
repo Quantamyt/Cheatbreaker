@@ -2,21 +2,24 @@ package com.cheatbreaker.client.network.websocket.client;
 
 import com.cheatbreaker.client.network.websocket.WSNetHandler;
 import com.cheatbreaker.client.network.websocket.WSPacket;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 import net.minecraft.network.PacketBuffer;
 
+/**
+ * @WSPacket WSPacketClientFriendRemove
+ * @see WSPacket
+ *
+ * This packet removes a player from the player's friends list.
+ */
+@Getter @AllArgsConstructor @NoArgsConstructor
 public class WSPacketClientFriendRemove extends WSPacket {
     private String playerId;
 
-    public WSPacketClientFriendRemove() {
-    }
-
-    public WSPacketClientFriendRemove(String string) {
-        this.playerId = string;
-    }
-
     @Override
     public void write(PacketBuffer packetBuffer) {
-        packetBuffer.writeStringToBuffer(this.playerId);
+        packetBuffer.writeString(this.playerId);
     }
 
     @Override
@@ -27,9 +30,5 @@ public class WSPacketClientFriendRemove extends WSPacket {
     @Override
     public void process(WSNetHandler wSNetHandler) {
         wSNetHandler.handleFriendRemove(this);
-    }
-
-    public String getPlayerId() {
-        return this.playerId;
     }
 }

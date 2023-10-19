@@ -9,7 +9,10 @@ import com.cheatbreaker.client.module.impl.packmanager.gui.components.list.GuiRe
 import com.cheatbreaker.client.module.impl.packmanager.utils.PackUtils;
 import com.cheatbreaker.client.module.impl.packmanager.utils.ThreadUtils;
 import com.google.common.collect.Lists;
-import net.minecraft.client.gui.*;
+import net.minecraft.client.gui.GuiButton;
+import net.minecraft.client.gui.GuiOptionButton;
+import net.minecraft.client.gui.GuiScreen;
+import net.minecraft.client.gui.GuiTextField;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.client.resources.ResourcePackRepository;
 import net.minecraft.util.EnumChatFormatting;
@@ -18,8 +21,8 @@ import net.minecraft.util.StringUtils;
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
 import java.util.List;
+import java.util.*;
 
 public class GuiResourcePacks extends GuiScreen {
     private static final Comparator<ResourcePackRepository.Entry> ENTRY_COMPARATOR = (entry1, entry2) -> {
@@ -27,7 +30,7 @@ public class GuiResourcePacks extends GuiScreen {
                 StringUtils.stripControlCodes(entry2.getResourcePackName()).trim());
     };
     private static final Comparator<ResourcePacksFolder> FOLDER_COMPARATOR = (folder1, folder2) -> {
-       return StringUtils.stripControlCodes(folder1.getName()).trim().compareToIgnoreCase(StringUtils.stripControlCodes(folder2.getName()).trim());
+        return StringUtils.stripControlCodes(folder1.getName()).trim().compareToIgnoreCase(StringUtils.stripControlCodes(folder2.getName()).trim());
     };
     private final GuiScreen previousScreen;
     private final ResourcePackRepository packsRepo;
@@ -67,7 +70,7 @@ public class GuiResourcePacks extends GuiScreen {
     public void initGui() {
         int listWidth = (this.width - 30) / 2;
         int listHeight = this.height - 80 - 46;
-        boolean wide = CheatBreaker.getInstance().getGlobalSettings().widePackMenu.getBooleanValue();
+        boolean wide = (Boolean) CheatBreaker.getInstance().getGlobalSettings().widePackMenu.getValue();
         int wideWidth = wide ? this.width - listWidth - 12 : this.width / 2 + 4;
         int wideWidth2 = wide ? listWidth + 2 : 200;
         int wideWidth3 = wide ? listWidth + 2 : 200;
@@ -79,12 +82,12 @@ public class GuiResourcePacks extends GuiScreen {
         this.buttonList.add(this.buttonDone);
         int width = this.selectedPacks.left + this.selectedPacks.listWidth / 2 - this.fontRendererObj.getStringWidth(this.selectedPacks.title) / 2 - (this.availablePacks.left + this.availablePacks.listWidth / 2 + this.fontRendererObj.getStringWidth(this.availablePacks.title) / 2) - 50;
         if ((Boolean) CheatBreaker.getInstance().getGlobalSettings().widePackMenu.getValue()) {
-            this.searchBar = new GuiTextField(this.fontRendererObj, 10, this.height - 70, (this.width - 30) / 2, 18);
+            this.searchBar = new GuiTextField(299, this.fontRendererObj, 10, this.height - 70, (this.width - 30) / 2, 18);
         } else {
-            this.searchBar = new GuiTextField(this.fontRendererObj, this.width / 2 - 204, this.height - 70, 200, 18);
+            this.searchBar = new GuiTextField(299, this.fontRendererObj, this.width / 2 - 204, this.height - 70, 200, 18);
         }
 //        if ((Boolean) CheatBreaker.getInstance().getGlobalSettings().packSearchBar.getValue()) {
-            this.searchBar.setVisible(this.activePackFolder == null && (Boolean) CheatBreaker.getInstance().getGlobalSettings().packSearchBar.getValue());
+        this.searchBar.setVisible(this.activePackFolder == null && (Boolean) CheatBreaker.getInstance().getGlobalSettings().packSearchBar.getValue());
 //        } else {
 //            this.searchBar.setVisible(false);
 //        }
@@ -95,6 +98,7 @@ public class GuiResourcePacks extends GuiScreen {
         this.buttonList.add(this.redStringButton);
         this.backgroundButton = new GuiOptionButton(102, this.width / 2 + (wide && this.width / 2 > 338 ? 204 : 4), this.height - (wide && this.width / 2 > 338 ? 71 : 91), (wide && this.width / 2 > 338 ? 138 : 200), 20, "Background: " + ((Boolean) CheatBreaker.getInstance().getGlobalSettings().transparentBackground.getValue() ? "TRANSPARENT" : "NORMAL"));
         this.buttonList.add(this.backgroundButton);
+        this.searchBar.setFocused(true);
     }
 
     @Override
@@ -105,7 +109,7 @@ public class GuiResourcePacks extends GuiScreen {
         if (this.mc.theWorld != null && (Boolean) CheatBreaker.getInstance().getGlobalSettings().transparentBackground.getValue()) {
             this.drawDefaultBackground();
         } else {
-            this.func_146278_c(0);
+            this.drawBackground(0);
         }
 //        if (this.mc.theWorld == null) {
 //            super.func_146278_c(0);
@@ -124,32 +128,31 @@ public class GuiResourcePacks extends GuiScreen {
 //        Gui.drawRect(0, this.height - 40, this.width, this.height, -16777216);
 //        super.drawGradientRect(0, 40, this.width, 45, -16777216, 0);
 //        super.drawGradientRect(0, this.height - 45, this.width, this.height - 40, 0, -16777216);
-        boolean wide = CheatBreaker.getInstance().getGlobalSettings().widePackMenu.getBooleanValue();
         if (this.availablePacks.entries.isEmpty()) {
             String string = !this.searchBar.getText().isEmpty() && this.searchedEntries.isEmpty() ? "No resource packs found." : "";
             if (this.load) {
                 string = "Discovering resource packs...";
             }
-            this.drawCenteredString(this.fontRendererObj, EnumChatFormatting.GRAY + "" + EnumChatFormatting.ITALIC + string, wide ? this.width / 4 : this.width / 2 - 100, 60, 0xFFFFFF);
+            this.drawCenteredString(this.fontRendererObj, EnumChatFormatting.GRAY + "" + EnumChatFormatting.ITALIC + string, this.width / 2 - 100, 60, 0xFFFFFF);
         }
         if (this.selectedPacks.entries.isEmpty()) {
             String string = "Select resource packs.";
-            this.drawCenteredString(this.fontRendererObj, EnumChatFormatting.GRAY + "" + EnumChatFormatting.ITALIC + string, wide ? this.width / 2 + this.width / 4 : this.width / 2 + 100, 60, 0xFFFFFF);
+            this.drawCenteredString(this.fontRendererObj, EnumChatFormatting.GRAY + "" + EnumChatFormatting.ITALIC + string, this.width / 2 + 100, 60, 0xFFFFFF);
         }
-        super.drawCenteredString(this.mc.fontRenderer, this.selectedPacks.title, this.selectedPacks.left + this.selectedPacks.listWidth / 2, this.selectedPacks.top - 14, -1);
-        super.drawCenteredString(this.mc.fontRenderer, this.availablePacks.title, this.availablePacks.left + this.availablePacks.listWidth / 2, this.availablePacks.top - 14, -1);
+        super.drawCenteredString(this.mc.fontRendererObj, this.selectedPacks.title, this.selectedPacks.left + this.selectedPacks.listWidth / 2, this.selectedPacks.top - 14, -1);
+        super.drawCenteredString(this.mc.fontRendererObj, this.availablePacks.title, this.availablePacks.left + this.availablePacks.listWidth / 2, this.availablePacks.top - 14, -1);
         this.drawCenteredString(this.fontRendererObj, I18n.format("resourcePack.folderInfo"), this.width / 2 - 77, this.height - 26, 8421504);
         super.drawScreen(mouseX, mouseY, partialTicks);
         this.searchBar.drawTextBox();
-        if (this.searchBar.isVisible() && !this.searchBar.isFocused() && this.searchBar.getText().isEmpty()) {
+        if (this.searchBar.getVisible() && !this.searchBar.isFocused() && this.searchBar.getText().isEmpty()) {
             super.drawString(this.fontRendererObj, EnumChatFormatting.GRAY + "" + EnumChatFormatting.ITALIC + "Search...", (Boolean) CheatBreaker.getInstance().getGlobalSettings().widePackMenu.getValue() ? 14 : this.width / 2 - 200, this.height - 65, 0xFFFFFF);
         }
     }
 
     @Override
-    protected void mouseClicked(int mouseX, int mouseY, int mouseButton) {
+    protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException {
         super.mouseClicked(mouseX, mouseY, mouseButton);
-        if (this.searchBar.isVisible()) {
+        if (this.searchBar.getVisible()) {
             this.searchBar.mouseClicked(mouseX, mouseY, mouseButton);
         }
     }
@@ -176,7 +179,8 @@ public class GuiResourcePacks extends GuiScreen {
         } else if (button.id == this.clearGlassButton.id) {
             Setting clearGlass = CheatBreaker.getInstance().getModuleManager().packTweaksMod.clearGlass;
             for (int i = 0; i < clearGlass.getAcceptedStringValues().length; ++i) {
-                if (!clearGlass.getAcceptedStringValues()[i].toLowerCase().equalsIgnoreCase(clearGlass.getStringValue())) continue;
+                if (!clearGlass.getAcceptedStringValues()[i].toLowerCase().equalsIgnoreCase(clearGlass.getStringValue()))
+                    continue;
                 if (i + 1 >= clearGlass.getAcceptedStringValues().length) {
                     clearGlass.setValue(clearGlass.getAcceptedStringValues()[0]);
                     break;
@@ -201,16 +205,16 @@ public class GuiResourcePacks extends GuiScreen {
     }
 
     @Override
-    public void handleMouseInput() {
+    public void handleMouseInput() throws IOException {
         super.handleMouseInput();
         this.availablePacks.handleMouseInput();
         this.selectedPacks.handleMouseInput();
     }
 
     @Override
-    protected void keyTyped(char typedChar, int keyCode) {
+    protected void keyTyped(char typedChar, int keyCode) throws IOException {
         super.keyTyped(typedChar, keyCode);
-        if (this.searchBar.keyTyped(typedChar, keyCode)) {
+        if (this.searchBar.textboxKeyTyped(typedChar, keyCode)) {
             this.searchForPacks(this.searchBar.getText().toLowerCase());
         }
     }
@@ -241,12 +245,14 @@ public class GuiResourcePacks extends GuiScreen {
     public void setAvailablePacks(ResourcePacksFolder packFolder) {
         this.activePackFolder = packFolder;
         int searchBarHeight = (Boolean) CheatBreaker.getInstance().getGlobalSettings().packSearchBar.getValue() ? 26 : 4;
+
         if (packFolder == null) {
             if (this.searchBar != null) {
                 this.searchBar.setVisible((Boolean) CheatBreaker.getInstance().getGlobalSettings().packSearchBar.getValue());
             }
-            this.availableEntries = new ArrayList<ResourcePackRepository.Entry>(this.packsRepo.getRepositoryEntriesAll());
+            this.availableEntries = new ArrayList<>(this.packsRepo.getRepositoryEntriesAll());
             this.availableEntries.removeAll(this.selectedEntries);
+
             if ((Boolean) CheatBreaker.getInstance().getGlobalSettings().widePackMenu.getValue()) {
                 this.availablePacks = new GuiResourcePacksAvailable(this, 10, 32, (this.width - 30) / 2, this.height - 80 - searchBarHeight, 36, this.availableEntries, this.packFolders, true);
             } else {
@@ -301,7 +307,8 @@ public class GuiResourcePacks extends GuiScreen {
         } else {
             this.searchedEntries.clear();
             for (ResourcePackRepository.Entry entry : this.availableEntries) {
-                if (!StringUtils.stripControlCodes(entry.getResourcePackName()).toLowerCase().contains(search) && !StringUtils.stripControlCodes(entry.getTexturePackDescription()).toLowerCase().contains(search)) continue;
+                if (!StringUtils.stripControlCodes(entry.getResourcePackName()).toLowerCase().contains(search) && !StringUtils.stripControlCodes(entry.getTexturePackDescription()).toLowerCase().contains(search))
+                    continue;
                 this.addSearchedPack(entry);
             }
             for (ResourcePacksFolder packFolder : this.packFolders) {
@@ -318,7 +325,8 @@ public class GuiResourcePacks extends GuiScreen {
 
     private void searchForPacks(ResourcePacksFolder packFolder, String search) {
         for (ResourcePackRepository.Entry entry : packFolder.getEntries()) {
-            if (!StringUtils.stripControlCodes(entry.getResourcePackName().toLowerCase()).contains(search) && !StringUtils.stripControlCodes(entry.getTexturePackDescription()).toLowerCase().contains(search)) continue;
+            if (!StringUtils.stripControlCodes(entry.getResourcePackName().toLowerCase()).contains(search) && !StringUtils.stripControlCodes(entry.getTexturePackDescription()).toLowerCase().contains(search))
+                continue;
             this.addSearchedPack(entry);
         }
         for (ResourcePacksFolder packSubfolder : packFolder.getPackFolders()) {

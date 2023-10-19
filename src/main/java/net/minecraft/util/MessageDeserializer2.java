@@ -8,36 +8,42 @@ import io.netty.handler.codec.CorruptedFrameException;
 import java.util.List;
 import net.minecraft.network.PacketBuffer;
 
-public class MessageDeserializer2 extends ByteToMessageDecoder {
-
-
-    protected void decode(ChannelHandlerContext p_decode_1_, ByteBuf p_decode_2_, List p_decode_3_) {
+public class MessageDeserializer2 extends ByteToMessageDecoder
+{
+    protected void decode(ChannelHandlerContext p_decode_1_, ByteBuf p_decode_2_, List<Object> p_decode_3_) throws Exception
+    {
         p_decode_2_.markReaderIndex();
-        byte[] var4 = new byte[3];
+        byte[] abyte = new byte[3];
 
-        for (int var5 = 0; var5 < var4.length; ++var5) {
-            if (!p_decode_2_.isReadable()) {
+        for (int i = 0; i < abyte.length; ++i)
+        {
+            if (!p_decode_2_.isReadable())
+            {
                 p_decode_2_.resetReaderIndex();
                 return;
             }
 
-            var4[var5] = p_decode_2_.readByte();
+            abyte[i] = p_decode_2_.readByte();
 
-            if (var4[var5] >= 0) {
-                PacketBuffer var6 = new PacketBuffer(Unpooled.wrappedBuffer(var4));
+            if (abyte[i] >= 0)
+            {
+                PacketBuffer packetbuffer = new PacketBuffer(Unpooled.wrappedBuffer(abyte));
 
-                try {
-                    int var7 = var6.readVarIntFromBuffer();
+                try
+                {
+                    int j = packetbuffer.readVarIntFromBuffer();
 
-                    if (p_decode_2_.readableBytes() < var7) {
-                        p_decode_2_.resetReaderIndex();
+                    if (p_decode_2_.readableBytes() >= j)
+                    {
+                        p_decode_3_.add(p_decode_2_.readBytes(j));
                         return;
                     }
 
-                    p_decode_3_.add(p_decode_2_.readBytes(var7));
+                    p_decode_2_.resetReaderIndex();
                 }
-                finally {
-                    var6.release();
+                finally
+                {
+                    packetbuffer.release();
                 }
 
                 return;

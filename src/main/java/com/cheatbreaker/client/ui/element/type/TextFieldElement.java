@@ -2,12 +2,11 @@ package com.cheatbreaker.client.ui.element.type;
 
 import com.cheatbreaker.client.CheatBreaker;
 import com.cheatbreaker.client.config.GlobalSettings;
-import com.cheatbreaker.client.module.AbstractModule;
 import com.cheatbreaker.client.module.data.Setting;
 import com.cheatbreaker.client.ui.element.AbstractModulesGuiElement;
 import com.cheatbreaker.client.ui.element.module.ModulesGuiButtonElement;
 import com.cheatbreaker.client.ui.module.HudLayoutEditorGui;
-import com.cheatbreaker.client.ui.module.InputFieldElementPromptGui;
+import com.cheatbreaker.client.ui.module.setting.InputFieldElementPromptGui;
 import com.cheatbreaker.client.ui.theme.CBTheme;
 import lombok.Getter;
 import net.minecraft.client.Minecraft;
@@ -19,7 +18,8 @@ import org.lwjgl.input.Mouse;
 
 public class TextFieldElement extends AbstractModulesGuiElement {
 
-    @Getter private final ModulesGuiButtonElement keybindButton;
+    @Getter
+    private final ModulesGuiButtonElement keybindButton;
     private boolean usingKeybind = false;
     private boolean showKeybind = false;
     @Getter private final InputFieldElement textInputBar;
@@ -29,10 +29,10 @@ public class TextFieldElement extends AbstractModulesGuiElement {
         this.setting = setting;
         this.textInputBar = new InputFieldElement(CheatBreaker.getInstance().playBold18px, this.setting.getValue().toString(), 0, 0);
         this.textInputBar.setMaxStringLength(256);
-        this.keybindButton = new ModulesGuiButtonElement(CheatBreaker.getInstance().playBold18px, null, setting.isHasMouseBind() ? "Button " + (setting.getKeyCode() + 1) : Keyboard.getKeyName(setting.getKeyCode()), this.x + this.width - 100, this.y, 50, 18, -9442858, scale);
+        this.keybindButton = new ModulesGuiButtonElement(CheatBreaker.getInstance().playBold18px, null, setting.isHasMouseBind() ? "Button " + (setting.getKeyCode() + 1) : Keyboard.getKeyName(setting.getKeyCode()), this.x + this.width - 100, this.y, 50, 18, -9442858, scale, false);
         this.height = 18;
 
-        if (setting.getSettingName().startsWith("Hotkey")) {
+        if (setting.getSettingName().startsWith("Hot key")) {
             this.showKeybind = true;
         }
     }
@@ -45,7 +45,7 @@ public class TextFieldElement extends AbstractModulesGuiElement {
     @Override
     public void handleDrawElement(int mouseX, int mouseY, float partialTicks) {
         if (this.usingKeybind && this.showKeybind && Keyboard.getEventKeyState()) {
-            Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.func_147674_a(new ResourceLocation("gui.button.press"), 1.0f));
+            Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("gui.button.press"), 1.0f));
             CheatBreaker.getInstance().getModuleManager().autoTextMod.setActiveKeybindName(this.setting.getSettingName());
 
             for (Setting setting : CheatBreaker.getInstance().getModuleManager().autoTextMod.hotkeys) {
@@ -75,7 +75,7 @@ public class TextFieldElement extends AbstractModulesGuiElement {
         }
 
         if (this.usingKeybind && this.showKeybind && Mouse.getEventButton() != 0 && Mouse.getEventButtonState()) {
-            Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.func_147674_a(new ResourceLocation("gui.button.press"), 1.0f));
+            Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("gui.button.press"), 1.0f));
             CheatBreaker.getInstance().getModuleManager().autoTextMod.setActiveKeybindName(this.setting.getSettingName());
 
             for (Setting setting : CheatBreaker.getInstance().getModuleManager().autoTextMod.hotkeys) {
@@ -174,7 +174,7 @@ public class TextFieldElement extends AbstractModulesGuiElement {
 
             CheatBreaker.getInstance().getModuleManager().autoTextMod.setActiveKeybindName(this.setting.getSettingName());
 
-            Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.func_147674_a(new ResourceLocation("gui.button.press"), 1.0f));
+            Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("gui.button.press"), 1.0f));
             this.usingKeybind = true;
             this.keybindButton.optionString = "<PRESS ANY KEY>";
         }
@@ -182,7 +182,7 @@ public class TextFieldElement extends AbstractModulesGuiElement {
         boolean hoveringOnTextElement = (float) mouseX > (float) this.x * this.scale && (float) mouseX < (float) (this.x + this.width - (showKeybind ? 120 : 40)) * this.scale && (float) mouseY > (float) (this.y + this.yOffset) * this.scale && (float) mouseY < (float) (this.y + 18 + this.yOffset) * this.scale;
         if (hoveringOnTextElement) {
             Minecraft.getMinecraft().displayGuiScreen(new InputFieldElementPromptGui(this.setting, HudLayoutEditorGui.instance, this.scale));
-            Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.func_147674_a(new ResourceLocation("gui.button.press"), 1.0f));
+            Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("gui.button.press"), 1.0f));
         }
     }
 }

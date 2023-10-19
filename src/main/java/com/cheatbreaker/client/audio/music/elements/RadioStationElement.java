@@ -1,24 +1,24 @@
 package com.cheatbreaker.client.audio.music.elements;
 
-import com.cheatbreaker.client.*;
+import com.cheatbreaker.client.CheatBreaker;
 import com.cheatbreaker.client.audio.music.data.Station;
 import com.cheatbreaker.client.audio.music.util.DashUtil;
 import com.cheatbreaker.client.ui.mainmenu.AbstractElement;
 import com.cheatbreaker.client.ui.util.RenderUtil;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.util.ResourceLocation;
 import org.lwjgl.opengl.GL11;
 
+@RequiredArgsConstructor
 public class RadioStationElement extends AbstractElement {
-    private final Station station;
-    private final ResourceLocation starIcon = new ResourceLocation("client/icons/star-21.png");
-    private final ResourceLocation starFilledIcon = new ResourceLocation("client/icons/star-filled-21.png");
     private final RadioElement parent;
+    @Getter private final Station station;
 
-    public RadioStationElement(RadioElement radioElement, Station station) {
-        this.parent = radioElement;
-        this.station = station;
-    }
+    // KEEP THESE UNFINALIZED.
+    private ResourceLocation starIcon = new ResourceLocation("client/icons/star-21.png");
+    private ResourceLocation starFilledIcon = new ResourceLocation("client/icons/star-filled-21.png");
 
     @Override
     protected void handleElementDraw(float f, float f2, boolean bl) {
@@ -53,7 +53,7 @@ public class RadioStationElement extends AbstractElement {
             this.parent.updateElementSize();
             return true;
         }
-                if (this.isMouseInside(f, f2) && bl) {
+        if (this.isMouseInside(f, f2) && bl) {
             if (DashUtil.isActive()) {
                 DashUtil.end();
             }
@@ -62,9 +62,5 @@ public class RadioStationElement extends AbstractElement {
             CheatBreaker.getInstance().getDashManager().setCurrentStation(this.station);
         }
         return false;
-    }
-
-    public Station getStation() {
-        return this.station;
     }
 }

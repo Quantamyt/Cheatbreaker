@@ -1,84 +1,68 @@
 package net.minecraft.network.play.server;
 
 import java.io.IOException;
-import net.minecraft.network.INetHandler;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayClient;
+import net.minecraft.util.BlockPos;
 
-public class S28PacketEffect extends Packet {
-    private int field_149251_a;
-    private int field_149249_b;
-    private int field_149250_c;
-    private int field_149247_d;
-    private int field_149248_e;
-    private boolean field_149246_f;
+public class S28PacketEffect implements Packet<INetHandlerPlayClient>
+{
+    private int soundType;
+    private BlockPos soundPos;
+    private int soundData;
+    private boolean serverWide;
 
-
-    public S28PacketEffect() {}
-
-    public S28PacketEffect(int p_i45198_1_, int p_i45198_2_, int p_i45198_3_, int p_i45198_4_, int p_i45198_5_, boolean p_i45198_6_) {
-        this.field_149251_a = p_i45198_1_;
-        this.field_149250_c = p_i45198_2_;
-        this.field_149247_d = p_i45198_3_;
-        this.field_149248_e = p_i45198_4_;
-        this.field_149249_b = p_i45198_5_;
-        this.field_149246_f = p_i45198_6_;
+    public S28PacketEffect()
+    {
     }
 
-    /**
-     * Reads the raw packet data from the data stream.
-     */
-    public void readPacketData(PacketBuffer p_148837_1_) throws IOException {
-        this.field_149251_a = p_148837_1_.readInt();
-        this.field_149250_c = p_148837_1_.readInt();
-        this.field_149247_d = p_148837_1_.readByte() & 255;
-        this.field_149248_e = p_148837_1_.readInt();
-        this.field_149249_b = p_148837_1_.readInt();
-        this.field_149246_f = p_148837_1_.readBoolean();
+    public S28PacketEffect(int soundTypeIn, BlockPos soundPosIn, int soundDataIn, boolean serverWideIn)
+    {
+        this.soundType = soundTypeIn;
+        this.soundPos = soundPosIn;
+        this.soundData = soundDataIn;
+        this.serverWide = serverWideIn;
     }
 
-    /**
-     * Writes the raw packet data to the data stream.
-     */
-    public void writePacketData(PacketBuffer p_148840_1_) throws IOException {
-        p_148840_1_.writeInt(this.field_149251_a);
-        p_148840_1_.writeInt(this.field_149250_c);
-        p_148840_1_.writeByte(this.field_149247_d & 255);
-        p_148840_1_.writeInt(this.field_149248_e);
-        p_148840_1_.writeInt(this.field_149249_b);
-        p_148840_1_.writeBoolean(this.field_149246_f);
+    public void readPacketData(PacketBuffer buf) throws IOException
+    {
+        this.soundType = buf.readInt();
+        this.soundPos = buf.readBlockPos();
+        this.soundData = buf.readInt();
+        this.serverWide = buf.readBoolean();
     }
 
-    public void processPacket(INetHandlerPlayClient p_148833_1_) {
-        p_148833_1_.handleEffect(this);
+    public void writePacketData(PacketBuffer buf) throws IOException
+    {
+        buf.writeInt(this.soundType);
+        buf.writeBlockPos(this.soundPos);
+        buf.writeInt(this.soundData);
+        buf.writeBoolean(this.serverWide);
     }
 
-    public boolean func_149244_c() {
-        return this.field_149246_f;
+    public void processPacket(INetHandlerPlayClient handler)
+    {
+        handler.handleEffect(this);
     }
 
-    public int func_149242_d() {
-        return this.field_149251_a;
+    public boolean isSoundServerwide()
+    {
+        return this.serverWide;
     }
 
-    public int func_149241_e() {
-        return this.field_149249_b;
+    public int getSoundType()
+    {
+        return this.soundType;
     }
 
-    public int func_149240_f() {
-        return this.field_149250_c;
+    public int getSoundData()
+    {
+        return this.soundData;
     }
 
-    public int func_149243_g() {
-        return this.field_149247_d;
-    }
-
-    public int func_149239_h() {
-        return this.field_149248_e;
-    }
-
-    public void processPacket(INetHandler p_148833_1_) {
-        this.processPacket((INetHandlerPlayClient)p_148833_1_);
+    public BlockPos getSoundPos()
+    {
+        return this.soundPos;
     }
 }

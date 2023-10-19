@@ -3,26 +3,25 @@ package net.minecraft.entity.ai.attributes;
 import java.util.Collection;
 import java.util.UUID;
 
-public interface IAttributeInstance {
-    /**
-     * Get the Attribute this is an instance of
-     */
+public interface IAttributeInstance
+{
     IAttribute getAttribute();
 
     double getBaseValue();
 
-    void setBaseValue(double p_111128_1_);
+    void setBaseValue(double baseValue);
 
-    Collection func_111122_c();
+    Collection<AttributeModifier> getModifiersByOperation(int operation);
 
-    /**
-     * Returns attribute modifier, if any, by the given UUID
-     */
-    AttributeModifier getModifier(UUID p_111127_1_);
+    Collection<AttributeModifier> func_111122_c();
 
-    void applyModifier(AttributeModifier p_111121_1_);
+    boolean hasModifier(AttributeModifier modifier);
 
-    void removeModifier(AttributeModifier p_111124_1_);
+    AttributeModifier getModifier(UUID uuid);
+
+    void applyModifier(AttributeModifier modifier);
+
+    void removeModifier(AttributeModifier modifier);
 
     void removeAllModifiers();
 

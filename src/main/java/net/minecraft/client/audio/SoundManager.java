@@ -1,22 +1,8 @@
 package net.minecraft.client.audio;
 
-import com.google.common.collect.BiMap;
-import com.google.common.collect.HashBiMap;
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Multimap;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLConnection;
-import java.net.URLStreamHandler;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.Map.Entry;
+import com.cheatbreaker.client.CheatBreaker;
+import com.google.common.collect.*;
+import io.netty.util.internal.ThreadLocalRandom;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.settings.GameSettings;
 import net.minecraft.entity.player.EntityPlayer;
@@ -26,281 +12,380 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
-import paulscode.sound.SoundSystem;
-import paulscode.sound.SoundSystemConfig;
-import paulscode.sound.SoundSystemException;
-import paulscode.sound.Source;
+import paulscode.sound.*;
 import paulscode.sound.codecs.CodecJOrbis;
 import paulscode.sound.libraries.LibraryLWJGLOpenAL;
 
-public class SoundManager {
-    private static final Marker field_148623_a = MarkerManager.getMarker("SOUNDS");
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.net.URLStreamHandler;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.UUID;
+
+public class SoundManager
+{
+    private static final Marker LOG_MARKER = MarkerManager.getMarker("SOUNDS");
     private static final Logger logger = LogManager.getLogger();
-    private final SoundHandler field_148622_c;
-    private final GameSettings field_148619_d;
-    public SoundManager.SoundSystemStarterThread field_148620_e;
-    private boolean field_148617_f;
-    private int field_148618_g = 0;
-    private final Map field_148629_h = HashBiMap.create();
-    private final Map field_148630_i;
-    private final Map field_148627_j;
-    private final Multimap field_148628_k;
-    private final List field_148625_l;
-    private final Map field_148626_m;
-    private final Map field_148624_n;
+    private final SoundHandler sndHandler;
+    private final GameSettings options;
+    private SoundManager.SoundSystemStarterThread sndSystem;
+    private boolean loaded;
+    private int playTime = 0;
+    private final Map<String, ISound> playingSounds = HashBiMap.<String, ISound>create();
+    private final Map<ISound, String> invPlayingSounds;
+    private Map<ISound, SoundPoolEntry> playingSoundPoolEntries;
+    private final Multimap<SoundCategory, String> categorySounds;
+    private final List<ITickableSound> tickableSounds;
+    private final Map<ISound, Integer> delayedSounds;
+    private final Map<String, Integer> playingSoundsStopTime;
 
     public void playSound(String string, float f) {
-        if (this.field_148617_f) {
+        if (this.loaded) {
             ResourceLocation resourceLocation = new ResourceLocation("client/sound/" + string + ".ogg");
             String string2 = UUID.randomUUID().toString();
-            this.field_148620_e.newStreamingSource(false, string2, func_148612_a(resourceLocation), resourceLocation.toString(), false, 0.0f, 0.0f, 0.0f, 0, SoundSystemConfig.getDefaultRolloff());
-            this.field_148620_e.setPitch(string2, 1.0f);
-            this.field_148620_e.setVolume(string2, 1.0f * f);
-            this.field_148620_e.play(string2);
+            this.sndSystem.newStreamingSource(false, string2, getURLForSoundResource(resourceLocation), resourceLocation.toString(), false, 0.0f, 0.0f, 0.0f, 0, SoundSystemConfig.getDefaultRolloff());
+            this.sndSystem.setPitch(string2, 1.0f);
+            this.sndSystem.setVolume(string2, 1.0f * f);
+            this.sndSystem.play(string2);
         }
     }
 
+    public SoundManager(SoundHandler p_i45119_1_, GameSettings p_i45119_2_)
+    {
+        this.invPlayingSounds = ((BiMap)this.playingSounds).inverse();
+        this.playingSoundPoolEntries = Maps.<ISound, SoundPoolEntry>newHashMap();
+        this.categorySounds = HashMultimap.<SoundCategory, String>create();
+        this.tickableSounds = Lists.<ITickableSound>newArrayList();
+        this.delayedSounds = Maps.<ISound, Integer>newHashMap();
+        this.playingSoundsStopTime = Maps.<String, Integer>newHashMap();
+        this.sndHandler = p_i45119_1_;
+        this.options = p_i45119_2_;
 
-    public SoundManager(SoundHandler p_i45119_1_, GameSettings p_i45119_2_) {
-        this.field_148630_i = ((BiMap)this.field_148629_h).inverse();
-        this.field_148627_j = Maps.newHashMap();
-        this.field_148628_k = HashMultimap.create();
-        this.field_148625_l = Lists.newArrayList();
-        this.field_148626_m = Maps.newHashMap();
-        this.field_148624_n = Maps.newHashMap();
-        this.field_148622_c = p_i45119_1_;
-        this.field_148619_d = p_i45119_2_;
-
-        try {
+        try
+        {
             SoundSystemConfig.addLibrary(LibraryLWJGLOpenAL.class);
             SoundSystemConfig.setCodec("ogg", CodecJOrbis.class);
-        } catch (SoundSystemException var4) {
-            logger.error(field_148623_a, "Error linking with the LibraryJavaSound plug-in", var4);
+        }
+        catch (SoundSystemException soundsystemexception)
+        {
+            logger.error(LOG_MARKER, (String)"Error linking with the LibraryJavaSound plug-in", (Throwable)soundsystemexception);
         }
     }
 
-    public void func_148596_a() {
-        this.func_148613_b();
-        this.func_148608_i();
+    public void reloadSoundSystem()
+    {
+        this.unloadSoundSystem();
+        this.loadSoundSystem();
     }
 
-    private synchronized void func_148608_i() {
-        if (!this.field_148617_f) {
-            try {
-                (new Thread(new Runnable() {
-
-                    public void run() {
-                        SoundManager.this.field_148620_e = SoundManager.this.new SoundSystemStarterThread(null);
-                        SoundManager.this.field_148617_f = true;
-                        SoundManager.this.field_148620_e.setMasterVolume(SoundManager.this.field_148619_d.getSoundLevel(SoundCategory.MASTER));
-                        SoundManager.logger.info(SoundManager.field_148623_a, "Sound engine started");
+    private synchronized void loadSoundSystem()
+    {
+        if (!this.loaded)
+        {
+            try
+            {
+                (new Thread(new Runnable()
+                {
+                    public void run()
+                    {
+                        SoundSystemConfig.setLogger(new SoundSystemLogger()
+                        {
+                            public void message(String p_message_1_, int p_message_2_)
+                            {
+                                if (!p_message_1_.isEmpty())
+                                {
+                                    SoundManager.logger.info(p_message_1_);
+                                }
+                            }
+                            public void importantMessage(String p_importantMessage_1_, int p_importantMessage_2_)
+                            {
+                                if (!p_importantMessage_1_.isEmpty())
+                                {
+                                    SoundManager.logger.warn(p_importantMessage_1_);
+                                }
+                            }
+                            public void errorMessage(String p_errorMessage_1_, String p_errorMessage_2_, int p_errorMessage_3_)
+                            {
+                                if (!p_errorMessage_2_.isEmpty())
+                                {
+                                    SoundManager.logger.error("Error in class \'" + p_errorMessage_1_ + "\'");
+                                    SoundManager.logger.error(p_errorMessage_2_);
+                                }
+                            }
+                        });
+                        SoundManager.this.sndSystem = SoundManager.this.new SoundSystemStarterThread();
+                        SoundManager.this.loaded = true;
+                        SoundManager.this.sndSystem.setMasterVolume(SoundManager.this.options.getSoundLevel(SoundCategory.MASTER));
+                        SoundManager.logger.info(SoundManager.LOG_MARKER, "Sound engine started");
                     }
                 }, "Sound Library Loader")).start();
-            } catch (RuntimeException var2) {
-                logger.error(field_148623_a, "Error starting SoundSystem. Turning off sounds & music", var2);
-                this.field_148619_d.setSoundLevel(SoundCategory.MASTER, 0.0F);
-                this.field_148619_d.saveOptions();
+            }
+            catch (RuntimeException runtimeexception)
+            {
+                logger.error(LOG_MARKER, (String)"Error starting SoundSystem. Turning off sounds & music", (Throwable)runtimeexception);
+                this.options.setSoundLevel(SoundCategory.MASTER, 0.0F);
+                this.options.saveOptions();
             }
         }
     }
 
-    private float func_148595_a(SoundCategory p_148595_1_) {
-        return p_148595_1_ != null && p_148595_1_ != SoundCategory.MASTER ? this.field_148619_d.getSoundLevel(p_148595_1_) : 1.0F;
+    private float getSoundCategoryVolume(SoundCategory category)
+    {
+        return category != null && category != SoundCategory.MASTER ? this.options.getSoundLevel(category) : 1.0F;
     }
 
-    public void func_148601_a(SoundCategory p_148601_1_, float p_148601_2_) {
-        if (this.field_148617_f) {
-            if (p_148601_1_ == SoundCategory.MASTER) {
-                this.field_148620_e.setMasterVolume(p_148601_2_);
-            } else {
-                Iterator var3 = this.field_148628_k.get(p_148601_1_).iterator();
+    public void setSoundCategoryVolume(SoundCategory category, float volume)
+    {
+        if (this.loaded)
+        {
+            if (category == SoundCategory.MASTER)
+            {
+                this.sndSystem.setMasterVolume(volume);
+            }
+            else
+            {
+                for (String s : this.categorySounds.get(category))
+                {
+                    ISound isound = (ISound)this.playingSounds.get(s);
+                    float f = this.getNormalizedVolume(isound, (SoundPoolEntry)this.playingSoundPoolEntries.get(isound), category);
 
-                while (var3.hasNext()) {
-                    String var4 = (String)var3.next();
-                    ISound var5 = (ISound)this.field_148629_h.get(var4);
-                    float var6 = this.func_148594_a(var5, (SoundPoolEntry)this.field_148627_j.get(var5), p_148601_1_);
-
-                    if (var6 <= 0.0F) {
-                        this.func_148602_b(var5);
-                    } else {
-                        this.field_148620_e.setVolume(var4, var6);
+                    if (f <= 0.0F)
+                    {
+                        this.stopSound(isound);
+                    }
+                    else
+                    {
+                        this.sndSystem.setVolume(s, f);
                     }
                 }
             }
         }
     }
 
-    public void func_148613_b() {
-        if (this.field_148617_f) {
-            this.func_148614_c();
-            this.field_148620_e.cleanup();
-            this.field_148617_f = false;
+    public void unloadSoundSystem()
+    {
+        if (this.loaded)
+        {
+            this.stopAllSounds();
+            this.sndSystem.cleanup();
+            this.loaded = false;
         }
     }
 
-    public void func_148614_c() {
-        if (this.field_148617_f) {
-            Iterator var1 = this.field_148629_h.keySet().iterator();
-
-            while (var1.hasNext()) {
-                String var2 = (String)var1.next();
-                this.field_148620_e.stop(var2);
+    public void stopAllSounds()
+    {
+        if (this.loaded)
+        {
+            for (String s : this.playingSounds.keySet())
+            {
+                this.sndSystem.stop(s);
             }
 
-            this.field_148629_h.clear();
-            this.field_148626_m.clear();
-            this.field_148625_l.clear();
-            this.field_148628_k.clear();
-            this.field_148627_j.clear();
-            this.field_148624_n.clear();
+            this.playingSounds.clear();
+            this.delayedSounds.clear();
+            this.tickableSounds.clear();
+            this.categorySounds.clear();
+            this.playingSoundPoolEntries.clear();
+            this.playingSoundsStopTime.clear();
         }
     }
 
-    public void func_148605_d() {
-        ++this.field_148618_g;
-        Iterator var1 = this.field_148625_l.iterator();
-        String var3;
+    public void updateAllSounds()
+    {
+        ++this.playTime;
 
-        while (var1.hasNext()) {
-            ITickableSound var2 = (ITickableSound)var1.next();
-            var2.update();
+        for (ITickableSound itickablesound : this.tickableSounds)
+        {
+            itickablesound.update();
 
-            if (var2.func_147667_k()) {
-                this.func_148602_b(var2);
-            } else {
-                var3 = (String)this.field_148630_i.get(var2);
-                this.field_148620_e.setVolume(var3, this.func_148594_a(var2, (SoundPoolEntry)this.field_148627_j.get(var2), this.field_148622_c.func_147680_a(var2.func_147650_b()).func_148728_d()));
-                this.field_148620_e.setPitch(var3, this.func_148606_a(var2, (SoundPoolEntry)this.field_148627_j.get(var2)));
-                this.field_148620_e.setPosition(var3, var2.func_147649_g(), var2.func_147654_h(), var2.func_147651_i());
+            if (itickablesound.isDonePlaying())
+            {
+                this.stopSound(itickablesound);
+            }
+            else
+            {
+                String s = (String)this.invPlayingSounds.get(itickablesound);
+                this.sndSystem.setVolume(s, this.getNormalizedVolume(itickablesound, (SoundPoolEntry)this.playingSoundPoolEntries.get(itickablesound), this.sndHandler.getSound(itickablesound.getSoundLocation()).getSoundCategory()));
+                this.sndSystem.setPitch(s, this.getNormalizedPitch(itickablesound, (SoundPoolEntry)this.playingSoundPoolEntries.get(itickablesound)));
+                this.sndSystem.setPosition(s, itickablesound.getXPosF(), itickablesound.getYPosF(), itickablesound.getZPosF());
             }
         }
 
-        var1 = this.field_148629_h.entrySet().iterator();
-        ISound var4;
+        Iterator<Entry<String, ISound>> iterator = this.playingSounds.entrySet().iterator();
 
-        while (var1.hasNext()) {
-            Entry var9 = (Entry)var1.next();
-            var3 = (String)var9.getKey();
-            var4 = (ISound)var9.getValue();
+        while (iterator.hasNext())
+        {
+            Entry<String, ISound> entry = (Entry)iterator.next();
+            String s1 = (String)entry.getKey();
+            ISound isound = (ISound)entry.getValue();
 
-            if (!this.field_148620_e.playing(var3)) {
-                int var5 = ((Integer)this.field_148624_n.get(var3)).intValue();
+            if (!this.sndSystem.playing(s1))
+            {
+                int i = ((Integer)this.playingSoundsStopTime.get(s1)).intValue();
 
-                if (var5 <= this.field_148618_g) {
-                    int var6 = var4.func_147652_d();
+                if (i <= this.playTime)
+                {
+                    int j = isound.getRepeatDelay();
 
-                    if (var4.func_147657_c() && var6 > 0) {
-                        this.field_148626_m.put(var4, Integer.valueOf(this.field_148618_g + var6));
+                    if (isound.canRepeat() && j > 0)
+                    {
+                        this.delayedSounds.put(isound, Integer.valueOf(this.playTime + j));
                     }
 
-                    var1.remove();
-                    logger.debug(field_148623_a, "Removed channel {} because it's not playing anymore", var3);
-                    this.field_148620_e.removeSource(var3);
-                    this.field_148624_n.remove(var3);
-                    this.field_148627_j.remove(var4);
+                    iterator.remove();
+                    logger.debug(LOG_MARKER, "Removed channel {} because it\'s not playing anymore", new Object[] {s1});
+                    this.sndSystem.removeSource(s1);
+                    this.playingSoundsStopTime.remove(s1);
+                    this.playingSoundPoolEntries.remove(isound);
 
-                    try {
-                        this.field_148628_k.remove(this.field_148622_c.func_147680_a(var4.func_147650_b()).func_148728_d(), var3);
-                    } catch (RuntimeException var8) {
+                    try
+                    {
+                        this.categorySounds.remove(this.sndHandler.getSound(isound.getSoundLocation()).getSoundCategory(), s1);
+                    }
+                    catch (RuntimeException var8)
+                    {
+                        ;
                     }
 
-                    if (var4 instanceof ITickableSound) {
-                        this.field_148625_l.remove(var4);
+                    if (isound instanceof ITickableSound)
+                    {
+                        this.tickableSounds.remove(isound);
                     }
                 }
             }
         }
 
-        Iterator var10 = this.field_148626_m.entrySet().iterator();
+        Iterator<Entry<ISound, Integer>> iterator1 = this.delayedSounds.entrySet().iterator();
 
-        while (var10.hasNext()) {
-            Entry var11 = (Entry)var10.next();
+        while (iterator1.hasNext())
+        {
+            Entry<ISound, Integer> entry1 = (Entry)iterator1.next();
 
-            if (this.field_148618_g >= ((Integer)var11.getValue()).intValue()) {
-                var4 = (ISound)var11.getKey();
+            if (this.playTime >= ((Integer)entry1.getValue()).intValue())
+            {
+                ISound isound1 = (ISound)entry1.getKey();
 
-                if (var4 instanceof ITickableSound) {
-                    ((ITickableSound)var4).update();
+                if (isound1 instanceof ITickableSound)
+                {
+                    ((ITickableSound)isound1).update();
                 }
 
-                this.func_148611_c(var4);
-                var10.remove();
+                this.playSound(isound1);
+                iterator1.remove();
             }
         }
     }
 
-    public boolean func_148597_a(ISound p_148597_1_) {
-        if (!this.field_148617_f) {
+    public boolean isSoundPlaying(ISound sound)
+    {
+        if (!this.loaded)
+        {
             return false;
-        } else {
-            String var2 = (String)this.field_148630_i.get(p_148597_1_);
-            return var2 != null && (this.field_148620_e.playing(var2) || this.field_148624_n.containsKey(var2) && ((Integer) this.field_148624_n.get(var2)).intValue() <= this.field_148618_g);
+        }
+        else
+        {
+            String s = (String)this.invPlayingSounds.get(sound);
+            return s == null ? false : this.sndSystem.playing(s) || this.playingSoundsStopTime.containsKey(s) && ((Integer)this.playingSoundsStopTime.get(s)).intValue() <= this.playTime;
         }
     }
 
-    public void func_148602_b(ISound p_148602_1_) {
-        if (this.field_148617_f) {
-            String var2 = (String)this.field_148630_i.get(p_148602_1_);
+    public void stopSound(ISound sound)
+    {
+        if (this.loaded)
+        {
+            String s = (String)this.invPlayingSounds.get(sound);
 
-            if (var2 != null) {
-                this.field_148620_e.stop(var2);
+            if (s != null)
+            {
+                this.sndSystem.stop(s);
             }
         }
     }
 
-    public void func_148611_c(ISound p_148611_1_) {
-        if (this.field_148617_f) {
-            if (this.field_148620_e.getMasterVolume() <= 0.0F) {
-                logger.debug(field_148623_a, "Skipped playing soundEvent: {}, master volume was zero", p_148611_1_.func_147650_b());
-            } else {
-                SoundEventAccessorComposite var2 = this.field_148622_c.func_147680_a(p_148611_1_.func_147650_b());
+    public void playSound(ISound p_sound)
+    {
+        if (this.loaded)
+        {
+            if (this.sndSystem.getMasterVolume() <= 0.0F)
+            {
+                logger.debug(LOG_MARKER, "Skipped playing soundEvent: {}, master volume was zero", new Object[] {p_sound.getSoundLocation()});
+            }
+            else
+            {
+                SoundEventAccessorComposite soundeventaccessorcomposite = this.sndHandler.getSound(p_sound.getSoundLocation());
 
-                if (var2 == null) {
-                    logger.warn(field_148623_a, "Unable to play unknown soundEvent: {}", p_148611_1_.func_147650_b());
-                } else {
-                    SoundPoolEntry var3 = var2.func_148720_g();
+                if (soundeventaccessorcomposite == null && !p_sound.getSoundLocation().toString().equals("none"))
+                {
+                    logger.warn(LOG_MARKER, "Unable to play unknown soundEvent: {}", p_sound.getSoundLocation());
+                }
+                else
+                {
+                    SoundPoolEntry soundpoolentry = soundeventaccessorcomposite.cloneEntry();
 
-                    if (var3 == SoundHandler.field_147700_a) {
-                        logger.warn(field_148623_a, "Unable to play empty soundEvent: {}", var2.func_148729_c());
-                    } else {
-                        float var4 = p_148611_1_.func_147653_e();
-                        float var5 = 16.0F;
+                    if (soundpoolentry == SoundHandler.missing_sound)
+                    {
+                        logger.warn(LOG_MARKER, "Unable to play empty soundEvent: {}", new Object[] {soundeventaccessorcomposite.getSoundEventLocation()});
+                    }
+                    else
+                    {
+                        float f = p_sound.getVolume();
+                        float f1 = 16.0F;
 
-                        if (var4 > 1.0F) {
-                            var5 *= var4;
+                        if (f > 1.0F)
+                        {
+                            f1 *= f;
                         }
 
-                        SoundCategory var6 = var2.func_148728_d();
-                        float var7 = this.func_148594_a(p_148611_1_, var3, var6);
-                        double var8 = this.func_148606_a(p_148611_1_, var3);
-                        ResourceLocation var10 = var3.func_148652_a();
+                        SoundCategory soundcategory = soundeventaccessorcomposite.getSoundCategory();
+                        float f2 = this.getNormalizedVolume(p_sound, soundpoolentry, soundcategory);
+                        double d0 = (double)this.getNormalizedPitch(p_sound, soundpoolentry);
+                        ResourceLocation resourcelocation = soundpoolentry.getSoundPoolEntryLocation();
 
-                        if (var7 == 0.0F) {
-                            logger.debug(field_148623_a, "Skipped playing sound {}, volume was zero.", var10);
-                        } else {
-                            boolean var11 = p_148611_1_.func_147657_c() && p_148611_1_.func_147652_d() == 0;
-                            String var12 = UUID.randomUUID().toString();
+                        if (f2 == 0.0F)
+                        {
+                            logger.debug(LOG_MARKER, "Skipped playing sound {}, volume was zero.", new Object[] {resourcelocation});
+                        }
+                        else
+                        {
+                            boolean flag = p_sound.canRepeat() && p_sound.getRepeatDelay() == 0;
+                            String s = MathHelper.getRandomUuid(ThreadLocalRandom.current()).toString();
 
-                            if (var3.func_148648_d()) {
-                                this.field_148620_e.newStreamingSource(false, var12, func_148612_a(var10), var10.toString(), var11, p_148611_1_.func_147649_g(), p_148611_1_.func_147654_h(), p_148611_1_.func_147651_i(), p_148611_1_.func_147656_j().func_148586_a(), var5);
-                            } else {
-                                this.field_148620_e.newSource(false, var12, func_148612_a(var10), var10.toString(), var11, p_148611_1_.func_147649_g(), p_148611_1_.func_147654_h(), p_148611_1_.func_147651_i(), p_148611_1_.func_147656_j().func_148586_a(), var5);
+                            if (soundpoolentry.isStreamingSound())
+                            {
+                                this.sndSystem.newStreamingSource(false, s, getURLForSoundResource(resourcelocation), resourcelocation.toString(), flag, p_sound.getXPosF(), p_sound.getYPosF(), p_sound.getZPosF(), p_sound.getAttenuationType().getTypeInt(), f1);
+                            }
+                            else
+                            {
+                                this.sndSystem.newSource(false, s, getURLForSoundResource(resourcelocation), resourcelocation.toString(), flag, p_sound.getXPosF(), p_sound.getYPosF(), p_sound.getZPosF(), p_sound.getAttenuationType().getTypeInt(), f1);
                             }
 
-                            logger.debug(field_148623_a, "Playing sound {} for event {} as channel {}", var3.func_148652_a(), var2.func_148729_c(), var12);
-                            this.field_148620_e.setPitch(var12, (float)var8);
-                            this.field_148620_e.setVolume(var12, var7);
-                            this.field_148620_e.play(var12);
-                            this.field_148624_n.put(var12, Integer.valueOf(this.field_148618_g + 20));
-                            this.field_148629_h.put(var12, p_148611_1_);
-                            this.field_148627_j.put(p_148611_1_, var3);
+                            logger.debug(LOG_MARKER, "Playing sound {} for event {} as channel {}", new Object[] {soundpoolentry.getSoundPoolEntryLocation(), soundeventaccessorcomposite.getSoundEventLocation(), s});
+                            this.sndSystem.setPitch(s, (float)d0);
+                            this.sndSystem.setVolume(s, f2);
+                            this.sndSystem.play(s);
+                            this.playingSoundsStopTime.put(s, Integer.valueOf(this.playTime + 20));
+                            this.playingSounds.put(s, p_sound);
 
-                            if (var6 != SoundCategory.MASTER) {
-                                this.field_148628_k.put(var6, var12);
+                            CheatBreaker.getInstance().getModuleManager().hearingAssistance.setCurrentSound(p_sound.getSoundLocation().getResourcePath().replaceAll("minecraft:", ""));
+                            CheatBreaker.getInstance().getModuleManager().hearingAssistance.setLastUpdated(System.currentTimeMillis());
+                            this.playingSoundPoolEntries.put(p_sound, soundpoolentry);
+
+
+
+                            if (soundcategory != SoundCategory.MASTER)
+                            {
+                                this.categorySounds.put(soundcategory, s);
                             }
 
-                            if (p_148611_1_ instanceof ITickableSound) {
-                                this.field_148625_l.add(p_148611_1_);
+                            if (p_sound instanceof ITickableSound)
+                            {
+                                this.tickableSounds.add((ITickableSound)p_sound);
                             }
                         }
                     }
@@ -309,102 +394,113 @@ public class SoundManager {
         }
     }
 
-    private float func_148606_a(ISound p_148606_1_, SoundPoolEntry p_148606_2_) {
-        return (float)MathHelper.clamp_double((double)p_148606_1_.func_147655_f() * p_148606_2_.func_148650_b(), 0.5D, 2.0D);
+    private float getNormalizedPitch(ISound sound, SoundPoolEntry entry)
+    {
+        return (float)MathHelper.clamp_double((double)sound.getPitch() * entry.getPitch(), 0.5D, 2.0D);
     }
 
-    private float func_148594_a(ISound p_148594_1_, SoundPoolEntry p_148594_2_, SoundCategory p_148594_3_) {
-        return (float)MathHelper.clamp_double((double)p_148594_1_.func_147653_e() * p_148594_2_.func_148649_c() * (double)this.func_148595_a(p_148594_3_), 0.0D, 1.0D);
+    private float getNormalizedVolume(ISound sound, SoundPoolEntry entry, SoundCategory category)
+    {
+        return (float)MathHelper.clamp_double((double)sound.getVolume() * entry.getVolume(), 0.0D, 1.0D) * this.getSoundCategoryVolume(category);
     }
 
-    public void func_148610_e() {
-        Iterator var1 = this.field_148629_h.keySet().iterator();
-
-        while (var1.hasNext()) {
-            String var2 = (String)var1.next();
-            logger.debug(field_148623_a, "Pausing channel {}", var2);
-            this.field_148620_e.pause(var2);
+    public void pauseAllSounds()
+    {
+        for (String s : this.playingSounds.keySet())
+        {
+            logger.debug(LOG_MARKER, "Pausing channel {}", new Object[] {s});
+            this.sndSystem.pause(s);
         }
     }
 
-    public void func_148604_f() {
-        Iterator var1 = this.field_148629_h.keySet().iterator();
-
-        while (var1.hasNext()) {
-            String var2 = (String)var1.next();
-            logger.debug(field_148623_a, "Resuming channel {}", var2);
-            this.field_148620_e.play(var2);
+    public void resumeAllSounds()
+    {
+        for (String s : this.playingSounds.keySet())
+        {
+            logger.debug(LOG_MARKER, "Resuming channel {}", new Object[] {s});
+            this.sndSystem.play(s);
         }
     }
 
-    public void func_148599_a(ISound p_148599_1_, int p_148599_2_) {
-        this.field_148626_m.put(p_148599_1_, Integer.valueOf(this.field_148618_g + p_148599_2_));
+    public void playDelayedSound(ISound sound, int delay)
+    {
+        this.delayedSounds.put(sound, Integer.valueOf(this.playTime + delay));
     }
 
-    private static URL func_148612_a(final ResourceLocation p_148612_0_) {
-        String var1 = String.format("%s:%s:%s", "mcsounddomain", p_148612_0_.getResourceDomain(), p_148612_0_.getResourcePath());
-        URLStreamHandler var2 = new URLStreamHandler() {
-
-            protected URLConnection openConnection(final URL p_openConnection_1_) {
-                return new URLConnection(p_openConnection_1_) {
-
-                    public void connect() {}
-                    public InputStream getInputStream() throws IOException {
+    private static URL getURLForSoundResource(final ResourceLocation p_148612_0_)
+    {
+        String s = String.format("%s:%s:%s", new Object[] {"mcsounddomain", p_148612_0_.getResourceDomain(), p_148612_0_.getResourcePath()});
+        URLStreamHandler urlstreamhandler = new URLStreamHandler()
+        {
+            protected URLConnection openConnection(final URL p_openConnection_1_)
+            {
+                return new URLConnection(p_openConnection_1_)
+                {
+                    public void connect() throws IOException
+                    {
+                    }
+                    public InputStream getInputStream() throws IOException
+                    {
                         return Minecraft.getMinecraft().getResourceManager().getResource(p_148612_0_).getInputStream();
                     }
                 };
             }
         };
 
-        try {
-            return new URL(null, var1, var2);
-        } catch (MalformedURLException var4) {
+        try
+        {
+            return new URL((URL)null, s, urlstreamhandler);
+        }
+        catch (MalformedURLException var4)
+        {
             throw new Error("TODO: Sanely handle url exception! :D");
         }
     }
 
-    public void func_148615_a(EntityPlayer p_148615_1_, float p_148615_2_) {
-        if (this.field_148617_f && p_148615_1_ != null) {
-            float var3 = p_148615_1_.prevRotationPitch + (p_148615_1_.rotationPitch - p_148615_1_.prevRotationPitch) * p_148615_2_;
-            float var4 = p_148615_1_.prevRotationYaw + (p_148615_1_.rotationYaw - p_148615_1_.prevRotationYaw) * p_148615_2_;
-            double var5 = p_148615_1_.prevPosX + (p_148615_1_.posX - p_148615_1_.prevPosX) * (double)p_148615_2_;
-            double var7 = p_148615_1_.prevPosY + (p_148615_1_.posY - p_148615_1_.prevPosY) * (double)p_148615_2_;
-            double var9 = p_148615_1_.prevPosZ + (p_148615_1_.posZ - p_148615_1_.prevPosZ) * (double)p_148615_2_;
-            float var11 = MathHelper.cos((var4 + 90.0F) * 0.017453292F);
-            float var12 = MathHelper.sin((var4 + 90.0F) * 0.017453292F);
-            float var13 = MathHelper.cos(-var3 * 0.017453292F);
-            float var14 = MathHelper.sin(-var3 * 0.017453292F);
-            float var15 = MathHelper.cos((-var3 + 90.0F) * 0.017453292F);
-            float var16 = MathHelper.sin((-var3 + 90.0F) * 0.017453292F);
-            float var17 = var11 * var13;
-            float var19 = var12 * var13;
-            float var20 = var11 * var15;
-            float var22 = var12 * var15;
-            this.field_148620_e.setListenerPosition((float)var5, (float)var7, (float)var9);
-            this.field_148620_e.setListenerOrientation(var17, var14, var19, var20, var16, var22);
+    public void setListener(EntityPlayer player, float p_148615_2_)
+    {
+        if (this.loaded && player != null)
+        {
+            float f = player.prevRotationPitch + (player.rotationPitch - player.prevRotationPitch) * p_148615_2_;
+            float f1 = player.prevRotationYaw + (player.rotationYaw - player.prevRotationYaw) * p_148615_2_;
+            double d0 = player.prevPosX + (player.posX - player.prevPosX) * (double)p_148615_2_;
+            double d1 = player.prevPosY + (player.posY - player.prevPosY) * (double)p_148615_2_ + (double)player.getEyeHeight();
+            double d2 = player.prevPosZ + (player.posZ - player.prevPosZ) * (double)p_148615_2_;
+            float f2 = MathHelper.cos((f1 + 90.0F) * 0.017453292F);
+            float f3 = MathHelper.sin((f1 + 90.0F) * 0.017453292F);
+            float f4 = MathHelper.cos(-f * 0.017453292F);
+            float f5 = MathHelper.sin(-f * 0.017453292F);
+            float f6 = MathHelper.cos((-f + 90.0F) * 0.017453292F);
+            float f7 = MathHelper.sin((-f + 90.0F) * 0.017453292F);
+            float f8 = f2 * f4;
+            float f9 = f3 * f4;
+            float f10 = f2 * f6;
+            float f11 = f3 * f6;
+            this.sndSystem.setListenerPosition((float)d0, (float)d1, (float)d2);
+            this.sndSystem.setListenerOrientation(f8, f5, f9, f10, f7, f11);
         }
     }
 
-    class SoundSystemStarterThread extends SoundSystem {
-
-
-        private SoundSystemStarterThread() {}
-
-        public boolean playing(String p_playing_1_) {
-            Object var2 = SoundSystemConfig.THREAD_SYNC;
-
-            synchronized (SoundSystemConfig.THREAD_SYNC) {
-                if (this.soundLibrary == null) {
-                    return false;
-                } else {
-                    Source var3 = this.soundLibrary.getSources().get(p_playing_1_);
-                    return var3 != null && (var3.playing() || var3.paused() || var3.preLoad);
-                }
-            }
+    class SoundSystemStarterThread extends SoundSystem
+    {
+        private SoundSystemStarterThread()
+        {
         }
 
-        SoundSystemStarterThread(Object p_i45118_2_) {
-            this();
+        public boolean playing(String p_playing_1_)
+        {
+            synchronized (SoundSystemConfig.THREAD_SYNC)
+            {
+                if (this.soundLibrary == null)
+                {
+                    return false;
+                }
+                else
+                {
+                    Source source = (Source)this.soundLibrary.getSources().get(p_playing_1_);
+                    return source == null ? false : source.playing() || source.paused() || source.preLoad;
+                }
+            }
         }
     }
 }

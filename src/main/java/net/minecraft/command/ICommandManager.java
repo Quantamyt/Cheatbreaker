@@ -2,22 +2,15 @@ package net.minecraft.command;
 
 import java.util.List;
 import java.util.Map;
+import net.minecraft.util.BlockPos;
 
-public interface ICommandManager {
-    int executeCommand(ICommandSender p_71556_1_, String p_71556_2_);
+public interface ICommandManager
+{
+    int executeCommand(ICommandSender sender, String rawCommand);
 
-    /**
-     * Performs a "begins with" string match on each token in par2. Only returns commands that par1 can use.
-     */
-    List getPossibleCommands(ICommandSender p_71558_1_, String p_71558_2_);
+    List<String> getTabCompletionOptions(ICommandSender sender, String input, BlockPos pos);
 
-    /**
-     * returns all commands that the commandSender can use
-     */
-    List getPossibleCommands(ICommandSender p_71557_1_);
+    List<ICommand> getPossibleCommands(ICommandSender sender);
 
-    /**
-     * returns a map of string to commads. All commands are returned, not just ones which someone has permission to use.
-     */
-    Map getCommands();
+    Map<String, ICommand> getCommands();
 }

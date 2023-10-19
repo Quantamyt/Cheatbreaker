@@ -2,21 +2,26 @@ package com.cheatbreaker.client.module.impl.fixes;
 
 import com.cheatbreaker.client.CheatBreaker;
 import com.cheatbreaker.client.config.GlobalSettings;
-import com.cheatbreaker.client.event.impl.TickEvent;
+import com.cheatbreaker.client.event.impl.tick.TickEvent;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.settings.GameSettings;
 import net.minecraft.client.settings.KeyBinding;
-import net.minecraft.client.Minecraft;
 import org.lwjgl.input.Keyboard;
 
 import java.lang.reflect.Field;
 
-public class ModuleKeybindFix {
+/**
+ * @Module - Keybind Fix
+ * This module allows for keybind persistence in containers, and chat menus.
+ *
+ * This fix can be seen in Vanilla Minecraft 1.12+.
+ */
+public class ModuleKeyBindFix {
     private boolean hadAScreen;
-    private final Minecraft mc;
+    private final Minecraft mc = Minecraft.getMinecraft();
 
-    public ModuleKeybindFix() {
+    public ModuleKeyBindFix() {
         CheatBreaker.getInstance().getEventBus().addEvent(TickEvent.class, this::handleTick);
-        this.mc = Minecraft.getMinecraft();
     }
 
     public void handleTick(TickEvent event) {
@@ -33,7 +38,15 @@ public class ModuleKeybindFix {
                         KeyBinding keyBinding = (KeyBinding) field.get(mc.gameSettings);
                         boolean excludeSneak = !globalSettings.excludeSneakKeybind.getBooleanValue() || !keyBinding.getKeyDescription().equalsIgnoreCase("key.sneak");
                         boolean excludeThrow = !globalSettings.excludeThrowKeybind.getBooleanValue() || !keyBinding.getKeyDescription().equalsIgnoreCase("key.use");
-                        if (!keyBinding.getKeyDescription().equalsIgnoreCase("key.inventory") && !keyBinding.getKeyDescription().equalsIgnoreCase("key.chat") && !keyBinding.getKeyDescription().equalsIgnoreCase("key.command") && excludeSneak && excludeThrow && keyBinding.getKeyCode() > 0 && Keyboard.isKeyDown(keyBinding.getKeyCode())) {
+
+                        if (!keyBinding.getKeyDescription().equalsIgnoreCase("key.inventory")
+                                && !keyBinding.getKeyDescription().equalsIgnoreCase("key.chat")
+                                && !keyBinding.getKeyDescription().equalsIgnoreCase("key.command")
+                                && excludeSneak
+                                && excludeThrow
+                                && keyBinding.getKeyCode() > 0
+                                && Keyboard.isKeyDown(keyBinding.getKeyCode())
+                        ) {
                             KeyBinding.setKeyBindState(keyBinding.getKeyCode(), true);
                             KeyBinding.onTick(keyBinding.getKeyCode());
                         }

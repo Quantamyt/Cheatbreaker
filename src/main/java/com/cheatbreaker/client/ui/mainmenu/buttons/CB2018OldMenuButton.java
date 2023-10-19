@@ -1,8 +1,8 @@
 package com.cheatbreaker.client.ui.mainmenu.buttons;
 
+import com.cheatbreaker.client.ui.fading.ColorFade;
 import com.cheatbreaker.client.ui.fading.MinMaxFade;
 import com.cheatbreaker.client.ui.mainmenu.AbstractElement;
-import com.cheatbreaker.client.ui.fading.ColorFade;
 import net.minecraft.client.gui.Gui;
 
 public class CB2018OldMenuButton extends AbstractElement {

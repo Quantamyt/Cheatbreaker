@@ -1,45 +1,55 @@
 package net.minecraft.client.entity;
 
 import com.cheatbreaker.client.CheatBreaker;
-import com.cheatbreaker.client.module.impl.normal.hud.simple.impl.ModuleToggleSprint;
-import com.cheatbreaker.client.module.impl.normal.perspective.ModulePerspective;
+import com.cheatbreaker.client.cosmetic.Cosmetic;
+import com.cheatbreaker.client.cosmetic.Emote;
+import com.cheatbreaker.client.module.command.ModuleCommand;
+import com.cheatbreaker.client.module.impl.normal.hud.simple.module.SimpleModuleToggleSprint;
+import com.cheatbreaker.client.util.ClientCredits;
 import net.minecraft.MinecraftMovementInputHelper;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.audio.MovingSoundMinecartRiding;
 import net.minecraft.client.audio.PositionedSoundRecord;
-import net.minecraft.client.gui.GuiCommandBlock;
-import net.minecraft.client.gui.GuiEnchantment;
-import net.minecraft.client.gui.GuiHopper;
-import net.minecraft.client.gui.GuiMerchant;
-import net.minecraft.client.gui.GuiRepair;
-import net.minecraft.client.gui.GuiScreenBook;
+import net.minecraft.client.gui.*;
 import net.minecraft.client.gui.inventory.*;
+import net.minecraft.client.network.NetHandlerPlayClient;
 import net.minecraft.client.particle.EntityCrit2FX;
-import net.minecraft.client.particle.EntityPickupFX;
 import net.minecraft.command.server.CommandBlockLogic;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.IMerchant;
-import net.minecraft.entity.SharedMonsterAttributes;
-import net.minecraft.entity.ai.attributes.IAttributeInstance;
-import net.minecraft.entity.item.EntityMinecartHopper;
+import net.minecraft.entity.item.EntityItem;
+import net.minecraft.entity.item.EntityMinecart;
 import net.minecraft.entity.passive.EntityHorse;
 import net.minecraft.init.Items;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.network.play.client.C0BPacketEntityAction;
+import net.minecraft.network.play.client.*;
 import net.minecraft.potion.Potion;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.tileentity.TileEntityBeacon;
-import net.minecraft.tileentity.TileEntityBrewingStand;
-import net.minecraft.tileentity.TileEntityCommandBlock;
-import net.minecraft.tileentity.TileEntityDispenser;
-import net.minecraft.tileentity.TileEntityFurnace;
-import net.minecraft.tileentity.TileEntityHopper;
+import net.minecraft.src.Config;
+import net.minecraft.stats.StatBase;
+import net.minecraft.stats.StatFileWriter;
 import net.minecraft.tileentity.TileEntitySign;
 import net.minecraft.util.*;
+import net.minecraft.world.IInteractionObject;
 import net.minecraft.world.World;
+import org.lwjgl.opengl.Display;
+
+import java.util.UUID;
 
 public class EntityPlayerSP extends AbstractClientPlayer {
+    public final NetHandlerPlayClient sendQueue;
+    private final StatFileWriter statWriter;
+    private double lastReportedPosX;
+    private double lastReportedPosY;
+    private double lastReportedPosZ;
+    private float lastReportedYaw;
+    private float lastReportedPitch;
+    private boolean serverSneakState;
+    private boolean serverSprintState;
+    private int positionUpdateTicks;
+    private boolean hasValidHealth;
+    private String clientBrand;
     public MovementInput movementInput;
     protected Minecraft mc;
 
@@ -50,7 +60,9 @@ public class EntityPlayerSP extends AbstractClientPlayer {
      */
     protected int sprintToggleTimer;
 
-    /** Ticks left before sprinting is disabled. */
+    /**
+     * Ticks left before sprinting is disabled.
+     */
     public int sprintingTicksLeft;
     public float renderArmYaw;
     public float renderArmPitch;
@@ -58,41 +70,493 @@ public class EntityPlayerSP extends AbstractClientPlayer {
     public float prevRenderArmPitch;
     private int horseJumpPowerCounter;
     private float horseJumpPower;
-    private final MouseFilter field_71162_ch = new MouseFilter();
-    private final MouseFilter field_71160_ci = new MouseFilter();
-    private final MouseFilter field_71161_cj = new MouseFilter();
 
-    /** The amount of time an entity has been in a Portal */
+    /**
+     * The amount of time an entity has been in a Portal
+     */
     public float timeInPortal;
 
-    /** The amount of time an entity has been in a Portal the previous tick */
+    /**
+     * The amount of time an entity has been in a Portal the previous tick
+     */
     public float prevTimeInPortal;
 
     private final MinecraftMovementInputHelper minecraftMovementInputHelper;
 
-
-    public EntityPlayerSP(Minecraft p_i1238_1_, World p_i1238_2_, Session p_i1238_3_, int p_i1238_4_) {
-        super(p_i1238_2_, p_i1238_3_.func_148256_e());
+    public EntityPlayerSP(Minecraft mcIn, World worldIn, NetHandlerPlayClient netHandler, StatFileWriter statFile) {
+        super(worldIn, netHandler.getGameProfile());
         this.minecraftMovementInputHelper = new MinecraftMovementInputHelper(Minecraft.getMinecraft().gameSettings);
-        this.mc = p_i1238_1_;
-        this.dimension = p_i1238_4_;
+        this.sendQueue = netHandler;
+        this.statWriter = statFile;
+        this.mc = mcIn;
+        this.dimension = 0;
+    }
+
+    public boolean attackEntityFrom(DamageSource source, float amount) {
+        return false;
+    }
+
+    public void heal(float healAmount) {
+    }
+
+    public void mountEntity(Entity entityIn) {
+        super.mountEntity(entityIn);
+
+        if (entityIn instanceof EntityMinecart) {
+            this.mc.getSoundHandler().playSound(new MovingSoundMinecartRiding(this, (EntityMinecart) entityIn));
+        }
+    }
+
+    public void onUpdate() {
+        if (this.worldObj.isBlockLoaded(new BlockPos(this.posX, 0.0D, this.posZ))) {
+            super.onUpdate();
+
+            if (this.isRiding()) {
+                this.sendQueue.addToSendQueue(new C03PacketPlayer.C05PacketPlayerLook(this.rotationYaw, this.rotationPitch, this.onGround));
+                this.sendQueue.addToSendQueue(new C0CPacketInput(this.moveStrafing, this.moveForward, this.movementInput.jump, this.movementInput.sneak));
+            } else {
+                this.onUpdateWalkingPlayer();
+            }
+        }
+    }
+
+    public void onUpdateWalkingPlayer() {
+        boolean flag = this.isSprinting();
+
+        if (flag != this.serverSprintState) {
+            if (flag) {
+                this.sendQueue.addToSendQueue(new C0BPacketEntityAction(this, C0BPacketEntityAction.Action.START_SPRINTING));
+            } else {
+                this.sendQueue.addToSendQueue(new C0BPacketEntityAction(this, C0BPacketEntityAction.Action.STOP_SPRINTING));
+            }
+
+            this.serverSprintState = flag;
+        }
+
+        boolean flag1 = this.isSneaking();
+
+        if (flag1 != this.serverSneakState) {
+            if (flag1) {
+                this.sendQueue.addToSendQueue(new C0BPacketEntityAction(this, C0BPacketEntityAction.Action.START_SNEAKING));
+            } else {
+                this.sendQueue.addToSendQueue(new C0BPacketEntityAction(this, C0BPacketEntityAction.Action.STOP_SNEAKING));
+            }
+
+            this.serverSneakState = flag1;
+        }
+
+        if (this.isCurrentViewEntity()) {
+            double d0 = this.posX - this.lastReportedPosX;
+            double d1 = this.getEntityBoundingBox().minY - this.lastReportedPosY;
+            double d2 = this.posZ - this.lastReportedPosZ;
+            double d3 = (double) (this.rotationYaw - this.lastReportedYaw);
+            double d4 = (double) (this.rotationPitch - this.lastReportedPitch);
+            boolean flag2 = d0 * d0 + d1 * d1 + d2 * d2 > 9.0E-4D || this.positionUpdateTicks >= 20;
+            boolean flag3 = d3 != 0.0D || d4 != 0.0D;
+
+            if (this.ridingEntity == null) {
+                if (flag2 && flag3) {
+                    this.sendQueue.addToSendQueue(new C03PacketPlayer.C06PacketPlayerPosLook(this.posX, this.getEntityBoundingBox().minY, this.posZ, this.rotationYaw, this.rotationPitch, this.onGround));
+                } else if (flag2) {
+                    this.sendQueue.addToSendQueue(new C03PacketPlayer.C04PacketPlayerPosition(this.posX, this.getEntityBoundingBox().minY, this.posZ, this.onGround));
+                } else if (flag3) {
+                    this.sendQueue.addToSendQueue(new C03PacketPlayer.C05PacketPlayerLook(this.rotationYaw, this.rotationPitch, this.onGround));
+                } else {
+                    this.sendQueue.addToSendQueue(new C03PacketPlayer(this.onGround));
+                }
+            } else {
+                this.sendQueue.addToSendQueue(new C03PacketPlayer.C06PacketPlayerPosLook(this.motionX, -999.0D, this.motionZ, this.rotationYaw, this.rotationPitch, this.onGround));
+                flag2 = false;
+            }
+
+            ++this.positionUpdateTicks;
+
+            if (flag2) {
+                this.lastReportedPosX = this.posX;
+                this.lastReportedPosY = this.getEntityBoundingBox().minY;
+                this.lastReportedPosZ = this.posZ;
+                this.positionUpdateTicks = 0;
+            }
+
+            if (flag3) {
+                this.lastReportedYaw = this.rotationYaw;
+                this.lastReportedPitch = this.rotationPitch;
+            }
+        }
+    }
+
+    public EntityItem dropOneItem(boolean dropAll) {
+        C07PacketPlayerDigging.Action c07packetplayerdigging$action = dropAll ? C07PacketPlayerDigging.Action.DROP_ALL_ITEMS : C07PacketPlayerDigging.Action.DROP_ITEM;
+        this.sendQueue.addToSendQueue(new C07PacketPlayerDigging(c07packetplayerdigging$action, BlockPos.ORIGIN, EnumFacing.DOWN));
+        return null;
+    }
+
+    protected void joinEntityItemWithWorld(EntityItem itemIn) {
+    }
+
+    public void sendChatMessage(String message) {
+
+        if (message.equals("/cb debug")) {
+            CheatBreaker.getInstance().getGlobalSettings().isDebug = !CheatBreaker.getInstance().getGlobalSettings().isDebug;
+
+            Display.setTitle("Minecraft " + Config.MC_VERSION +
+                    (CheatBreaker.getInstance().getGlobalSettings().isDebug ? " - "
+                            + CheatBreaker.getInstance().getGitBuildVersion()
+                            + " Build (" + CheatBreaker.getInstance().getGitCommitIdAbbrev()
+                            + "/" + CheatBreaker.getInstance().getGitBranch() + ")" : ""));
+
+            ChatComponentText status = new ChatComponentText(EnumChatFormatting.GRAY + "Debug: " + EnumChatFormatting.RESET + CheatBreaker.getInstance().getGlobalSettings().isDebug);
+            status.setBranded(true);
+            Minecraft.getMinecraft().ingameGUI.getChatGUI().printChatMessage(status);
+        } else if (message.equals("/cb credits") && !ClientCredits.isCreditedUser(UUID.fromString(this.mc.getSession().getPlayerID()))) {
+            ClientCredits.sendCredits();
+        } else if (message.startsWith("/cb emote")) {
+            String[] args = message.split(" ");
+
+            if (args.length != 3) {
+                ChatComponentText prefix = new ChatComponentText(EnumChatFormatting.RED + "[C" + EnumChatFormatting.WHITE + "B" + EnumChatFormatting.RED + "] " + EnumChatFormatting.RESET);
+                ChatComponentText arguments = new ChatComponentText(EnumChatFormatting.RED + "Usage: /cb emote <id>");
+                prefix.appendSibling(arguments);
+                Minecraft.getMinecraft().ingameGUI.getChatGUI().printChatMessage(prefix);
+                return;
+            }
+
+            if (args[2].equals("list")) {
+                ChatComponentText prefix = new ChatComponentText(EnumChatFormatting.RED + "[C" + EnumChatFormatting.WHITE + "B" + EnumChatFormatting.RED + "] " + EnumChatFormatting.RESET);
+                StringBuilder emotes = new StringBuilder();
+
+                for (int id : CheatBreaker.getInstance().getCosmeticManager().getEmotes()) {
+                    Emote emote = CheatBreaker.getInstance().getCosmeticManager().getEmoteById(id);
+                    if (!emotes.toString().equals("")) emotes.append(", ");
+
+                    emotes.append(emote.getName()).append(" (ID: ").append(id).append(")");
+                }
+
+                prefix.appendSibling(new ChatComponentText(EnumChatFormatting.GRAY + "Emotes: " + emotes));
+                Minecraft.getMinecraft().ingameGUI.getChatGUI().printChatMessage(prefix);
+                return;
+            }
+
+            int id;
+            try {
+                id = Integer.parseInt(args[2]);
+            } catch (NumberFormatException e) {
+                sendIncorrectEmoteId(args[2]);
+                return;
+            }
+
+            Emote emote = CheatBreaker.getInstance().getCosmeticManager().getEmoteById(id);
+            if (emote == null) {
+                sendIncorrectEmoteId(id + "");
+                return;
+            }
+
+            ChatComponentText chatComponentText = new ChatComponentText(EnumChatFormatting.RED + "[C" + EnumChatFormatting.WHITE + "B" + EnumChatFormatting.RED + "] " + EnumChatFormatting.RESET);
+            ChatComponentText chatComponentText2 = new ChatComponentText(EnumChatFormatting.GRAY + "Doing emote: " + emote.getName());
+            chatComponentText.appendSibling(chatComponentText2);
+
+            Minecraft.getMinecraft().ingameGUI.getChatGUI().printChatMessage(chatComponentText);
+            CheatBreaker.getInstance().getCosmeticManager().playEmote(Minecraft.getMinecraft().thePlayer, emote);
+        } else {
+            if (CheatBreaker.getInstance().getGlobalSettings().enableModuleCommands.getBooleanValue()) {
+                for (ModuleCommand modCommand : CheatBreaker.getInstance().getModuleCommandManager().moduleCommands) {
+                    if (message.equals(modCommand.getCommand())) {
+                        modCommand.handle();
+                        return;
+                    }
+                }
+            }
+
+            this.sendQueue.addToSendQueue(new C01PacketChatMessage(message));
+            CheatBreaker.getInstance().getModuleManager().chatMod.dingCooldown.add(System.currentTimeMillis());
+        }
+    }
+
+
+    private void sendIncorrectEmoteId(String id) {
+        ChatComponentText chatComponentText = new ChatComponentText(EnumChatFormatting.RED + "[C" + EnumChatFormatting.WHITE + "B" + EnumChatFormatting.RED + "] " + EnumChatFormatting.RESET);
+        ChatComponentText chatComponentText2 = new ChatComponentText(EnumChatFormatting.GRAY + "Invalid Emote ID: " + id);
+        chatComponentText.appendSibling(chatComponentText2);
+        Minecraft.getMinecraft().ingameGUI.getChatGUI().printChatMessage(chatComponentText);
+    }
+
+    public void swingItem() {
+        super.swingItem();
+        this.sendQueue.addToSendQueue(new C0APacketAnimation());
+    }
+
+    public void respawnPlayer() {
+        this.sendQueue.addToSendQueue(new C16PacketClientStatus(C16PacketClientStatus.EnumState.PERFORM_RESPAWN));
+    }
+
+    protected void damageEntity(DamageSource damageSrc, float damageAmount) {
+        if (!this.isEntityInvulnerable(damageSrc)) {
+            this.setHealth(this.getHealth() - damageAmount);
+        }
+    }
+
+    public void closeScreen() {
+        this.sendQueue.addToSendQueue(new C0DPacketCloseWindow(this.openContainer.windowId));
+        this.closeScreenAndDropStack();
+    }
+
+    public void closeScreenAndDropStack() {
+        this.inventory.setItemStack( null);
+        super.closeScreen();
+        if ((Boolean) CheatBreaker.getInstance().getGlobalSettings().guiBlur.getValue()) {
+            Minecraft.getMinecraft().entityRenderer.stopUseShader();
+        }
+        this.mc.displayGuiScreen( null);
+    }
+
+    public void setPlayerSPHealth(float health) {
+        if (this.hasValidHealth) {
+            float f = this.getHealth() - health;
+
+            if (f <= 0.0F) {
+                this.setHealth(health);
+
+                if (f < 0.0F) {
+                    this.hurtResistantTime = this.maxHurtResistantTime / 2;
+                }
+            } else {
+                this.lastDamage = f;
+                this.setHealth(this.getHealth());
+                this.hurtResistantTime = this.maxHurtResistantTime;
+                this.damageEntity(DamageSource.generic, f);
+                this.hurtTime = this.maxHurtTime = 10;
+            }
+        } else {
+            this.setHealth(health);
+            this.hasValidHealth = true;
+        }
+    }
+
+    public void addStat(StatBase stat, int amount) {
+        if (stat != null) {
+            if (stat.isIndependent) {
+                super.addStat(stat, amount);
+            }
+        }
+    }
+
+    public void sendPlayerAbilities() {
+        this.sendQueue.addToSendQueue(new C13PacketPlayerAbilities(this.capabilities));
+    }
+
+    public boolean isUser() {
+        return true;
+    }
+
+    protected void sendHorseJump() {
+        this.sendQueue.addToSendQueue(new C0BPacketEntityAction(this, C0BPacketEntityAction.Action.RIDING_JUMP, (int) (this.getHorseJumpPower() * 100.0F)));
+    }
+
+    public void sendHorseInventory() {
+        this.sendQueue.addToSendQueue(new C0BPacketEntityAction(this, C0BPacketEntityAction.Action.OPEN_INVENTORY));
+    }
+
+    public void setClientBrand(String brand) {
+        this.clientBrand = brand;
+    }
+
+    public String getClientBrand() {
+        return this.clientBrand;
+    }
+
+    public StatFileWriter getStatFileWriter() {
+        return this.statWriter;
+    }
+
+    public void addChatComponentMessage(IChatComponent chatComponent) {
+        this.mc.ingameGUI.getChatGUI().printChatMessage(chatComponent);
+    }
+
+    protected boolean pushOutOfBlocks(double x, double y, double z) {
+        if (this.noClip) {
+            return false;
+        } else {
+            BlockPos blockpos = new BlockPos(x, y, z);
+            double d0 = x - (double) blockpos.getX();
+            double d1 = z - (double) blockpos.getZ();
+
+            if (!this.isOpenBlockSpace(blockpos)) {
+                int i = -1;
+                double d2 = 9999.0D;
+
+                if (this.isOpenBlockSpace(blockpos.west()) && d0 < d2) {
+                    d2 = d0;
+                    i = 0;
+                }
+
+                if (this.isOpenBlockSpace(blockpos.east()) && 1.0D - d0 < d2) {
+                    d2 = 1.0D - d0;
+                    i = 1;
+                }
+
+                if (this.isOpenBlockSpace(blockpos.north()) && d1 < d2) {
+                    d2 = d1;
+                    i = 4;
+                }
+
+                if (this.isOpenBlockSpace(blockpos.south()) && 1.0D - d1 < d2) {
+                    d2 = 1.0D - d1;
+                    i = 5;
+                }
+
+                float f = 0.1F;
+
+                if (i == 0) {
+                    this.motionX = (double) (-f);
+                }
+
+                if (i == 1) {
+                    this.motionX = (double) f;
+                }
+
+                if (i == 4) {
+                    this.motionZ = (double) (-f);
+                }
+
+                if (i == 5) {
+                    this.motionZ = (double) f;
+                }
+            }
+
+            return false;
+        }
+    }
+
+    private boolean isOpenBlockSpace(BlockPos pos) {
+        return !this.worldObj.getBlockState(pos).getBlock().isNormalCube() && !this.worldObj.getBlockState(pos.up()).getBlock().isNormalCube();
+    }
+
+    public void setSprinting(boolean sprinting) {
+        super.setSprinting(sprinting);
+        this.sprintingTicksLeft = sprinting ? 600 : 0;
+    }
+
+    public void setXPStats(float currentXP, int maxXP, int level) {
+        this.experience = currentXP;
+        this.experienceTotal = maxXP;
+        this.experienceLevel = level;
+    }
+
+    public void addChatMessage(IChatComponent component) {
+        this.mc.ingameGUI.getChatGUI().printChatMessage(component);
+    }
+
+    public boolean canCommandSenderUseCommand(int permLevel, String commandName) {
+        return permLevel <= 0;
+    }
+
+    public BlockPos getPosition() {
+        return new BlockPos(this.posX + 0.5D, this.posY + 0.5D, this.posZ + 0.5D);
+    }
+
+    public void playSound(String name, float volume, float pitch) {
+        this.worldObj.playSound(this.posX, this.posY, this.posZ, name, volume, pitch, false);
+    }
+
+    public boolean isServerWorld() {
+        return true;
+    }
+
+    public boolean isRidingHorse() {
+        return this.ridingEntity != null && this.ridingEntity instanceof EntityHorse && ((EntityHorse) this.ridingEntity).isHorseSaddled();
+    }
+
+    public float getHorseJumpPower() {
+        return this.horseJumpPower;
+    }
+
+    public void openEditSign(TileEntitySign signTile) {
+        this.mc.displayGuiScreen(new GuiEditSign(signTile));
+    }
+
+    public void openEditCommandBlock(CommandBlockLogic cmdBlockLogic) {
+        this.mc.displayGuiScreen(new GuiCommandBlock(cmdBlockLogic));
+    }
+
+    public void displayGUIBook(ItemStack bookStack) {
+        Item item = bookStack.getItem();
+
+        if (item == Items.writable_book) {
+            this.mc.displayGuiScreen(new GuiScreenBook(this, bookStack, true));
+        }
+    }
+
+    public void displayGUIChest(IInventory chestInventory) {
+        String s = chestInventory instanceof IInteractionObject ? ((IInteractionObject) chestInventory).getGuiID() : "minecraft:container";
+
+        if ("minecraft:chest".equals(s)) {
+            this.mc.displayGuiScreen(new GuiChest(this.inventory, chestInventory));
+        } else if ("minecraft:hopper".equals(s)) {
+            this.mc.displayGuiScreen(new GuiHopper(this.inventory, chestInventory));
+        } else if ("minecraft:furnace".equals(s)) {
+            this.mc.displayGuiScreen(new GuiFurnace(this.inventory, chestInventory));
+        } else if ("minecraft:brewing_stand".equals(s)) {
+            this.mc.displayGuiScreen(new GuiBrewingStand(this.inventory, chestInventory));
+        } else if ("minecraft:beacon".equals(s)) {
+            this.mc.displayGuiScreen(new GuiBeacon(this.inventory, chestInventory));
+        } else if (!"minecraft:dispenser".equals(s) && !"minecraft:dropper".equals(s)) {
+            this.mc.displayGuiScreen(new GuiChest(this.inventory, chestInventory));
+        } else {
+            this.mc.displayGuiScreen(new GuiDispenser(this.inventory, chestInventory));
+        }
+    }
+
+    public void displayGUIHorse(EntityHorse horse, IInventory horseInventory) {
+        this.mc.displayGuiScreen(new GuiScreenHorseInventory(this.inventory, horseInventory, horse));
+    }
+
+    public void displayGui(IInteractionObject guiOwner) {
+        String s = guiOwner.getGuiID();
+
+        if ("minecraft:crafting_table".equals(s)) {
+            this.mc.displayGuiScreen(new GuiCrafting(this.inventory, this.worldObj));
+        } else if ("minecraft:enchanting_table".equals(s)) {
+            this.mc.displayGuiScreen(new GuiEnchantment(this.inventory, this.worldObj, guiOwner));
+        } else if ("minecraft:anvil".equals(s)) {
+            this.mc.displayGuiScreen(new GuiRepair(this.inventory, this.worldObj));
+        }
+    }
+
+    public void displayVillagerTradeGui(IMerchant villager) {
+        this.mc.displayGuiScreen(new GuiMerchant(this.inventory, villager, this.worldObj));
+    }
+
+    public void onCriticalHit(Entity entityHit) {
+        this.mc.effectRenderer.emitParticleAtEntity(entityHit, EnumParticleTypes.CRIT);
+    }
+
+    public void onEnchantmentCritical(Entity entityHit) {
+        this.mc.effectRenderer.emitParticleAtEntity(entityHit, EnumParticleTypes.CRIT_MAGIC);
+    }
+
+    public boolean isSneaking() {
+        boolean flag = this.movementInput != null ? this.movementInput.sneak : false;
+        return flag && !this.sleeping;
     }
 
     public void updateEntityActionState() {
         super.updateEntityActionState();
-        this.moveStrafing = this.movementInput.moveStrafe;
-        this.moveForward = this.movementInput.moveForward;
-        this.isJumping = this.movementInput.jump;
-        this.prevRenderArmYaw = this.renderArmYaw;
-        this.prevRenderArmPitch = this.renderArmPitch;
-        this.renderArmPitch = (float)((double)this.renderArmPitch + (double)(this.rotationPitch - this.renderArmPitch) * 0.5D);
-        this.renderArmYaw = (float)((double)this.renderArmYaw + (double)(this.rotationYaw - this.renderArmYaw) * 0.5D);
+
+        if (this.isCurrentViewEntity()) {
+            this.moveStrafing = this.movementInput.moveStrafe;
+            this.moveForward = this.movementInput.moveForward;
+            this.isJumping = this.movementInput.jump;
+            this.prevRenderArmYaw = this.renderArmYaw;
+            this.prevRenderArmPitch = this.renderArmPitch;
+            this.renderArmPitch = (float) ((double) this.renderArmPitch + (double) (this.rotationPitch - this.renderArmPitch) * 0.5D);
+            this.renderArmYaw = (float) ((double) this.renderArmYaw + (double) (this.rotationYaw - this.renderArmYaw) * 0.5D);
+        }
     }
 
-    /**
-     * Called frequently so the entity can update its state every tick as required. For example, zombies and skeletons
-     * use this to react to sunlight and start to burn.
-     */
+    protected boolean isCurrentViewEntity() {
+        return this.mc.getRenderViewEntity() == this;
+    }
+
     public void onLivingUpdate() {
         if (CheatBreaker.getInstance().getModuleManager().toggleSprintMod.isEnabled()) {
             this.toggleSprintVersionOnLivingUpdate();
@@ -109,90 +573,85 @@ public class EntityPlayerSP extends AbstractClientPlayer {
                 --this.sprintToggleTimer;
             }
 
-            if (this.mc.playerController.enableEverythingIsScrewedUpMode()) {
-                this.posX = this.posZ = 0.5D;
-                this.posX = 0.0D;
-                this.posZ = 0.0D;
-                this.rotationYaw = (float)this.ticksExisted / 12.0F;
-                this.rotationPitch = 10.0F;
-                this.posY = 68.5D;
+            this.prevTimeInPortal = this.timeInPortal;
+
+            if (this.inPortal) {
+                if (this.mc.currentScreen != null && !this.mc.currentScreen.doesGuiPauseGame()) {
+                    this.mc.displayGuiScreen(null);
+                }
+
+                if (this.timeInPortal == 0.0F) {
+                    this.mc.getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("portal.trigger"), this.rand.nextFloat() * 0.4F + 0.8F));
+                }
+
+                this.timeInPortal += 0.0125F;
+
+                if (this.timeInPortal >= 1.0F) {
+                    this.timeInPortal = 1.0F;
+                }
+
+                this.inPortal = false;
+            } else if (this.isPotionActive(Potion.confusion) && this.getActivePotionEffect(Potion.confusion).getDuration() > 60) {
+                this.timeInPortal += 0.006666667F;
+
+                if (this.timeInPortal > 1.0F) {
+                    this.timeInPortal = 1.0F;
+                }
             } else {
-                this.prevTimeInPortal = this.timeInPortal;
+                if (this.timeInPortal > 0.0F) {
+                    this.timeInPortal -= 0.05F;
+                }
 
-                if (this.inPortal) {
-                    if (this.mc.currentScreen != null) {
-                        this.mc.displayGuiScreen(null);
-                    }
+                if (this.timeInPortal < 0.0F) {
+                    this.timeInPortal = 0.0F;
+                }
+            }
 
-                    if (this.timeInPortal == 0.0F) {
-                        this.mc.getSoundHandler().playSound(PositionedSoundRecord.func_147674_a(new ResourceLocation("portal.trigger"), this.rand.nextFloat() * 0.4F + 0.8F));
-                    }
+            if (this.timeUntilPortal > 0) {
+                --this.timeUntilPortal;
+            }
 
-                    this.timeInPortal += 0.0125F;
+            boolean flag = this.movementInput.jump;
+            boolean flag1 = this.movementInput.sneak;
+            float f = 0.8F;
+            boolean flag2 = this.movementInput.moveForward >= f;
+            this.movementInput.updatePlayerMoveState();
 
-                    if (this.timeInPortal >= 1.0F) {
-                        this.timeInPortal = 1.0F;
-                    }
+            if (this.isUsingItem() && !this.isRiding()) {
+                this.movementInput.moveStrafe *= 0.2F;
+                this.movementInput.moveForward *= 0.2F;
+                this.sprintToggleTimer = 0;
+            }
 
-                    this.inPortal = false;
-                } else if (this.isPotionActive(Potion.confusion) && this.getActivePotionEffect(Potion.confusion).getDuration() > 60) {
-                    this.timeInPortal += 0.006666667F;
+            this.pushOutOfBlocks(this.posX - (double) this.width * 0.35D, this.getEntityBoundingBox().minY + 0.5D, this.posZ + (double) this.width * 0.35D);
+            this.pushOutOfBlocks(this.posX - (double) this.width * 0.35D, this.getEntityBoundingBox().minY + 0.5D, this.posZ - (double) this.width * 0.35D);
+            this.pushOutOfBlocks(this.posX + (double) this.width * 0.35D, this.getEntityBoundingBox().minY + 0.5D, this.posZ - (double) this.width * 0.35D);
+            this.pushOutOfBlocks(this.posX + (double) this.width * 0.35D, this.getEntityBoundingBox().minY + 0.5D, this.posZ + (double) this.width * 0.35D);
+            boolean flag3 = (float) this.getFoodStats().getFoodLevel() > 6.0F || this.capabilities.allowFlying;
 
-                    if (this.timeInPortal > 1.0F) {
-                        this.timeInPortal = 1.0F;
-                    }
+            if (this.onGround && !flag1 && !flag2 && this.movementInput.moveForward >= f && !this.isSprinting() && flag3 && !this.isUsingItem() && !this.isPotionActive(Potion.blindness)) {
+                if (this.sprintToggleTimer <= 0 && !this.mc.gameSettings.keyBindSprint.isKeyDown()) {
+                    this.sprintToggleTimer = 7;
                 } else {
-                    if (this.timeInPortal > 0.0F) {
-                        this.timeInPortal -= 0.05F;
-                    }
-
-                    if (this.timeInPortal < 0.0F) {
-                        this.timeInPortal = 0.0F;
-                    }
-                }
-
-                if (this.timeUntilPortal > 0) {
-                    --this.timeUntilPortal;
-                }
-
-                boolean var1 = this.movementInput.jump;
-                float var2 = 0.8F;
-                boolean var3 = this.movementInput.moveForward >= var2;
-                this.movementInput.updatePlayerMoveState();
-
-                if (this.isUsingItem() && !this.isRiding()) {
-                    this.movementInput.moveStrafe *= 0.2F;
-                    this.movementInput.moveForward *= 0.2F;
-                    this.sprintToggleTimer = 0;
-                }
-
-                if (this.movementInput.sneak && this.ySize < 0.2F) {
-                    this.ySize = 0.2F;
-                }
-
-                this.func_145771_j(this.posX - (double)this.width * 0.35D, this.boundingBox.minY + 0.5D, this.posZ + (double)this.width * 0.35D);
-                this.func_145771_j(this.posX - (double)this.width * 0.35D, this.boundingBox.minY + 0.5D, this.posZ - (double)this.width * 0.35D);
-                this.func_145771_j(this.posX + (double)this.width * 0.35D, this.boundingBox.minY + 0.5D, this.posZ - (double)this.width * 0.35D);
-                this.func_145771_j(this.posX + (double)this.width * 0.35D, this.boundingBox.minY + 0.5D, this.posZ + (double)this.width * 0.35D);
-                boolean var4 = (float)this.getFoodStats().getFoodLevel() > 6.0F || this.capabilities.allowFlying;
-
-                if (this.onGround && !var3 && this.movementInput.moveForward >= var2 && !this.isSprinting() && var4 && !this.isUsingItem() && !this.isPotionActive(Potion.blindness)) {
-                    if (this.sprintToggleTimer <= 0 && !this.mc.gameSettings.keyBindSprint.getIsKeyPressed()) {
-                        this.sprintToggleTimer = 7;
-                    } else {
-                        this.setSprinting(true);
-                    }
-                }
-
-                if (!this.isSprinting() && this.movementInput.moveForward >= var2 && var4 && !this.isUsingItem() && !this.isPotionActive(Potion.blindness) && this.mc.gameSettings.keyBindSprint.getIsKeyPressed()) {
                     this.setSprinting(true);
                 }
+            }
 
-                if (this.isSprinting() && (this.movementInput.moveForward < var2 || this.isCollidedHorizontally || !var4)) {
-                    this.setSprinting(false);
-                }
+            if (!this.isSprinting() && this.movementInput.moveForward >= f && flag3 && !this.isUsingItem() && !this.isPotionActive(Potion.blindness) && this.mc.gameSettings.keyBindSprint.isKeyDown()) {
+                this.setSprinting(true);
+            }
 
-                if (this.capabilities.allowFlying && !var1 && this.movementInput.jump) {
+            if (this.isSprinting() && (this.movementInput.moveForward < f || this.isCollidedHorizontally || !flag3)) {
+                this.setSprinting(false);
+            }
+
+            if (this.capabilities.allowFlying) {
+                if (this.mc.playerController.isSpectatorMode()) {
+                    if (!this.capabilities.isFlying) {
+                        this.capabilities.isFlying = true;
+                        this.sendPlayerAbilities();
+                    }
+                } else if (!flag && this.movementInput.jump) {
                     if (this.flyToggleTimer == 0) {
                         this.flyToggleTimer = 7;
                     } else {
@@ -201,51 +660,51 @@ public class EntityPlayerSP extends AbstractClientPlayer {
                         this.flyToggleTimer = 0;
                     }
                 }
+            }
 
-                if (this.capabilities.isFlying) {
-                    if (this.movementInput.sneak) {
-                        this.motionY -= 0.15D;
-                    }
-
-                    if (this.movementInput.jump) {
-                        this.motionY += 0.15D;
-                    }
+            if (this.capabilities.isFlying && this.isCurrentViewEntity()) {
+                if (this.movementInput.sneak) {
+                    this.motionY -= (this.capabilities.getFlySpeed() * 3.0F);
                 }
 
-                if (this.isRidingHorse()) {
-                    if (this.horseJumpPowerCounter < 0) {
-                        ++this.horseJumpPowerCounter;
+                if (this.movementInput.jump) {
+                    this.motionY += (this.capabilities.getFlySpeed() * 3.0F);
+                }
+            }
 
-                        if (this.horseJumpPowerCounter == 0) {
-                            this.horseJumpPower = 0.0F;
-                        }
-                    }
+            if (this.isRidingHorse()) {
+                if (this.horseJumpPowerCounter < 0) {
+                    ++this.horseJumpPowerCounter;
 
-                    if (var1 && !this.movementInput.jump) {
-                        this.horseJumpPowerCounter = -10;
-                        this.func_110318_g();
-                    } else if (!var1 && this.movementInput.jump) {
-                        this.horseJumpPowerCounter = 0;
+                    if (this.horseJumpPowerCounter == 0) {
                         this.horseJumpPower = 0.0F;
-                    } else if (var1) {
-                        ++this.horseJumpPowerCounter;
-
-                        if (this.horseJumpPowerCounter < 10) {
-                            this.horseJumpPower = (float)this.horseJumpPowerCounter * 0.1F;
-                        } else {
-                            this.horseJumpPower = 0.8F + 2.0F / (float)(this.horseJumpPowerCounter - 9) * 0.1F;
-                        }
                     }
-                } else {
+                }
+
+                if (flag && !this.movementInput.jump) {
+                    this.horseJumpPowerCounter = -10;
+                    this.sendHorseJump();
+                } else if (!flag && this.movementInput.jump) {
+                    this.horseJumpPowerCounter = 0;
                     this.horseJumpPower = 0.0F;
-                }
+                } else if (flag) {
+                    ++this.horseJumpPowerCounter;
 
-                super.onLivingUpdate();
-
-                if (this.onGround && this.capabilities.isFlying) {
-                    this.capabilities.isFlying = false;
-                    this.sendPlayerAbilities();
+                    if (this.horseJumpPowerCounter < 10) {
+                        this.horseJumpPower = (float) this.horseJumpPowerCounter * 0.1F;
+                    } else {
+                        this.horseJumpPower = 0.8F + 2.0F / (float) (this.horseJumpPowerCounter - 9) * 0.1F;
+                    }
                 }
+            } else {
+                this.horseJumpPower = 0.0F;
+            }
+
+            super.onLivingUpdate();
+
+            if (this.onGround && this.capabilities.isFlying && !this.mc.playerController.isSpectatorMode()) {
+                this.capabilities.isFlying = false;
+                this.sendPlayerAbilities();
             }
         }
     }
@@ -253,123 +712,138 @@ public class EntityPlayerSP extends AbstractClientPlayer {
     public void toggleSprintVersionOnLivingUpdate() {
         if (this.sprintingTicksLeft > 0) {
             --this.sprintingTicksLeft;
+
             if (this.sprintingTicksLeft == 0) {
                 this.setSprinting(false);
             }
         }
+
         if (this.sprintToggleTimer > 0) {
             --this.sprintToggleTimer;
         }
-        if (this.mc.playerController.enableEverythingIsScrewedUpMode()) {
-            this.posX = this.posZ = 0.4137931168079376 * 1.2083332943212668;
-            this.posX = 0.0;
-            this.posZ = 0.0;
-            this.rotationYaw = (float)this.ticksExisted / (float)12;
-            this.rotationPitch = 10;
-            this.posY = 44.2395846517757 * 1.548387050628662;
+
+        this.prevTimeInPortal = this.timeInPortal;
+
+        if (this.inPortal) {
+            if (this.mc.currentScreen != null && !this.mc.currentScreen.doesGuiPauseGame()) {
+                this.mc.displayGuiScreen((GuiScreen) null);
+            }
+
+            if (this.timeInPortal == 0.0F) {
+                this.mc.getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("portal.trigger"), this.rand.nextFloat() * 0.4F + 0.8F));
+            }
+
+            this.timeInPortal += 0.0125F;
+
+            if (this.timeInPortal >= 1.0F) {
+                this.timeInPortal = 1.0F;
+            }
+
+            this.inPortal = false;
+        } else if (this.isPotionActive(Potion.confusion) && this.getActivePotionEffect(Potion.confusion).getDuration() > 60) {
+            this.timeInPortal += 0.006666667F;
+
+            if (this.timeInPortal > 1.0F) {
+                this.timeInPortal = 1.0F;
+            }
         } else {
-            this.prevTimeInPortal = this.timeInPortal;
-            if (this.inPortal) {
-                if (this.mc.currentScreen != null) {
-                    this.mc.displayGuiScreen(null);
-                }
-                if (this.timeInPortal == 0.0f) {
-                    this.mc.getSoundHandler().playSound(PositionedSoundRecord.func_147674_a(new ResourceLocation("portal.trigger"), this.getRNG().nextFloat() * (0.627907f * 0.63703704f) + 1.1750001f * 0.68085104f));
-                }
-                this.timeInPortal += 0.007142857f * 1.75f;
-                if (this.timeInPortal >= 1.0f) {
-                    this.timeInPortal = 1.0f;
-                }
-                this.inPortal = false;
-            } else if (this.isPotionActive(Potion.confusion) && this.getActivePotionEffect(Potion.confusion).getDuration() > 60) {
-                this.timeInPortal += 9.803922E-5f * 68.0f;
-                if (this.timeInPortal > 1.0f) {
-                    this.timeInPortal = 1.0f;
-                }
-            } else {
-                if (this.timeInPortal > 0.0f) {
-                    this.timeInPortal -= 0.92391306f * 0.054117646f;
-                }
-                if (this.timeInPortal < 0.0f) {
-                    this.timeInPortal = 0.0f;
-                }
+            if (this.timeInPortal > 0.0F) {
+                this.timeInPortal -= 0.05F;
             }
-            if (this.timeUntilPortal > 0) {
-                --this.timeUntilPortal;
+
+            if (this.timeInPortal < 0.0F) {
+                this.timeInPortal = 0.0F;
             }
-            boolean bl = this.movementInput.jump;
-            float f = 0.4848485f * 1.65f;
-            boolean bl2 = this.movementInput.moveForward >= f;
-            MinecraftMovementInputHelper.lIIIIlIIllIIlIIlIIIlIIllI(this.mc, (MovementInputFromOptions)this.movementInput, this);
-            if (this.isUsingItem() && !this.isRiding()) {
-                this.movementInput.moveStrafe *= 2.2380953f * 0.089361705f;
-                this.movementInput.moveForward *= 0.44444445f * 0.45000002f;
-                this.sprintToggleTimer = 0;
-            }
-            if (this.movementInput.sneak && this.ySize < 0.114583336f * 1.7454545f) {
-                this.ySize = 0.2037037f * 0.9818182f;
-            }
-            this.func_145771_j(this.posX - (double)this.width * (1.3176470588235294 * 0.265625), this.boundingBox.minY + (double)1.3f * 0.3846153987229934, this.posZ + (double)this.width * (0.6499999667916996 * 0.5384615659713745));
-            this.func_145771_j(this.posX - (double)this.width * (0.6369999688661113 * 0.5494505763053894), this.boundingBox.minY + 0.19135803257686843 * 2.612903118133545, this.posZ - (double)this.width * (5.692307472229004 * 0.061486488863706154));
-            this.func_145771_j(this.posX + (double)this.width * (3.2666666507720947 * 0.10714285766418057), this.boundingBox.minY + 0.3421052695971778 * 1.4615384340286255, this.posZ - (double)this.width * ((double)0.8875f * 0.39436620248023824));
-            this.func_145771_j(this.posX + (double)this.width * (1.5106383562088013 * 0.23169013189787085), this.boundingBox.minY + 1.1034482717514038 * 0.45312500168802217, this.posZ + (double)this.width * (0.0517241396009922 * 6.766666448199094));
-            boolean bl3 = (float)this.getFoodStats().getFoodLevel() > (float)6 || this.capabilities.isFlying;
-            boolean bl4 = !CheatBreaker.getInstance().getModuleManager().toggleSprintMod.isEnabled() || !((Boolean) ModuleToggleSprint.toggleSprint.getValue());
-            boolean bl5 = (Boolean) ModuleToggleSprint.doubleTap.getValue();
-            if (ModuleToggleSprint.buggedSprint) {
-                this.setSprinting(false);
-                this.minecraftMovementInputHelper.setSprintState(false, false);
-                ModuleToggleSprint.buggedSprint = false;
-            }
-            if (bl4) {
-                if ((Boolean) ModuleToggleSprint.doubleTap.getValue() && this.onGround
-                        && !bl2 && this.movementInput.moveForward >= f && !this.isSprinting()
-                        && bl3 && !this.isUsingItem() && !this.isPotionActive(Potion.blindness)) {
-                    if (this.sprintToggleTimer <= 0 && !this.mc.gameSettings.keyBindSprint.getIsKeyPressed()) {
-                        this.sprintToggleTimer = 7;
-                    } else {
-                        this.setSprinting(true);
-                        this.minecraftMovementInputHelper.setSprintState(true, false);
-                    }
-                }
-                if (!this.isSprinting() && this.movementInput.moveForward >= f && bl3 && !this.isUsingItem() && !this.isPotionActive(Potion.blindness) && this.mc.gameSettings.keyBindSprint.getIsKeyPressed()) {
+        }
+
+        if (this.timeUntilPortal > 0) {
+            --this.timeUntilPortal;
+        }
+
+        boolean flag = this.movementInput.jump;
+        boolean flag1 = this.movementInput.sneak;
+        float f = 0.8F;
+        boolean flag2 = this.movementInput.moveForward >= f;
+//        this.movementInput.updatePlayerMoveState();
+        MinecraftMovementInputHelper.lIIIIlIIllIIlIIlIIIlIIllI(this.mc, (MovementInputFromOptions) this.movementInput, this);
+
+        if (this.isUsingItem() && !this.isRiding()) {
+            this.movementInput.moveStrafe *= 0.2F;
+            this.movementInput.moveForward *= 0.2F;
+            this.sprintToggleTimer = 0;
+        }
+
+        this.pushOutOfBlocks(this.posX - (double) this.width * 0.35D, this.getEntityBoundingBox().minY + 0.5D, this.posZ + (double) this.width * 0.35D);
+        this.pushOutOfBlocks(this.posX - (double) this.width * 0.35D, this.getEntityBoundingBox().minY + 0.5D, this.posZ - (double) this.width * 0.35D);
+        this.pushOutOfBlocks(this.posX + (double) this.width * 0.35D, this.getEntityBoundingBox().minY + 0.5D, this.posZ - (double) this.width * 0.35D);
+        this.pushOutOfBlocks(this.posX + (double) this.width * 0.35D, this.getEntityBoundingBox().minY + 0.5D, this.posZ + (double) this.width * 0.35D);
+        boolean flag3 = (float) this.getFoodStats().getFoodLevel() > 6.0F || this.capabilities.allowFlying;
+        boolean bl4 = !CheatBreaker.getInstance().getModuleManager().toggleSprintMod.isEnabled() || !((Boolean) SimpleModuleToggleSprint.toggleSprint.getValue());
+        boolean bl5 = (Boolean) SimpleModuleToggleSprint.doubleTap.getValue();
+        if (SimpleModuleToggleSprint.buggedSprint) {
+            this.setSprinting(false);
+            this.minecraftMovementInputHelper.setSprintState(false, false);
+            SimpleModuleToggleSprint.buggedSprint = false;
+        }
+
+        if (bl4) {
+            if ((Boolean) SimpleModuleToggleSprint.doubleTap.getValue() && this.onGround && !flag1 && !flag2 && this.movementInput.moveForward >= f && !this.isSprinting() && flag3 && !this.isUsingItem() && !this.isPotionActive(Potion.blindness)) {
+                if (this.sprintToggleTimer <= 0 && !this.mc.gameSettings.keyBindSprint.isKeyDown()) {
+                    this.sprintToggleTimer = 7;
+                } else {
                     this.setSprinting(true);
                     this.minecraftMovementInputHelper.setSprintState(true, false);
                 }
-            } else {
-                boolean bl6 = MinecraftMovementInputHelper.isSprinting;
-                if (!(!bl3 || this.isUsingItem() || this.isPotionActive(Potion.blindness) || MinecraftMovementInputHelper.superSusBoolean || bl5 && this.isSprinting())) {
-                    this.setSprinting(bl6);
-                }
-                if (bl5 && !bl6 && this.onGround && !bl2 && this.movementInput.moveForward >= f && !this.isSprinting() && bl3 && !this.isUsingItem() && !this.isPotionActive(Potion.blindness)) {
-                    if (this.sprintToggleTimer == 0) {
-                        this.sprintToggleTimer = 7;
-                    } else {
-                        this.setSprinting(true);
-                        this.minecraftMovementInputHelper.setSprintState(true, true);
-                        this.sprintToggleTimer = 0;
-                    }
+                if (!this.isSprinting() && this.movementInput.moveForward >= f && flag3 && !this.isUsingItem() && !this.isPotionActive(Potion.blindness) && this.mc.gameSettings.keyBindSprint.isKeyDown()) {
+                    this.setSprinting(true);
+                    this.minecraftMovementInputHelper.setSprintState(true, false);
                 }
             }
-            if (this.isSprinting() && (this.movementInput.moveForward < f || this.isCollidedHorizontally || !bl3)) {
-                this.setSprinting(false);
-                if (MinecraftMovementInputHelper.superSusBoolean || bl4 || MinecraftMovementInputHelper.aSusBoolean || this.isRiding()) {
-                    this.minecraftMovementInputHelper.setSprintState(false, false);
+        } else {
+            boolean bl6 = MinecraftMovementInputHelper.isSprinting;
+            if (!(!flag3 || this.isUsingItem() || this.isPotionActive(Potion.blindness) || MinecraftMovementInputHelper.superSusBoolean || bl5 && this.isSprinting())) {
+                this.setSprinting(bl6);
+            }
+            if (bl5 && !bl6 && this.onGround && !flag2 && this.movementInput.moveForward >= f && !this.isSprinting() && flag3 && !this.isUsingItem() && !this.isPotionActive(Potion.blindness)) {
+                if (this.sprintToggleTimer == 0) {
+                    this.sprintToggleTimer = 7;
+                } else {
+                    this.setSprinting(true);
+                    this.minecraftMovementInputHelper.setSprintState(true, true);
+                    this.sprintToggleTimer = 0;
+                }
+            }
+        }
 
-                }
+
+        if (this.isSprinting() && (this.movementInput.moveForward < f || this.isCollidedHorizontally || !flag3)) {
+            this.setSprinting(false);
+            if (MinecraftMovementInputHelper.superSusBoolean || bl4 || MinecraftMovementInputHelper.aSusBoolean || this.isRiding()) {
+                this.minecraftMovementInputHelper.setSprintState(false, false);
+
             }
-            if ((Boolean) ModuleToggleSprint.flyBoost.getValue() && this.capabilities.isFlying && this.mc.gameSettings.keyBindSprint.getIsKeyPressed() && this.capabilities.isCreativeMode) {
-                this.capabilities.setFlySpeed(0.027272727f * 1.8333334f * (Float) ModuleToggleSprint.flyBoostAmount.getValue());
-                if (this.movementInput.sneak) {
-                    this.motionY -= 0.6526315808296204 * 0.2298387090145425 * (double) (Float) ModuleToggleSprint.flyBoostAmount.getValue();
-                }
-                if (this.movementInput.jump) {
-                    this.motionY += 0.01084337374315776 * 13.833333015441895 * (double) (Float) ModuleToggleSprint.flyBoostAmount.getValue();
-                }
-            } else if (this.capabilities.getFlySpeed() != 0.0129629625f * 3.857143f) {
-                this.capabilities.setFlySpeed(4.714286f * 0.010606061f);
+        }
+
+        //CB
+        if ((Boolean) SimpleModuleToggleSprint.flyBoost.getValue() && this.capabilities.isFlying && this.mc.gameSettings.keyBindSprint.isKeyDown() && this.capabilities.isCreativeMode) {
+            this.capabilities.setFlySpeed(0.027272727f * 1.8333334f * (Float) SimpleModuleToggleSprint.flyBoostAmount.getValue());
+            if (this.movementInput.sneak) {
+                this.motionY -= 0.6526315808296204 * 0.2298387090145425 * (double) (Float) SimpleModuleToggleSprint.flyBoostAmount.getValue();
             }
-            if (this.capabilities.allowFlying && !bl && this.movementInput.jump) {
+            if (this.movementInput.jump) {
+                this.motionY += 0.01084337374315776 * 13.833333015441895 * (double) (Float) SimpleModuleToggleSprint.flyBoostAmount.getValue();
+            }
+        } else if (this.capabilities.getFlySpeed() != 0.0129629625f * 3.857143f) {
+            this.capabilities.setFlySpeed(4.714286f * 0.010606061f);
+        }
+
+        if (this.capabilities.allowFlying) {
+            if (this.mc.playerController.isSpectatorMode()) {
+                if (!this.capabilities.isFlying) {
+                    this.capabilities.isFlying = true;
+                    this.sendPlayerAbilities();
+                }
+            } else if (!flag && this.movementInput.jump) {
                 if (this.flyToggleTimer == 0) {
                     this.flyToggleTimer = 7;
                 } else {
@@ -378,353 +852,51 @@ public class EntityPlayerSP extends AbstractClientPlayer {
                     this.flyToggleTimer = 0;
                 }
             }
-            if (this.capabilities.isFlying) {
-                if (this.movementInput.sneak) {
-                    this.motionY -= 0.33387095875472134 * 0.4492753744125366;
-                }
-                if (this.movementInput.jump) {
-                    this.motionY += 0.12826086912203224 * 1.1694915294647217;
-                }
-            }
-            if (this.isRidingHorse()) {
-                if (this.horseJumpPowerCounter < 0) {
-                    ++this.horseJumpPowerCounter;
-                    if (this.horseJumpPowerCounter == 0) {
-                        this.horseJumpPower = 0.0f;
-                    }
-                }
-                if (bl && !this.movementInput.jump) {
-                    this.horseJumpPowerCounter -= 10;
-                    this.horseJumpPowerCounter = -10;
-                    ((EntityClientPlayerMP)this).sendQueue.addToSendQueue(new C0BPacketEntityAction(this, 6, (int)(this.getHorseJumpPower() * (float)100)));
-                } else if (!bl && this.movementInput.jump) {
-                    this.horseJumpPowerCounter = 0;
-                    this.horseJumpPower = 0.0f;
-                } else if (bl) {
-                    ++this.horseJumpPowerCounter;
-                    this.horseJumpPower = this.horseJumpPowerCounter < 10 ? (float)this.horseJumpPowerCounter * (0.84615386f * 0.11818182f) : 2.2272727f * 0.35918367f + 2.0f / (float)(this.horseJumpPowerCounter - 9) * (0.54651165f * 0.18297872f);
-                }
-            } else {
-                this.horseJumpPower = 0.0f;
-            }
-            super.onLivingUpdate();
-            if (this.onGround && this.capabilities.isFlying) {
-                this.capabilities.isFlying = false;
-                this.sendPlayerAbilities();
-            }
-        }
-    }
-
-    /**
-     * Gets the player's field of view multiplier. (ex. when flying)
-     */
-    public float getFOVMultiplier() {
-        ModulePerspective perspectiveMod = CheatBreaker.getInstance().getModuleManager().perspectiveMod;
-        
-        float var1 = 1.0F;
-
-        if (this.capabilities.isFlying) {
-            var1 *= 1.1F;
         }
 
-        IAttributeInstance var2 = this.getEntityAttribute(SharedMonsterAttributes.movementSpeed);
+        if (this.capabilities.isFlying && this.isCurrentViewEntity()) {
+            if (this.movementInput.sneak) {
+                this.motionY -= (double) (this.capabilities.getFlySpeed() * 3.0F);
+            }
 
-        if (perspectiveMod.isEnabled()) {
-            if (!perspectiveMod.staticSwiftness.getBooleanValue()) {
-                var1 = (float)((double)var1 * ((var2.getAttributeValue() / (double)this.capabilities.getWalkSpeed() + 1.0D) / 2.0D));
+            if (this.movementInput.jump) {
+                this.motionY += (double) (this.capabilities.getFlySpeed() * 3.0F);
+            }
+        }
+
+        if (this.isRidingHorse()) {
+            if (this.horseJumpPowerCounter < 0) {
+                ++this.horseJumpPowerCounter;
+
+                if (this.horseJumpPowerCounter == 0) {
+                    this.horseJumpPower = 0.0F;
+                }
+            }
+
+            if (flag && !this.movementInput.jump) {
+                this.horseJumpPowerCounter = -10;
+                this.sendHorseJump();
+            } else if (!flag && this.movementInput.jump) {
+                this.horseJumpPowerCounter = 0;
+                this.horseJumpPower = 0.0F;
+            } else if (flag) {
+                ++this.horseJumpPowerCounter;
+
+                if (this.horseJumpPowerCounter < 10) {
+                    this.horseJumpPower = (float) this.horseJumpPowerCounter * 0.1F;
+                } else {
+                    this.horseJumpPower = 0.8F + 2.0F / (float) (this.horseJumpPowerCounter - 9) * 0.1F;
+                }
             }
         } else {
-            var1 = (float)((double)var1 * ((var2.getAttributeValue() / (double)this.capabilities.getWalkSpeed() + 1.0D) / 2.0D));
+            this.horseJumpPower = 0.0F;
         }
 
-        if (this.capabilities.getWalkSpeed() == 0.0F || Float.isNaN(var1) || Float.isInfinite(var1)) {
-            var1 = 1.0F;
-        }
+        super.onLivingUpdate();
 
-        if (this.isUsingItem() && this.getItemInUse().getItem() == Items.bow) {
-            int var3 = this.getItemInUseDuration();
-            float var4 = (float)var3 / 20.0F;
-
-            if (var4 > 1.0F) {
-                var4 = 1.0F;
-            } else {
-                var4 *= var4;
-            }
-
-            if (perspectiveMod.isEnabled()) {
-                var1 *= 1.0F - var4 * perspectiveMod.aimingMultiplier.getFloatValue();
-            } else {
-                var1 *= 1.0F - var4 * 0.15F;
-            }
-        }
-
-        return var1;
-    }
-
-    /**
-     * set current crafting inventory back to the 2x2 square
-     */
-    public void closeScreen() {
-        super.closeScreen();
-        if ((Boolean) CheatBreaker.getInstance().getGlobalSettings().guiBlur.getValue()) {
-            Minecraft.getMinecraft().entityRenderer.stopUseShader();
-        }
-        this.mc.displayGuiScreen(null);
-    }
-
-    public void func_146100_a(TileEntity p_146100_1_) {
-        if (p_146100_1_ instanceof TileEntitySign) {
-            this.mc.displayGuiScreen(new GuiEditSign((TileEntitySign)p_146100_1_));
-        } else if (p_146100_1_ instanceof TileEntityCommandBlock) {
-            this.mc.displayGuiScreen(new GuiCommandBlock(((TileEntityCommandBlock)p_146100_1_).func_145993_a()));
+        if (this.onGround && this.capabilities.isFlying && !this.mc.playerController.isSpectatorMode()) {
+            this.capabilities.isFlying = false;
+            this.sendPlayerAbilities();
         }
     }
-
-    public void func_146095_a(CommandBlockLogic p_146095_1_) {
-        this.mc.displayGuiScreen(new GuiCommandBlock(p_146095_1_));
-    }
-
-    /**
-     * Displays the GUI for interacting with a book.
-     */
-    public void displayGUIBook(ItemStack p_71048_1_) {
-        Item var2 = p_71048_1_.getItem();
-
-        if (var2 == Items.written_book) {
-            this.mc.displayGuiScreen(new GuiScreenBook(this, p_71048_1_, false));
-        } else if (var2 == Items.writable_book) {
-            this.mc.displayGuiScreen(new GuiScreenBook(this, p_71048_1_, true));
-        }
-    }
-
-    /**
-     * Displays the GUI for interacting with a chest inventory. Args: chestInventory
-     */
-    public void displayGUIChest(IInventory p_71007_1_) {
-        this.mc.displayGuiScreen(new GuiChest(this.inventory, p_71007_1_));
-    }
-
-    public void func_146093_a(TileEntityHopper p_146093_1_) {
-        this.mc.displayGuiScreen(new GuiHopper(this.inventory, p_146093_1_));
-    }
-
-    public void displayGUIHopperMinecart(EntityMinecartHopper p_96125_1_) {
-        this.mc.displayGuiScreen(new GuiHopper(this.inventory, p_96125_1_));
-    }
-
-    public void displayGUIHorse(EntityHorse p_110298_1_, IInventory p_110298_2_) {
-        this.mc.displayGuiScreen(new GuiScreenHorseInventory(this.inventory, p_110298_2_, p_110298_1_));
-    }
-
-    /**
-     * Displays the crafting GUI for a workbench.
-     */
-    public void displayGUIWorkbench(int p_71058_1_, int p_71058_2_, int p_71058_3_) {
-        this.mc.displayGuiScreen(new GuiCrafting(this.inventory, this.worldObj, p_71058_1_, p_71058_2_, p_71058_3_));
-    }
-
-    public void displayGUIEnchantment(int p_71002_1_, int p_71002_2_, int p_71002_3_, String p_71002_4_) {
-        this.mc.displayGuiScreen(new GuiEnchantment(this.inventory, this.worldObj, p_71002_1_, p_71002_2_, p_71002_3_, p_71002_4_));
-    }
-
-    /**
-     * Displays the GUI for interacting with an anvil.
-     */
-    public void displayGUIAnvil(int p_82244_1_, int p_82244_2_, int p_82244_3_) {
-        this.mc.displayGuiScreen(new GuiRepair(this.inventory, this.worldObj, p_82244_1_, p_82244_2_, p_82244_3_));
-    }
-
-    public void func_146101_a(TileEntityFurnace p_146101_1_) {
-        this.mc.displayGuiScreen(new GuiFurnace(this.inventory, p_146101_1_));
-    }
-
-    public void func_146098_a(TileEntityBrewingStand p_146098_1_) {
-        this.mc.displayGuiScreen(new GuiBrewingStand(this.inventory, p_146098_1_));
-    }
-
-    public void func_146104_a(TileEntityBeacon p_146104_1_) {
-        this.mc.displayGuiScreen(new GuiBeacon(this.inventory, p_146104_1_));
-    }
-
-    public void func_146102_a(TileEntityDispenser p_146102_1_) {
-        this.mc.displayGuiScreen(new GuiDispenser(this.inventory, p_146102_1_));
-    }
-
-    public void displayGUIMerchant(IMerchant p_71030_1_, String p_71030_2_) {
-        this.mc.displayGuiScreen(new GuiMerchant(this.inventory, p_71030_1_, this.worldObj, p_71030_2_));
-    }
-
-    /**
-     * Called when the player performs a critical hit on the Entity. Args: entity that was hit critically
-     */
-    public void onCriticalHit(Entity p_71009_1_) {
-        this.mc.effectRenderer.addEffect(new EntityCrit2FX(this.mc.theWorld, p_71009_1_));
-    }
-
-    public void onEnchantmentCritical(Entity p_71047_1_) {
-        EntityCrit2FX var2 = new EntityCrit2FX(this.mc.theWorld, p_71047_1_, "magicCrit");
-        this.mc.effectRenderer.addEffect(var2);
-    }
-
-    /**
-     * Called whenever an item is picked up from walking over it. Args: pickedUpEntity, stackSize
-     */
-    public void onItemPickup(Entity p_71001_1_, int p_71001_2_) {
-        this.mc.effectRenderer.addEffect(new EntityPickupFX(this.mc.theWorld, p_71001_1_, this, -0.5F));
-    }
-
-    /**
-     * Returns if this entity is sneaking.
-     */
-    public boolean isSneaking() {
-        return this.movementInput.sneak && !this.sleeping;
-    }
-
-    /**
-     * Updates health locally.
-     */
-    public void setPlayerSPHealth(float p_71150_1_) {
-        float var2 = this.getHealth() - p_71150_1_;
-
-        if (var2 <= 0.0F) {
-            this.setHealth(p_71150_1_);
-
-            if (var2 < 0.0F) {
-                this.hurtResistantTime = this.maxHurtResistantTime / 2;
-            }
-        } else {
-            this.lastDamage = var2;
-            this.setHealth(this.getHealth());
-            this.hurtResistantTime = this.maxHurtResistantTime;
-            this.damageEntity(DamageSource.generic, var2);
-            this.hurtTime = this.maxHurtTime = 10;
-        }
-    }
-
-    public void addChatComponentMessage(IChatComponent p_146105_1_) {
-        this.mc.ingameGUI.getChatGUI().func_146227_a(p_146105_1_);
-    }
-
-    private boolean isBlockTranslucent(int p_71153_1_, int p_71153_2_, int p_71153_3_) {
-        return this.worldObj.getBlock(p_71153_1_, p_71153_2_, p_71153_3_).isNormalCube();
-    }
-
-    protected boolean func_145771_j(double p_145771_1_, double p_145771_3_, double p_145771_5_) {
-        int var7 = MathHelper.floor_double(p_145771_1_);
-        int var8 = MathHelper.floor_double(p_145771_3_);
-        int var9 = MathHelper.floor_double(p_145771_5_);
-        double var10 = p_145771_1_ - (double)var7;
-        double var12 = p_145771_5_ - (double)var9;
-
-        if (this.isBlockTranslucent(var7, var8, var9) || this.isBlockTranslucent(var7, var8 + 1, var9)) {
-            boolean var14 = !this.isBlockTranslucent(var7 - 1, var8, var9) && !this.isBlockTranslucent(var7 - 1, var8 + 1, var9);
-            boolean var15 = !this.isBlockTranslucent(var7 + 1, var8, var9) && !this.isBlockTranslucent(var7 + 1, var8 + 1, var9);
-            boolean var16 = !this.isBlockTranslucent(var7, var8, var9 - 1) && !this.isBlockTranslucent(var7, var8 + 1, var9 - 1);
-            boolean var17 = !this.isBlockTranslucent(var7, var8, var9 + 1) && !this.isBlockTranslucent(var7, var8 + 1, var9 + 1);
-            byte var18 = -1;
-            double var19 = 9999.0D;
-
-            if (var14 && var10 < var19) {
-                var19 = var10;
-                var18 = 0;
-            }
-
-            if (var15 && 1.0D - var10 < var19) {
-                var19 = 1.0D - var10;
-                var18 = 1;
-            }
-
-            if (var16 && var12 < var19) {
-                var19 = var12;
-                var18 = 4;
-            }
-
-            if (var17 && 1.0D - var12 < var19) {
-                var19 = 1.0D - var12;
-                var18 = 5;
-            }
-
-            float var21 = 0.1F;
-
-            if (var18 == 0) {
-                this.motionX = -var21;
-            }
-
-            if (var18 == 1) {
-                this.motionX = var21;
-            }
-
-            if (var18 == 4) {
-                this.motionZ = -var21;
-            }
-
-            if (var18 == 5) {
-                this.motionZ = var21;
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * Set sprinting switch for Entity.
-     */
-    public void setSprinting(boolean p_70031_1_) {
-        super.setSprinting(p_70031_1_);
-        this.sprintingTicksLeft = p_70031_1_ ? 600 : 0;
-    }
-
-    /**
-     * Sets the current XP, total XP, and level number.
-     */
-    public void setXPStats(float p_71152_1_, int p_71152_2_, int p_71152_3_) {
-        this.experience = p_71152_1_;
-        this.experienceTotal = p_71152_2_;
-        this.experienceLevel = p_71152_3_;
-    }
-
-    /**
-     * Notifies this sender of some sort of information.  This is for messages intended to display to the user.  Used
-     * for typical output (like "you asked for whether or not this game rule is set, so here's your answer"), warnings
-     * (like "I fetched this block for you by ID, but I'd like you to know that every time you do this, I die a little
-     * inside"), and errors (like "it's not called iron_pixacke, silly").
-     */
-    public void addChatMessage(IChatComponent p_145747_1_) {
-        this.mc.ingameGUI.getChatGUI().func_146227_a(p_145747_1_);
-    }
-
-    /**
-     * Returns true if the command sender is allowed to use the given command.
-     */
-    public boolean canCommandSenderUseCommand(int p_70003_1_, String p_70003_2_) {
-        return p_70003_1_ <= 0;
-    }
-
-    /**
-     * Return the position for this command sender.
-     */
-    public ChunkCoordinates getPlayerCoordinates() {
-        return new ChunkCoordinates(MathHelper.floor_double(this.posX + 0.5D), MathHelper.floor_double(this.posY + 0.5D), MathHelper.floor_double(this.posZ + 0.5D));
-    }
-
-    public void playSound(String p_85030_1_, float p_85030_2_, float p_85030_3_) {
-        this.worldObj.playSound(this.posX, this.posY - (double)this.yOffset, this.posZ, p_85030_1_, p_85030_2_, p_85030_3_, false);
-    }
-
-    /**
-     * Returns whether the entity is in a local (com.cheatbreaker.client) world
-     */
-    public boolean isClientWorld() {
-        return true;
-    }
-
-    public boolean isRidingHorse() {
-        return this.ridingEntity != null && this.ridingEntity instanceof EntityHorse;
-    }
-
-    public float getHorseJumpPower() {
-        return this.horseJumpPower;
-    }
-
-    protected void func_110318_g() {}
 }

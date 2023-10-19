@@ -2,7 +2,12 @@ package com.cheatbreaker.client.module.impl.normal.hud.armorstatus;
 
 import java.util.List;
 
-public class ArmorStatusDamageComparable implements Comparable {
+/**
+ * @ModuleUtility - ArmorStatusDamageComparable
+ *
+ * This utility is used to get information on an item for use in the Armor Status module.
+ */
+public class ArmorStatusDamageComparable implements Comparable<ArmorStatusDamageComparable> {
     public int percent;
     public String colorCode;
 
@@ -11,14 +16,13 @@ public class ArmorStatusDamageComparable implements Comparable {
         this.colorCode = colorCode;
     }
 
-    public String toString() {
-        return this.percent + ", " + this.colorCode;
-    }
-
     public int compare(ArmorStatusDamageComparable damageComparable) {
         return Integer.compare(this.percent, damageComparable.percent);
     }
 
+    /**
+     * Returns the item damage color.
+     */
     public static String getDamageColor(List<ArmorStatusDamageComparable> durability, int n) {
         for (ArmorStatusDamageComparable armorStatusDamageComparable : durability) {
             if (n > armorStatusDamageComparable.percent) continue;
@@ -27,7 +31,7 @@ public class ArmorStatusDamageComparable implements Comparable {
         return "f";
     }
 
-    public int compareTo(Object object) {
-        return this.compare((ArmorStatusDamageComparable)object);
+    public int compareTo(ArmorStatusDamageComparable object) {
+        return this.compare(object);
     }
 }

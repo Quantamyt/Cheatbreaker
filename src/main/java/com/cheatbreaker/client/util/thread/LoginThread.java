@@ -10,10 +10,11 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.util.Session;
 
 import java.net.Proxy;
-import java.util.concurrent.CompletableFuture;
 
-@Getter
-@Setter
+/**
+ * Minecraft Login Thread.
+ */
+@Getter @Setter
 public class LoginThread extends Thread {
 
     private String password;
@@ -43,7 +44,6 @@ public class LoginThread extends Thread {
         this.password = alt.split(":")[1];
         loggedIn = false;
     }
-
 
     public Session createSession(String username, String password) {
         YggdrasilAuthenticationService service = new YggdrasilAuthenticationService(Proxy.NO_PROXY, "");

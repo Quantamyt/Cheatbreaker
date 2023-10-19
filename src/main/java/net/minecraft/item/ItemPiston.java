@@ -2,17 +2,15 @@ package net.minecraft.item;
 
 import net.minecraft.block.Block;
 
-public class ItemPiston extends ItemBlock {
-
-
-    public ItemPiston(Block p_i45348_1_) {
-        super(p_i45348_1_);
+public class ItemPiston extends ItemBlock
+{
+    public ItemPiston(Block block)
+    {
+        super(block);
     }
 
-    /**
-     * Returns the metadata of the block which this Item (ItemBlock) can place
-     */
-    public int getMetadata(int p_77647_1_) {
+    public int getMetadata(int damage)
+    {
         return 7;
     }
 }

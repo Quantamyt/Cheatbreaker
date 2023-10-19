@@ -2,10 +2,11 @@ package net.minecraft.entity.boss;
 
 import net.minecraft.util.IChatComponent;
 
-public interface IBossDisplayData {
+public interface IBossDisplayData
+{
     float getMaxHealth();
 
     float getHealth();
 
-    IChatComponent func_145748_c_();
+    IChatComponent getDisplayName();
 }

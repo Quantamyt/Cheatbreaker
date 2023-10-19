@@ -3,57 +3,78 @@ package net.minecraft.client.renderer.texture;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
-import javax.imageio.ImageIO;
 import net.minecraft.client.resources.IResource;
 import net.minecraft.client.resources.IResourceManager;
 import net.minecraft.client.resources.data.TextureMetadataSection;
 import net.minecraft.src.Config;
 import net.minecraft.util.ResourceLocation;
+import net.optifine.EmissiveTextures;
+import net.optifine.shaders.ShadersTex;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import shadersmod.client.ShadersTex;
 
-public class SimpleTexture extends AbstractTexture {
+public class SimpleTexture extends AbstractTexture
+{
     private static final Logger logger = LogManager.getLogger();
     protected final ResourceLocation textureLocation;
+    public ResourceLocation locationEmissive;
+    public boolean isEmissive;
 
-    public SimpleTexture(ResourceLocation par1ResourceLocation) {
-        this.textureLocation = par1ResourceLocation;
+    public SimpleTexture(ResourceLocation textureResourceLocation)
+    {
+        this.textureLocation = textureResourceLocation;
     }
 
-    public void loadTexture(IResourceManager par1ResourceManager) throws IOException {
-        this.func_147631_c();
-        InputStream var2 = null;
+    public void loadTexture(IResourceManager resourceManager) throws IOException
+    {
+        this.deleteGlTexture();
+        InputStream inputstream = null;
 
-        try {
-            IResource var3 = par1ResourceManager.getResource(this.textureLocation);
-            var2 = var3.getInputStream();
-            BufferedImage var4 = ImageIO.read(var2);
-            boolean var5 = false;
-            boolean var6 = false;
+        try
+        {
+            IResource iresource = resourceManager.getResource(this.textureLocation);
+            inputstream = iresource.getInputStream();
+            BufferedImage bufferedimage = TextureUtil.readBufferedImage(inputstream);
+            boolean flag = false;
+            boolean flag1 = false;
 
-            if (var3.hasMetadata()) {
-                try {
-                    TextureMetadataSection var11 = (TextureMetadataSection)var3.getMetadata("texture");
+            if (iresource.hasMetadata())
+            {
+                try
+                {
+                    TextureMetadataSection texturemetadatasection = (TextureMetadataSection)iresource.getMetadata("texture");
 
-                    if (var11 != null) {
-                        var5 = var11.getTextureBlur();
-                        var6 = var11.getTextureClamp();
+                    if (texturemetadatasection != null)
+                    {
+                        flag = texturemetadatasection.getTextureBlur();
+                        flag1 = texturemetadatasection.getTextureClamp();
                     }
-                } catch (RuntimeException var111) {
-                    logger.warn("Failed reading metadata of: " + this.textureLocation, var111);
+                }
+                catch (RuntimeException runtimeexception)
+                {
+                    logger.warn((String)("Failed reading metadata of: " + this.textureLocation), (Throwable)runtimeexception);
                 }
             }
 
-            if (Config.isShaders()) {
-                ShadersTex.loadSimpleTexture(this.getGlTextureId(), var4, var5, var6, par1ResourceManager, this.textureLocation, this.getMultiTexID());
-            } else {
-                TextureUtil.uploadTextureImageAllocate(this.getGlTextureId(), var4, var5, var6);
+            if (Config.isShaders())
+            {
+                ShadersTex.loadSimpleTexture(this.getGlTextureId(), bufferedimage, flag, flag1, resourceManager, this.textureLocation, this.getMultiTexID());
+            }
+            else
+            {
+                TextureUtil.uploadTextureImageAllocate(this.getGlTextureId(), bufferedimage, flag, flag1);
+            }
+
+            if (EmissiveTextures.isActive())
+            {
+                EmissiveTextures.loadTexture(this.textureLocation, this);
             }
         }
-        finally {
-            if (var2 != null) {
-                var2.close();
+        finally
+        {
+            if (inputstream != null)
+            {
+                inputstream.close();
             }
         }
     }

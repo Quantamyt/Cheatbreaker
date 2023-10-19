@@ -1,177 +1,212 @@
 package net.minecraft.block;
 
 import java.util.Random;
+import net.minecraft.block.material.MapColor;
 import net.minecraft.block.material.Material;
-import net.minecraft.client.renderer.texture.IIconRegister;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.AxisAlignedBB;
+import net.minecraft.util.BlockPos;
+import net.minecraft.util.EnumFacing;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 
-public abstract class BlockBasePressurePlate extends Block {
-    private final String field_150067_a;
+public abstract class BlockBasePressurePlate extends Block
+{
+    protected BlockBasePressurePlate(Material materialIn)
+    {
+        this(materialIn, materialIn.getMaterialMapColor());
+    }
 
-
-    protected BlockBasePressurePlate(String p_i45387_1_, Material p_i45387_2_) {
-        super(p_i45387_2_);
-        this.field_150067_a = p_i45387_1_;
+    protected BlockBasePressurePlate(Material p_i46401_1_, MapColor p_i46401_2_)
+    {
+        super(p_i46401_1_, p_i46401_2_);
         this.setCreativeTab(CreativeTabs.tabRedstone);
         this.setTickRandomly(true);
-        this.func_150063_b(this.func_150066_d(15));
     }
 
-    public void setBlockBoundsBasedOnState(IBlockAccess p_149719_1_, int p_149719_2_, int p_149719_3_, int p_149719_4_) {
-        this.func_150063_b(p_149719_1_.getBlockMetadata(p_149719_2_, p_149719_3_, p_149719_4_));
+    public void setBlockBoundsBasedOnState(IBlockAccess worldIn, BlockPos pos)
+    {
+        this.setBlockBoundsBasedOnState0(worldIn.getBlockState(pos));
     }
 
-    protected void func_150063_b(int p_150063_1_) {
-        boolean var2 = this.func_150060_c(p_150063_1_) > 0;
-        float var3 = 0.0625F;
+    protected void setBlockBoundsBasedOnState0(IBlockState state)
+    {
+        boolean flag = this.getRedstoneStrength(state) > 0;
+        float f = 0.0625F;
 
-        if (var2) {
-            this.setBlockBounds(var3, 0.0F, var3, 1.0F - var3, 0.03125F, 1.0F - var3);
-        } else {
-            this.setBlockBounds(var3, 0.0F, var3, 1.0F - var3, 0.0625F, 1.0F - var3);
+        if (flag)
+        {
+            this.setBlockBounds(0.0625F, 0.0F, 0.0625F, 0.9375F, 0.03125F, 0.9375F);
+        }
+        else
+        {
+            this.setBlockBounds(0.0625F, 0.0F, 0.0625F, 0.9375F, 0.0625F, 0.9375F);
         }
     }
 
-    public int func_149738_a(World p_149738_1_) {
+    public int tickRate(World worldIn)
+    {
         return 20;
     }
 
-    /**
-     * Returns a bounding box from the pool of bounding boxes (this means this box can change after the pool has been
-     * cleared to be reused)
-     */
-    public AxisAlignedBB getCollisionBoundingBoxFromPool(World p_149668_1_, int p_149668_2_, int p_149668_3_, int p_149668_4_) {
+    public AxisAlignedBB getCollisionBoundingBox(World worldIn, BlockPos pos, IBlockState state)
+    {
         return null;
     }
 
-    public boolean isOpaqueCube() {
+    public boolean isOpaqueCube()
+    {
         return false;
     }
 
-    public boolean renderAsNormalBlock() {
+    public boolean isFullCube()
+    {
         return false;
     }
 
-    public boolean getBlocksMovement(IBlockAccess p_149655_1_, int p_149655_2_, int p_149655_3_, int p_149655_4_) {
+    public boolean isPassable(IBlockAccess worldIn, BlockPos pos)
+    {
         return true;
     }
 
-    public boolean canPlaceBlockAt(World p_149742_1_, int p_149742_2_, int p_149742_3_, int p_149742_4_) {
-        return World.doesBlockHaveSolidTopSurface(p_149742_1_, p_149742_2_, p_149742_3_ - 1, p_149742_4_) || BlockFence.func_149825_a(p_149742_1_.getBlock(p_149742_2_, p_149742_3_ - 1, p_149742_4_));
+    public boolean canSpawnInBlock()
+    {
+        return true;
     }
 
-    public void onNeighborBlockChange(World p_149695_1_, int p_149695_2_, int p_149695_3_, int p_149695_4_, Block p_149695_5_) {
-        boolean var6 = !World.doesBlockHaveSolidTopSurface(p_149695_1_, p_149695_2_, p_149695_3_ - 1, p_149695_4_) && !BlockFence.func_149825_a(p_149695_1_.getBlock(p_149695_2_, p_149695_3_ - 1, p_149695_4_));
+    public boolean canPlaceBlockAt(World worldIn, BlockPos pos)
+    {
+        return this.canBePlacedOn(worldIn, pos.down());
+    }
 
-        if (var6) {
-            this.dropBlockAsItem(p_149695_1_, p_149695_2_, p_149695_3_, p_149695_4_, p_149695_1_.getBlockMetadata(p_149695_2_, p_149695_3_, p_149695_4_), 0);
-            p_149695_1_.setBlockToAir(p_149695_2_, p_149695_3_, p_149695_4_);
+    public void onNeighborBlockChange(World worldIn, BlockPos pos, IBlockState state, Block neighborBlock)
+    {
+        if (!this.canBePlacedOn(worldIn, pos.down()))
+        {
+            this.dropBlockAsItem(worldIn, pos, state, 0);
+            worldIn.setBlockToAir(pos);
         }
     }
 
-    /**
-     * Ticks the block if it's been scheduled
-     */
-    public void updateTick(World p_149674_1_, int p_149674_2_, int p_149674_3_, int p_149674_4_, Random p_149674_5_) {
-        if (!p_149674_1_.isClient) {
-            int var6 = this.func_150060_c(p_149674_1_.getBlockMetadata(p_149674_2_, p_149674_3_, p_149674_4_));
+    private boolean canBePlacedOn(World worldIn, BlockPos pos)
+    {
+        return World.doesBlockHaveSolidTopSurface(worldIn, pos) || worldIn.getBlockState(pos).getBlock() instanceof BlockFence;
+    }
 
-            if (var6 > 0) {
-                this.func_150062_a(p_149674_1_, p_149674_2_, p_149674_3_, p_149674_4_, var6);
+    public void randomTick(World worldIn, BlockPos pos, IBlockState state, Random random)
+    {
+    }
+
+    public void updateTick(World worldIn, BlockPos pos, IBlockState state, Random rand)
+    {
+        if (!worldIn.isRemote)
+        {
+            int i = this.getRedstoneStrength(state);
+
+            if (i > 0)
+            {
+                this.updateState(worldIn, pos, state, i);
             }
         }
     }
 
-    public void onEntityCollidedWithBlock(World p_149670_1_, int p_149670_2_, int p_149670_3_, int p_149670_4_, Entity p_149670_5_) {
-        if (!p_149670_1_.isClient) {
-            int var6 = this.func_150060_c(p_149670_1_.getBlockMetadata(p_149670_2_, p_149670_3_, p_149670_4_));
+    public void onEntityCollidedWithBlock(World worldIn, BlockPos pos, IBlockState state, Entity entityIn)
+    {
+        if (!worldIn.isRemote)
+        {
+            int i = this.getRedstoneStrength(state);
 
-            if (var6 == 0) {
-                this.func_150062_a(p_149670_1_, p_149670_2_, p_149670_3_, p_149670_4_, var6);
+            if (i == 0)
+            {
+                this.updateState(worldIn, pos, state, i);
             }
         }
     }
 
-    protected void func_150062_a(World p_150062_1_, int p_150062_2_, int p_150062_3_, int p_150062_4_, int p_150062_5_) {
-        int var6 = this.func_150065_e(p_150062_1_, p_150062_2_, p_150062_3_, p_150062_4_);
-        boolean var7 = p_150062_5_ > 0;
-        boolean var8 = var6 > 0;
+    protected void updateState(World worldIn, BlockPos pos, IBlockState state, int oldRedstoneStrength)
+    {
+        int i = this.computeRedstoneStrength(worldIn, pos);
+        boolean flag = oldRedstoneStrength > 0;
+        boolean flag1 = i > 0;
 
-        if (p_150062_5_ != var6) {
-            p_150062_1_.setBlockMetadataWithNotify(p_150062_2_, p_150062_3_, p_150062_4_, this.func_150066_d(var6), 2);
-            this.func_150064_a_(p_150062_1_, p_150062_2_, p_150062_3_, p_150062_4_);
-            p_150062_1_.markBlockRangeForRenderUpdate(p_150062_2_, p_150062_3_, p_150062_4_, p_150062_2_, p_150062_3_, p_150062_4_);
+        if (oldRedstoneStrength != i)
+        {
+            state = this.setRedstoneStrength(state, i);
+            worldIn.setBlockState(pos, state, 2);
+            this.updateNeighbors(worldIn, pos);
+            worldIn.markBlockRangeForRenderUpdate(pos, pos);
         }
 
-        if (!var8 && var7) {
-            p_150062_1_.playSoundEffect((double)p_150062_2_ + 0.5D, (double)p_150062_3_ + 0.1D, (double)p_150062_4_ + 0.5D, "random.click", 0.3F, 0.5F);
-        } else if (var8 && !var7) {
-            p_150062_1_.playSoundEffect((double)p_150062_2_ + 0.5D, (double)p_150062_3_ + 0.1D, (double)p_150062_4_ + 0.5D, "random.click", 0.3F, 0.6F);
+        if (!flag1 && flag)
+        {
+            worldIn.playSoundEffect((double)pos.getX() + 0.5D, (double)pos.getY() + 0.1D, (double)pos.getZ() + 0.5D, "random.click", 0.3F, 0.5F);
+        }
+        else if (flag1 && !flag)
+        {
+            worldIn.playSoundEffect((double)pos.getX() + 0.5D, (double)pos.getY() + 0.1D, (double)pos.getZ() + 0.5D, "random.click", 0.3F, 0.6F);
         }
 
-        if (var8) {
-            p_150062_1_.scheduleBlockUpdate(p_150062_2_, p_150062_3_, p_150062_4_, this, this.func_149738_a(p_150062_1_));
+        if (flag1)
+        {
+            worldIn.scheduleUpdate(pos, this, this.tickRate(worldIn));
         }
     }
 
-    protected AxisAlignedBB func_150061_a(int p_150061_1_, int p_150061_2_, int p_150061_3_) {
-        float var4 = 0.125F;
-        return AxisAlignedBB.getBoundingBox((float)p_150061_1_ + var4, p_150061_2_, (float)p_150061_3_ + var4, (float)(p_150061_1_ + 1) - var4, (double)p_150061_2_ + 0.25D, (float)(p_150061_3_ + 1) - var4);
+    protected AxisAlignedBB getSensitiveAABB(BlockPos pos)
+    {
+        float f = 0.125F;
+        return new AxisAlignedBB((double)((float)pos.getX() + 0.125F), (double)pos.getY(), (double)((float)pos.getZ() + 0.125F), (double)((float)(pos.getX() + 1) - 0.125F), (double)pos.getY() + 0.25D, (double)((float)(pos.getZ() + 1) - 0.125F));
     }
 
-    public void breakBlock(World p_149749_1_, int p_149749_2_, int p_149749_3_, int p_149749_4_, Block p_149749_5_, int p_149749_6_) {
-        if (this.func_150060_c(p_149749_6_) > 0) {
-            this.func_150064_a_(p_149749_1_, p_149749_2_, p_149749_3_, p_149749_4_);
+    public void breakBlock(World worldIn, BlockPos pos, IBlockState state)
+    {
+        if (this.getRedstoneStrength(state) > 0)
+        {
+            this.updateNeighbors(worldIn, pos);
         }
 
-        super.breakBlock(p_149749_1_, p_149749_2_, p_149749_3_, p_149749_4_, p_149749_5_, p_149749_6_);
+        super.breakBlock(worldIn, pos, state);
     }
 
-    protected void func_150064_a_(World p_150064_1_, int p_150064_2_, int p_150064_3_, int p_150064_4_) {
-        p_150064_1_.notifyBlocksOfNeighborChange(p_150064_2_, p_150064_3_, p_150064_4_, this);
-        p_150064_1_.notifyBlocksOfNeighborChange(p_150064_2_, p_150064_3_ - 1, p_150064_4_, this);
+    protected void updateNeighbors(World worldIn, BlockPos pos)
+    {
+        worldIn.notifyNeighborsOfStateChange(pos, this);
+        worldIn.notifyNeighborsOfStateChange(pos.down(), this);
     }
 
-    public int isProvidingWeakPower(IBlockAccess p_149709_1_, int p_149709_2_, int p_149709_3_, int p_149709_4_, int p_149709_5_) {
-        return this.func_150060_c(p_149709_1_.getBlockMetadata(p_149709_2_, p_149709_3_, p_149709_4_));
+    public int getWeakPower(IBlockAccess worldIn, BlockPos pos, IBlockState state, EnumFacing side)
+    {
+        return this.getRedstoneStrength(state);
     }
 
-    public int isProvidingStrongPower(IBlockAccess p_149748_1_, int p_149748_2_, int p_149748_3_, int p_149748_4_, int p_149748_5_) {
-        return p_149748_5_ == 1 ? this.func_150060_c(p_149748_1_.getBlockMetadata(p_149748_2_, p_149748_3_, p_149748_4_)) : 0;
+    public int getStrongPower(IBlockAccess worldIn, BlockPos pos, IBlockState state, EnumFacing side)
+    {
+        return side == EnumFacing.UP ? this.getRedstoneStrength(state) : 0;
     }
 
-    /**
-     * Can this block provide power. Only wire currently seems to have this change based on its state.
-     */
-    public boolean canProvidePower() {
+    public boolean canProvidePower()
+    {
         return true;
     }
 
-    /**
-     * Sets the block's bounds for rendering it as an item
-     */
-    public void setBlockBoundsForItemRender() {
-        float var1 = 0.5F;
-        float var2 = 0.125F;
-        float var3 = 0.5F;
-        this.setBlockBounds(0.5F - var1, 0.5F - var2, 0.5F - var3, 0.5F + var1, 0.5F + var2, 0.5F + var3);
+    public void setBlockBoundsForItemRender()
+    {
+        float f = 0.5F;
+        float f1 = 0.125F;
+        float f2 = 0.5F;
+        this.setBlockBounds(0.0F, 0.375F, 0.0F, 1.0F, 0.625F, 1.0F);
     }
 
-    public int getMobilityFlag() {
+    public int getMobilityFlag()
+    {
         return 1;
     }
 
-    protected abstract int func_150065_e(World p_150065_1_, int p_150065_2_, int p_150065_3_, int p_150065_4_);
+    protected abstract int computeRedstoneStrength(World worldIn, BlockPos pos);
 
-    protected abstract int func_150060_c(int p_150060_1_);
+    protected abstract int getRedstoneStrength(IBlockState state);
 
-    protected abstract int func_150066_d(int p_150066_1_);
-
-    public void registerBlockIcons(IIconRegister p_149651_1_) {
-        this.blockIcon = p_149651_1_.registerIcon(this.field_150067_a);
-    }
+    protected abstract IBlockState setRedstoneStrength(IBlockState state, int strength);
 }

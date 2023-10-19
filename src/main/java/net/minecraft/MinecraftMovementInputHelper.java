@@ -1,7 +1,7 @@
 package net.minecraft;
 
 import com.cheatbreaker.client.CheatBreaker;
-import com.cheatbreaker.client.module.impl.normal.hud.simple.impl.ModuleToggleSprint;
+import com.cheatbreaker.client.module.impl.normal.hud.simple.module.SimpleModuleToggleSprint;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.settings.GameSettings;
@@ -10,18 +10,18 @@ import net.minecraft.util.MovementInputFromOptions;
 import java.text.DecimalFormat;
 
 public class MinecraftMovementInputHelper extends MovementInputFromOptions {
-    public static boolean lIIIIlIIllIIlIIlIIIlIIllI;
+    public static boolean isToggleSprintAllowed;
     public static boolean lIIIIIIIIIlIllIIllIlIIlIl;
     public static boolean isSprinting = true;
     public static boolean superSusBoolean = false;
     public static boolean aSusBoolean = false;
-    private static long IlIlllIIIIllIllllIllIIlIl;
+    private static long someTiming;
     private static long llIIlllIIIIlllIllIlIlllIl;
-    private static boolean lIIlIlIllIIlIIIlIIIlllIII;
+    private static boolean someToggleSneakBoolean;
     private static boolean IIIlllIIIllIllIlIIIIIIlII;
-    private static boolean llIlIIIlIIIIlIlllIlIIIIll;
+    private static boolean isPlayerRiding;
     private static boolean IIIlIIllllIIllllllIlIIIll;
-    private static boolean lllIIIIIlIllIlIIIllllllII;
+    private static boolean shouldBeSprinting;
     public static String toggleSprintString = "";
 
     public MinecraftMovementInputHelper(GameSettings gameSettings) {
@@ -32,52 +32,52 @@ public class MinecraftMovementInputHelper extends MovementInputFromOptions {
         movementInputFromOptions.moveStrafe = 0.0f;
         movementInputFromOptions.moveForward = 0.0f;
         GameSettings gameSettings = minecraft.gameSettings;
-        if (gameSettings.keyBindForward.getIsKeyPressed()) {
+        if (gameSettings.keyBindForward.isKeyDown()) {
             movementInputFromOptions.moveForward += 1.0f;
         }
-        if (gameSettings.keyBindBack.getIsKeyPressed()) {
+        if (gameSettings.keyBindBack.isKeyDown()) {
             movementInputFromOptions.moveForward -= 1.0f;
         }
-        if (gameSettings.keyBindLeft.getIsKeyPressed()) {
+        if (gameSettings.keyBindLeft.isKeyDown()) {
             movementInputFromOptions.moveStrafe += 1.0f;
         }
-        if (gameSettings.keyBindRight.getIsKeyPressed()) {
+        if (gameSettings.keyBindRight.isKeyDown()) {
             movementInputFromOptions.moveStrafe -= 1.0f;
         }
         if (entityPlayerSP.isRiding() && !IIIlIIllllIIllllllIlIIIll) {
             IIIlIIllllIIllllllIlIIIll = true;
-            lllIIIIIlIllIlIIIllllllII = isSprinting;
+            shouldBeSprinting = isSprinting;
         } else if (IIIlIIllllIIllllllIlIIIll && !entityPlayerSP.isRiding()) {
             IIIlIIllllIIllllllIlIIIll = false;
-            if (lllIIIIIlIllIlIIIllllllII && !isSprinting) {
+            if (shouldBeSprinting && !isSprinting) {
                 isSprinting = true;
                 llIIlllIIIIlllIllIlIlllIl = System.currentTimeMillis();
                 IIIlllIIIllIllIlIIIIIIlII = true;
                 superSusBoolean = false;
             }
         }
-        movementInputFromOptions.jump = gameSettings.keyBindJump.getIsKeyPressed();
-        if ((Boolean) ModuleToggleSprint.toggleSneak.getValue() && CheatBreaker.getInstance().getModuleManager().toggleSprintMod.isEnabled()) {
-            if (gameSettings.keyBindSneak.getIsKeyPressed() && !lIIlIlIllIIlIIIlIIIlllIII) {
+        movementInputFromOptions.jump = gameSettings.keyBindJump.isKeyDown();
+        if ((Boolean) SimpleModuleToggleSprint.toggleSneak.getValue() && CheatBreaker.getInstance().getModuleManager().toggleSprintMod.isEnabled()) {
+            if (gameSettings.keyBindSneak.isKeyDown() && !someToggleSneakBoolean) {
                 if (entityPlayerSP.isRiding() || entityPlayerSP.capabilities.isFlying) {
                     movementInputFromOptions.sneak = true;
-                    llIlIIIlIIIIlIlllIlIIIIll = entityPlayerSP.isRiding();
+                    isPlayerRiding = entityPlayerSP.isRiding();
                 } else {
                     movementInputFromOptions.sneak = !movementInputFromOptions.sneak;
                 }
-                IlIlllIIIIllIllllIllIIlIl = System.currentTimeMillis();
-                lIIlIlIllIIlIIIlIIIlllIII = true;
+                someTiming = System.currentTimeMillis();
+                someToggleSneakBoolean = true;
             }
-            if (!gameSettings.keyBindSneak.getIsKeyPressed() && lIIlIlIllIIlIIIlIIIlllIII) {
-                if (entityPlayerSP.capabilities.isFlying || llIlIIIlIIIIlIlllIlIIIIll) {
+            if (!gameSettings.keyBindSneak.isKeyDown() && someToggleSneakBoolean) {
+                if (entityPlayerSP.capabilities.isFlying || isPlayerRiding) {
                     movementInputFromOptions.sneak = false;
-                } else if (System.currentTimeMillis() - IlIlllIIIIllIllllIllIIlIl > 300L) {
+                } else if (System.currentTimeMillis() - someTiming > 300L) {
                     movementInputFromOptions.sneak = false;
                 }
-                lIIlIlIllIIlIIIlIIIlllIII = false;
+                someToggleSneakBoolean = false;
             }
         } else {
-            movementInputFromOptions.sneak = gameSettings.keyBindSneak.getIsKeyPressed();
+            movementInputFromOptions.sneak = gameSettings.keyBindSneak.isKeyDown();
         }
         if (movementInputFromOptions.sneak) {
             movementInputFromOptions.moveStrafe = (float)((double)movementInputFromOptions.moveStrafe * ((double)1.7f * 0.17647058328542756));
@@ -85,15 +85,15 @@ public class MinecraftMovementInputHelper extends MovementInputFromOptions {
         }
         boolean bl = (float)entityPlayerSP.getFoodStats().getFoodLevel() > (float)6 || entityPlayerSP.capabilities.isFlying;
         boolean bl2 = !movementInputFromOptions.sneak && !entityPlayerSP.capabilities.isFlying && bl;
-        lIIIIlIIllIIlIIlIIIlIIllI = !((Boolean) ModuleToggleSprint.toggleSprint.getValue());
-        lIIIIIIIIIlIllIIllIlIIlIl = (Boolean) ModuleToggleSprint.doubleTap.getValue();
-        if ((bl2 || lIIIIlIIllIIlIIlIIIlIIllI) && gameSettings.keyBindSprint.getIsKeyPressed() && !IIIlllIIIllIllIlIIIIIIlII && !entityPlayerSP.capabilities.isFlying && !lIIIIlIIllIIlIIlIIIlIIllI) {
+        isToggleSprintAllowed = !((Boolean) SimpleModuleToggleSprint.toggleSprint.getValue());
+        lIIIIIIIIIlIllIIllIlIIlIl = (Boolean) SimpleModuleToggleSprint.doubleTap.getValue();
+        if ((bl2 || isToggleSprintAllowed) && gameSettings.keyBindSprint.isKeyDown() && !IIIlllIIIllIllIlIIIIIIlII && !entityPlayerSP.capabilities.isFlying && !isToggleSprintAllowed) {
             isSprinting = !isSprinting;
             llIIlllIIIIlllIllIlIlllIl = System.currentTimeMillis();
             IIIlllIIIllIllIlIIIIIIlII = true;
             superSusBoolean = false;
         }
-        if ((bl2 || lIIIIlIIllIIlIIlIIIlIIllI) && !gameSettings.keyBindSprint.getIsKeyPressed() && IIIlllIIIllIllIlIIIIIIlII) {
+        if ((bl2 || isToggleSprintAllowed) && !gameSettings.keyBindSprint.isKeyDown() && IIIlllIIIllIllIlIIIIIIlII) {
             if (System.currentTimeMillis() - llIIlllIIIIlllIllIlIlllIl > 300L) {
                 superSusBoolean = true;
             }
@@ -112,11 +112,11 @@ public class MinecraftMovementInputHelper extends MovementInputFromOptions {
         String string = "";
         boolean flying = entityPlayerSP.capabilities.isFlying;
         boolean riding = entityPlayerSP.isRiding();
-        boolean sneakHeld = gameSettings.keyBindSneak.getIsKeyPressed();
-        boolean sprintHeld = gameSettings.keyBindSprint.getIsKeyPressed();
+        boolean sneakHeld = gameSettings.keyBindSneak.isKeyDown();
+        boolean sprintHeld = gameSettings.keyBindSprint.isKeyDown();
         if (flying) {
             DecimalFormat decimalFormat = new DecimalFormat("#.00");
-            string = (Boolean) ModuleToggleSprint.flyBoost.getValue() && sprintHeld && entityPlayerSP.capabilities.isCreativeMode ? string + ((String)CheatBreaker.getInstance().getModuleManager().toggleSprintMod.flyBoostString.getValue()).replaceAll("%BOOST%", decimalFormat.format(ModuleToggleSprint.flyBoostAmount.getValue())) : string + CheatBreaker.getInstance().getModuleManager().toggleSprintMod.flyString.getValue();
+            string = (Boolean) SimpleModuleToggleSprint.flyBoost.getValue() && sprintHeld && entityPlayerSP.capabilities.isCreativeMode ? string + ((String)CheatBreaker.getInstance().getModuleManager().toggleSprintMod.flyBoostString.getValue()).replaceAll("%BOOST%", decimalFormat.format(SimpleModuleToggleSprint.flyBoostAmount.getValue())) : string + CheatBreaker.getInstance().getModuleManager().toggleSprintMod.flyString.getValue();
         }
         if (riding) {
             string = string + CheatBreaker.getInstance().getModuleManager().toggleSprintMod.ridingString.getValue();
@@ -127,7 +127,7 @@ public class MinecraftMovementInputHelper extends MovementInputFromOptions {
                             (sneakHeld ? string + CheatBreaker.getInstance().getModuleManager().toggleSprintMod.sneakHeldString.getValue() :
                                     string + CheatBreaker.getInstance().getModuleManager().toggleSprintMod.sneakToggledString.getValue()));
         } else if (isSprinting && !flying && !riding) {
-            boolean bl5 = superSusBoolean || lIIIIlIIllIIlIIlIIIlIIllI || aSusBoolean;
+            boolean bl5 = superSusBoolean || isToggleSprintAllowed || aSusBoolean;
             string = sprintHeld ? string + CheatBreaker.getInstance().getModuleManager().toggleSprintMod.sprintHeldString.getValue() : (bl5 ? string + CheatBreaker.getInstance().getModuleManager().toggleSprintMod.sprintVanillaString.getValue() : string + CheatBreaker.getInstance().getModuleManager().toggleSprintMod.sprintToggledString.getValue());
         }
         toggleSprintString = string;

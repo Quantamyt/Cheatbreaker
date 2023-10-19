@@ -4,32 +4,33 @@ import com.cheatbreaker.client.module.AbstractModule;
 import net.minecraft.client.gui.ScaledResolution;
 
 public class AnchorHelper {//TODO: Map this class
+
     public static GuiAnchor getAnchor(float f, float f2, ScaledResolution scaledResolution) {
         int n = scaledResolution.getScaledWidth();
         int n2 = scaledResolution.getScaledHeight();
-        if (f < (float)(n / 3) && f2 < (float)(n2 / 3)) {
+        if (f < (float) (n / 3) && f2 < (float) (n2 / 3)) {
             return GuiAnchor.LEFT_TOP;
         }
-        if (f > (float)(n / 3 * 2) && f2 < (float)(n2 / 3)) {
+        if (f > (float) (n / 3 * 2) && f2 < (float) (n2 / 3)) {
             return GuiAnchor.RIGHT_TOP;
         }
-        if (f2 < (float)(n2 / 3)) {
+        if (f2 < (float) (n2 / 3)) {
             return GuiAnchor.MIDDLE_TOP;
         }
-        if (f < (float)(n / 3) && f2 < (float)(n2 / 3 * 2)) {
+        if (f < (float) (n / 3) && f2 < (float) (n2 / 3 * 2)) {
             return GuiAnchor.LEFT_MIDDLE;
         }
-        if (f > (float)(n / 3 * 2) && f2 < (float)(n2 / 3 * 2)) {
+        if (f > (float) (n / 3 * 2) && f2 < (float) (n2 / 3 * 2)) {
             return GuiAnchor.RIGHT_MIDDLE;
         }
-        if (f2 < (float)(n2 / 3 * 2)) {
+        if (f2 < (float) (n2 / 3 * 2)) {
             return GuiAnchor.MIDDLE_MIDDLE;
         }
-        if (f < (float)(n / 3)) {
+        if (f < (float) (n / 3)) {
             return GuiAnchor.LEFT_BOTTOM;
         }
-        if (f < (float)(n / 3 * 2)) {
-            if (f > (float)(n / 3 + n / 6)) {
+        if (f < (float) (n / 3 * 2)) {
+            if (f > (float) (n / 3 + n / 6)) {
                 return GuiAnchor.MIDDLE_BOTTOM_RIGHT;
             }
             return GuiAnchor.MIDDLE_BOTTOM_LEFT;
@@ -73,7 +74,7 @@ public class AnchorHelper {//TODO: Map this class
                 f6 = f4 / 3.0F * 2.0f;
                 break;
             case MIDDLE_BOTTOM_RIGHT:
-                f5 = f3 / 3.0F + f3 / (float)6;
+                f5 = f3 / 3.0F + f3 / (float) 6;
                 f6 = f4 / 3.0F * 2.0f;
                 break;
             case MIDDLE_BOTTOM_LEFT:
@@ -140,8 +141,8 @@ public class AnchorHelper {//TODO: Map this class
         float f3 = scaledResolution.getScaledWidth();
         float f4 = scaledResolution.getScaledHeight();
         GuiAnchor cBGuiAnchor = AnchorHelper.getAnchor(f, f2, scaledResolution);
-        float f5 = module.width * (Float) module.masterScale();
-        float f6 = module.height * (Float) module.masterScale();
+        float f5 = module.width * module.masterScale();
+        float f6 = module.height * module.masterScale();
         float f7 = 0.0f;
         float f8 = 0.0f;
         switch (cBGuiAnchor) {
@@ -159,7 +160,7 @@ public class AnchorHelper {//TODO: Map this class
                 break;
             case LEFT_MIDDLE:
                 f7 = f5 / 2.0f;
-                f8 = f4 / (float)6;
+                f8 = f4 / (float) 6;
                 break;
             case RIGHT_MIDDLE:
                 f7 = f3 / 3.0F - f5 / 2.0f;

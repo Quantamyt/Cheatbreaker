@@ -5,10 +5,12 @@ import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.util.Vec3;
 
-import java.awt.Color;
+import java.awt.*;
 import java.beans.ConstructorProperties;
 
-@AllArgsConstructor @Getter @Setter
+@AllArgsConstructor
+@Getter
+@Setter
 public class CBTeammate {
     private String uuid;
     private boolean leader = false;

@@ -1,9 +1,16 @@
 package com.cheatbreaker.client.module.impl.normal.perspective;
 
 import com.cheatbreaker.client.CheatBreaker;
-import com.cheatbreaker.client.event.impl.TickEvent;
+import com.cheatbreaker.client.event.impl.tick.TickEvent;
+import com.cheatbreaker.client.module.AbstractModule;
 import net.minecraft.client.Minecraft;
 
+/**
+ * @Module - ModuleSnapLook
+ * @see AbstractModule
+ *
+ * This module snaps your perspective to a certain value.
+ */
 public class ModuleSnapLook {
     private final Minecraft mc = Minecraft.getMinecraft();
     private final CheatBreaker cb = CheatBreaker.getInstance();
@@ -22,7 +29,7 @@ public class ModuleSnapLook {
                     this.tick();
                 }
             } else {
-                if (this.enabled && !this.cb.getGlobalSettings().keyBindBackLook.getIsKeyPressed() && !this.cb.getGlobalSettings().keyBindFrontLook.getIsKeyPressed()) {
+                if (this.enabled && !this.cb.getGlobalSettings().keyBindBackLook.isKeyDown() && !this.cb.getGlobalSettings().keyBindFrontLook.isKeyDown()) {
                     this.tick();
                 }
             }

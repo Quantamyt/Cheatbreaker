@@ -15,7 +15,7 @@ import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
 
 public class NewSliderElement extends AbstractModulesGuiElement {
-//    private final Setting setting;
+    //    private final Setting setting;
     private float settingValue = -1;
     private float value;
     private boolean interacting = false;
@@ -73,32 +73,42 @@ public class NewSliderElement extends AbstractModulesGuiElement {
         float darkOrLight = GlobalSettings.darkMode.getBooleanValue() ? 1.0F : 0.0F;
         GL11.glColor4f(darkOrLight, darkOrLight, darkOrLight, 0.43f);
         if (!this.setting.getLeftIcon().isEmpty() && !this.setting.getRightIcon().isEmpty()) {
+            GL11.glColor4f(darkOrLight, darkOrLight, darkOrLight, 0.43f);
             RenderUtil.renderIcon(new ResourceLocation("client/icons/" + this.setting.getLeftIcon() + ".png"), (float) (this.x + 180) - 5.0F, (float) (this.y + 3), 10.0f, 10.0f);
             Gui.drawRect((float) (this.x + 180) - 0.4509804f * 1.1086956f, this.y + 12, (float) (this.x + 180) + 0.45652175f * 1.0952381f, this.y + 14, GlobalSettings.darkMode.getBooleanValue() ? CBTheme.darkTextColor : CBTheme.lightTextColor);
+            GL11.glColor4f(darkOrLight, darkOrLight, darkOrLight, 0.43f);
             RenderUtil.renderIcon(new ResourceLocation("client/icons/" + this.setting.getRightIcon() + ".png"), (float) (this.x + 170 + n3 - 10.0f) - (float) 5, (float) (this.y + 3), (float) 10.0f, 10.0f);
             Gui.drawRect((float) (this.x + 170 + n3 - 10) - 1.1875f * 0.42105263f, this.y + 12, (float) (this.x + 170 + n3 - 10) + 0.4673913f * 1.0697675f, this.y + 14, GlobalSettings.darkMode.getBooleanValue() ? CBTheme.darkTextColor : CBTheme.lightTextColor);
             this.hasIcon = true;
         } else if (this.setting.getSettingName().endsWith("Opacity")) {
+            GL11.glColor4f(darkOrLight, darkOrLight, darkOrLight, 0.43f);
             RenderUtil.renderIcon(this.circleHollowIcon, (float) (this.x + 180) - 4.0f, (float) (this.y + 3), 7.5f, 7.5f);
             Gui.drawRect((float) (this.x + 180) - 0.4509804f * 1.1086956f, this.y + 12, (float) (this.x + 180) + 0.45652175f * 1.0952381f, this.y + 14, GlobalSettings.darkMode.getBooleanValue() ? CBTheme.darkTextColor : CBTheme.lightTextColor);
+            GL11.glColor4f(darkOrLight, darkOrLight, darkOrLight, 0.43f);
             RenderUtil.renderIcon(this.circleIcon, (float) (this.x + 170 + n3 - 7.5f) - (float) 6.5f, (float) (this.y + 3), (float) 7.5f, 7.5f);
             Gui.drawRect((float) (this.x + 170 + n3 - 10) - 1.1875f * 0.42105263f, this.y + 12, (float) (this.x + 170 + n3 - 10) + 0.4673913f * 1.0697675f, this.y + 14, GlobalSettings.darkMode.getBooleanValue() ? CBTheme.darkTextColor : CBTheme.lightTextColor);
             this.hasIcon = true;
         } else if (this.setting.getSettingName().endsWith("Volume")) {
+            GL11.glColor4f(darkOrLight, darkOrLight, darkOrLight, 0.43f);
             RenderUtil.renderIcon(this.volumeMuteIcon, (float) (this.x + 180) - 3.25f, (float) (this.y + 3), 7.5f, 7.5f);
             Gui.drawRect((float) (this.x + 180) - 0.4509804f * 1.1086956f, this.y + 12, (float) (this.x + 180) + 0.45652175f * 1.0952381f, this.y + 14, GlobalSettings.darkMode.getBooleanValue() ? CBTheme.darkTextColor : CBTheme.lightTextColor);
+            GL11.glColor4f(darkOrLight, darkOrLight, darkOrLight, 0.43f);
             RenderUtil.renderIcon(this.volumeUpIcon, (float) (this.x + 170 + n3 - 7.5f) - (float) 5, (float) (this.y + 3), (float) 7.5f, 7.5f);
             Gui.drawRect((float) (this.x + 170 + n3 - 10) - 1.1875f * 0.42105263f, this.y + 12, (float) (this.x + 170 + n3 - 10) + 0.4673913f * 1.0697675f, this.y + 14, GlobalSettings.darkMode.getBooleanValue() ? CBTheme.darkTextColor : CBTheme.lightTextColor);
             this.hasIcon = true;
         } else if (this.setting.getSettingName().equals("World Time")) {
+            GL11.glColor4f(darkOrLight, darkOrLight, darkOrLight, 0.43f);
             RenderUtil.renderIcon(this.moonIcon, (float) (this.x + 180) - 3.25f, (float) (this.y + 3), 7.5f, 7.5f);
             Gui.drawRect((float) (this.x + 180) - 0.4509804f * 1.1086956f, this.y + 12, (float) (this.x + 180) + 0.45652175f * 1.0952381f, this.y + 14, GlobalSettings.darkMode.getBooleanValue() ? CBTheme.darkTextColor : CBTheme.lightTextColor);
+            GL11.glColor4f(darkOrLight, darkOrLight, darkOrLight, 0.43f);
             RenderUtil.renderIcon(this.sunIcon, (float) (this.x + 170 + n3 - 10) - (float) 5, (float) (this.y + 2), (float) 10, 10);
             Gui.drawRect((float) (this.x + 170 + n3 - 10) - 1.1875f * 0.42105263f, this.y + 12, (float) (this.x + 170 + n3 - 10) + 0.4673913f * 1.0697675f, this.y + 14, GlobalSettings.darkMode.getBooleanValue() ? CBTheme.darkTextColor : CBTheme.lightTextColor);
             this.hasIcon = true;
         } if (this.setting.getSettingName().endsWith("Scale") || this.setting.getSettingName().endsWith("Scale Multiplier")) {
+            GL11.glColor4f(darkOrLight, darkOrLight, darkOrLight, 0.43f);
             RenderUtil.renderIcon(this.letterIcon, (float) (this.x + 180) - 3.0f, (float) (this.y + 4), 6.0f, 6.0f);
             Gui.drawRect((float) (this.x + 180) - 0.4509804f * 1.1086956f, this.y + 12, (float) (this.x + 180) + 0.45652175f * 1.0952381f, this.y + 14, GlobalSettings.darkMode.getBooleanValue() ? CBTheme.darkTextColor : CBTheme.lightTextColor);
+            GL11.glColor4f(darkOrLight, darkOrLight, darkOrLight, 0.43f);
             RenderUtil.renderIcon(this.letterIcon, (float) (this.x + 170 + n3 - 10) - (float) 4, (float) (this.y + 2.5f), (float) 8.0f, 8.0f);
             Gui.drawRect((float) (this.x + 170 + n3 - 10) - 1.1875f * 0.42105263f, this.y + 12, (float) (this.x + 170 + n3 - 10) + 0.4673913f * 1.0697675f, this.y + 14, GlobalSettings.darkMode.getBooleanValue() ? CBTheme.darkTextColor : CBTheme.lightTextColor);
             this.hasIcon = true;
@@ -133,7 +143,6 @@ public class NewSliderElement extends AbstractModulesGuiElement {
                 } else if (this.value > f5) {
                     this.value = f5;
                 }
-
                 switch (this.setting.getType()) {
                     case INTEGER:
                         this.setting.setValue(Integer.parseInt((int) this.value + ""));
@@ -144,6 +153,7 @@ public class NewSliderElement extends AbstractModulesGuiElement {
                     case DOUBLE:
                         this.setting.setValue(Double.parseDouble(this.value + ""));
                 }
+                Minecraft.getMinecraft().ingameGUI.getChatGUI().refreshChat();
             }
             f3 = (f3 = Float.parseFloat(this.setting.getValue() + "")) < this.settingValue ? this.settingValue - f3 : (f3 -= this.settingValue);
             float f6 = ((f5 - f4) / (float) 20 + f3 * (float) 8) / (float) (Minecraft.debugFPS + 1);
@@ -163,5 +173,9 @@ public class NewSliderElement extends AbstractModulesGuiElement {
             RenderUtil.drawCircle((double) ((float) this.x + 39.5f * 4.588608f) + d * d2 / (double) 100, (float) this.y + yPos3, 1.6875000046566129 * (double) 1.6f);
             this.drawDescription(this.setting, mouseX, mouseY);
         }
+    }
+
+    public float round(float floatIn) {
+        return Math.round(floatIn * 2) / 2F;
     }
 }

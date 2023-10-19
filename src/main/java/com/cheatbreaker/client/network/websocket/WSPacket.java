@@ -1,30 +1,50 @@
 package com.cheatbreaker.client.network.websocket;
 
-import net.minecraft.network.PacketBuffer;
-import com.cheatbreaker.client.network.websocket.shared.WSPacketFriendAcceptOrDeny;
 import com.cheatbreaker.client.network.websocket.client.*;
 import com.cheatbreaker.client.network.websocket.server.*;
 import com.cheatbreaker.client.network.websocket.shared.*;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import io.netty.buffer.ByteBuf;
+import net.minecraft.network.PacketBuffer;
 
 import java.io.IOException;
 
+/**
+ * This class defines what a websocket packet is for the CheatBreaker client.
+ */
 public abstract class WSPacket {
+
     public static BiMap<Class<? extends WSPacket>, Integer> REGISTRY = HashBiMap.create();
 
+    /**
+     * Writes outgoing data.
+     * Example: I wrote a string using buf.writeString(); !
+     */
     public abstract void write(PacketBuffer buf) throws IOException;
 
+    /**
+     * Reads incoming data.
+     */
     public abstract void read(PacketBuffer buf) throws IOException;
 
+    /**
+     * This gets ran when a packet is received.
+     * Example: When I receive the packet, a console message is received.
+     */
     public abstract void process(WSNetHandler netHandler);
 
+    /**
+     * Writes the length of incoming traffic and the traffic itself short using the ByteBufWrapper.
+     */
     protected void writeBlob(ByteBuf buf, byte[] data) {
         buf.writeShort(data.length);
         buf.writeBytes(data);
     }
 
+    /**
+     * Reads incoming data and returns it as bytes.
+     */
     protected byte[] readBlob(ByteBuf buf) {
         short key = buf.readShort();
         if (key < 0) {
@@ -36,6 +56,9 @@ public abstract class WSPacket {
         return data;
     }
 
+    /*
+     * Registers all the websocket packets for use on the client.
+     */
     static {
         REGISTRY.put(WSPacketJoinServer.class, 0);
         REGISTRY.put(WSPacketClientJoinServerResponse.class, 1);
@@ -63,7 +86,6 @@ public abstract class WSPacket {
         REGISTRY.put(WSPacketRequestProcessList.class, 35);
         REGISTRY.put(WSPacketClientProcessList.class, 36);
         REGISTRY.put(WSPacketClientKeySync.class, 37);
-//        REGISTRY.put(WSPacketUserConnect.class, 38);
         REGISTRY.put(WSPacketEmote.class, 39);
     }
 }

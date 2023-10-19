@@ -48,20 +48,20 @@ public class GuiResourcePacksAvailable extends GuiResourcePacksList {
             Gui.drawScaledCustomSizeModalRect(this.left + 2, top + 3, 0.0f, 0.0f, 256, 256, 32, 32, 256.0f, 256.0f);
             GlStateManager.disableBlend();
         }
-        this.mc.fontRenderer.drawString(GuiUtils.trimString(packFolder.getName(), this.listWidth - 46), (float)this.left + (showFolderIcons ? 36.0f : 2.0f), (float)top + 2.0f, -1, true);
+        this.mc.fontRendererObj.drawString(GuiUtils.trimString(packFolder.getName(), this.listWidth - 46), (float) this.left + (showFolderIcons ? 36.0f : 2.0f), (float) top + 2.0f, -1, true);
         int packFolders = packFolder.getPackFolders().size() - 1;
         if (packFolders != -1 && (Boolean) CheatBreaker.getInstance().getGlobalSettings().packFolderInfo.getValue()) {
             int entries;
             String text;
-            float y = (float)top + 13.0f;
+            float y = (float) top + 13.0f;
             if (packFolders != 0) {
                 text = GuiUtils.trimString(packFolders + (packFolders == 1 ? " Subfolder" : " Subfolders"), this.listWidth - 46);
-                this.mc.fontRenderer.drawString(text, (float)this.left + (showFolderIcons ? 36.0f : 2.0f), y, -5592406, true);
+                this.mc.fontRendererObj.drawString(text, (float) this.left + (showFolderIcons ? 36.0f : 2.0f), y, -5592406, true);
                 y += 10.0f;
             }
             if ((entries = packFolder.getEntries().size()) != 0) {
                 text = GuiUtils.trimString(entries + (entries == 1 ? " Pack" : " Packs"), this.listWidth - 46);
-                this.mc.fontRenderer.drawString(text, (float)this.left + (showFolderIcons ? 36.0f : 2.0f), y, -5592406, true);
+                this.mc.fontRendererObj.drawString(text, (float) this.left + (showFolderIcons ? 36.0f : 2.0f), y, -5592406, true);
             }
         }
     }

@@ -1,9 +1,15 @@
 package com.cheatbreaker.client.module.impl.staff.impl;
 
 import com.cheatbreaker.client.CheatBreaker;
-import com.cheatbreaker.client.module.impl.staff.StaffMod;
 import com.cheatbreaker.client.module.data.Setting;
+import com.cheatbreaker.client.module.impl.staff.StaffMod;
 
+/**
+ * @Module - StaffModuleBunnyhop
+ * @see StaffMod
+ *
+ * This staff module replicates the CSGO bunny hop.
+ */
 public class StaffModuleBunnyhop extends StaffMod {
     public static Setting trimp;
     public static Setting trimpMultiplier;
@@ -19,8 +25,8 @@ public class StaffModuleBunnyhop extends StaffMod {
     public static Setting increasedFallDistance;
     public static Setting maxAirAccelPerTick;
 
-    public StaffModuleBunnyhop(String string) {
-        super(string);
+    public StaffModuleBunnyhop() {
+        super("bunnyhop");
         this.setStaffModule(true);
         trimp = new Setting(this, "Trimp").setValue(true);
         trimpMultiplier = new Setting(this, "Trimp Multiplier").setValue(1.4F).setMinMax(1.0f, 4.0F);
@@ -38,6 +44,6 @@ public class StaffModuleBunnyhop extends StaffMod {
     }
 
     public static boolean canUse() {
-        return CheatBreaker.getInstance().getModuleManager().staffModuleBunnyhop.isStaffModuleEnabled() && CheatBreaker.getInstance().getModuleManager().staffModuleBunnyhop.isEnabled();
+        return CheatBreaker.getInstance().getModuleManager().staffBunnyhop.isStaffModuleEnabled() && CheatBreaker.getInstance().getModuleManager().staffBunnyhop.isEnabled();
     }
 }

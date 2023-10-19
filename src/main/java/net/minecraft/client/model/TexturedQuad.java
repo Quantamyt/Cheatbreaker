@@ -1,56 +1,78 @@
 package net.minecraft.client.model;
 
 import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.client.renderer.WorldRenderer;
+import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
+import net.minecraft.src.Config;
 import net.minecraft.util.Vec3;
+import net.optifine.shaders.SVertexFormat;
 
-public class TexturedQuad {
+public class TexturedQuad
+{
     public PositionTextureVertex[] vertexPositions;
     public int nVertices;
     private boolean invertNormal;
 
-
-    public TexturedQuad(PositionTextureVertex[] p_i46364_1_) {
-        this.vertexPositions = p_i46364_1_;
-        this.nVertices = p_i46364_1_.length;
+    public TexturedQuad(PositionTextureVertex[] vertices)
+    {
+        this.vertexPositions = vertices;
+        this.nVertices = vertices.length;
     }
 
-    public TexturedQuad(PositionTextureVertex[] p_i1153_1_, int p_i1153_2_, int p_i1153_3_, int p_i1153_4_, int p_i1153_5_, float p_i1153_6_, float p_i1153_7_) {
-        this(p_i1153_1_);
-        float var8 = 0.0F / p_i1153_6_;
-        float var9 = 0.0F / p_i1153_7_;
-        p_i1153_1_[0] = p_i1153_1_[0].setTexturePosition((float)p_i1153_4_ / p_i1153_6_ - var8, (float)p_i1153_3_ / p_i1153_7_ + var9);
-        p_i1153_1_[1] = p_i1153_1_[1].setTexturePosition((float)p_i1153_2_ / p_i1153_6_ + var8, (float)p_i1153_3_ / p_i1153_7_ + var9);
-        p_i1153_1_[2] = p_i1153_1_[2].setTexturePosition((float)p_i1153_2_ / p_i1153_6_ + var8, (float)p_i1153_5_ / p_i1153_7_ - var9);
-        p_i1153_1_[3] = p_i1153_1_[3].setTexturePosition((float)p_i1153_4_ / p_i1153_6_ - var8, (float)p_i1153_5_ / p_i1153_7_ - var9);
+    public TexturedQuad(PositionTextureVertex[] vertices, int texcoordU1, int texcoordV1, int texcoordU2, int texcoordV2, float textureWidth, float textureHeight)
+    {
+        this(vertices);
+        float f = 0.0F / textureWidth;
+        float f1 = 0.0F / textureHeight;
+        vertices[0] = vertices[0].setTexturePosition((float)texcoordU2 / textureWidth - f, (float)texcoordV1 / textureHeight + f1);
+        vertices[1] = vertices[1].setTexturePosition((float)texcoordU1 / textureWidth + f, (float)texcoordV1 / textureHeight + f1);
+        vertices[2] = vertices[2].setTexturePosition((float)texcoordU1 / textureWidth + f, (float)texcoordV2 / textureHeight - f1);
+        vertices[3] = vertices[3].setTexturePosition((float)texcoordU2 / textureWidth - f, (float)texcoordV2 / textureHeight - f1);
     }
 
-    public void flipFace() {
-        PositionTextureVertex[] var1 = new PositionTextureVertex[this.vertexPositions.length];
+    public void flipFace()
+    {
+        PositionTextureVertex[] apositiontexturevertex = new PositionTextureVertex[this.vertexPositions.length];
 
-        for (int var2 = 0; var2 < this.vertexPositions.length; ++var2) {
-            var1[var2] = this.vertexPositions[this.vertexPositions.length - var2 - 1];
+        for (int i = 0; i < this.vertexPositions.length; ++i)
+        {
+            apositiontexturevertex[i] = this.vertexPositions[this.vertexPositions.length - i - 1];
         }
 
-        this.vertexPositions = var1;
+        this.vertexPositions = apositiontexturevertex;
     }
 
-    public void draw(Tessellator p_78236_1_, float p_78236_2_) {
-        Vec3 var3 = this.vertexPositions[1].vector3D.subtract(this.vertexPositions[0].vector3D);
-        Vec3 var4 = this.vertexPositions[1].vector3D.subtract(this.vertexPositions[2].vector3D);
-        Vec3 var5 = var4.crossProduct(var3).normalize();
-        p_78236_1_.startDrawingQuads();
+    public void draw(WorldRenderer renderer, float scale)
+    {
+        Vec3 vec3 = this.vertexPositions[1].vector3D.subtractReverse(this.vertexPositions[0].vector3D);
+        Vec3 vec31 = this.vertexPositions[1].vector3D.subtractReverse(this.vertexPositions[2].vector3D);
+        Vec3 vec32 = vec31.crossProduct(vec3).normalize();
+        float f = (float)vec32.xCoord;
+        float f1 = (float)vec32.yCoord;
+        float f2 = (float)vec32.zCoord;
 
-        if (this.invertNormal) {
-            p_78236_1_.setNormal(-((float)var5.xCoord), -((float)var5.yCoord), -((float)var5.zCoord));
-        } else {
-            p_78236_1_.setNormal((float)var5.xCoord, (float)var5.yCoord, (float)var5.zCoord);
+        if (this.invertNormal)
+        {
+            f = -f;
+            f1 = -f1;
+            f2 = -f2;
         }
 
-        for (int var6 = 0; var6 < 4; ++var6) {
-            PositionTextureVertex var7 = this.vertexPositions[var6];
-            p_78236_1_.addVertexWithUV((float)var7.vector3D.xCoord * p_78236_2_, (float)var7.vector3D.yCoord * p_78236_2_, (float)var7.vector3D.zCoord * p_78236_2_, var7.texturePositionX, var7.texturePositionY);
+        if (Config.isShaders())
+        {
+            renderer.begin(7, SVertexFormat.defVertexFormatTextured);
+        }
+        else
+        {
+            renderer.begin(7, DefaultVertexFormats.OLDMODEL_POSITION_TEX_NORMAL);
         }
 
-        p_78236_1_.draw();
+        for (int i = 0; i < 4; ++i)
+        {
+            PositionTextureVertex positiontexturevertex = this.vertexPositions[i];
+            renderer.pos(positiontexturevertex.vector3D.xCoord * (double)scale, positiontexturevertex.vector3D.yCoord * (double)scale, positiontexturevertex.vector3D.zCoord * (double)scale).tex((double)positiontexturevertex.texturePositionX, (double)positiontexturevertex.texturePositionY).normal(f, f1, f2).endVertex();
+        }
+
+        Tessellator.getInstance().draw();
     }
 }

@@ -17,103 +17,114 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class SimpleReloadableResourceManager implements IReloadableResourceManager {
+public class SimpleReloadableResourceManager implements IReloadableResourceManager
+{
     private static final Logger logger = LogManager.getLogger();
     private static final Joiner joinerResourcePacks = Joiner.on(", ");
-    private final Map domainResourceManagers = Maps.newHashMap();
-    private final List reloadListeners = Lists.newArrayList();
-    private final Set setResourceDomains = Sets.newLinkedHashSet();
+    private final Map<String, FallbackResourceManager> domainResourceManagers = Maps.<String, FallbackResourceManager>newHashMap();
+    private final List<IResourceManagerReloadListener> reloadListeners = Lists.<IResourceManagerReloadListener>newArrayList();
+    private final Set<String> setResourceDomains = Sets.<String>newLinkedHashSet();
     private final IMetadataSerializer rmMetadataSerializer;
 
-
-    public SimpleReloadableResourceManager(IMetadataSerializer p_i1299_1_) {
-        this.rmMetadataSerializer = p_i1299_1_;
+    public SimpleReloadableResourceManager(IMetadataSerializer rmMetadataSerializerIn)
+    {
+        this.rmMetadataSerializer = rmMetadataSerializerIn;
     }
 
-    public void reloadResourcePack(IResourcePack p_110545_1_) {
-        FallbackResourceManager var4;
+    public void reloadResourcePack(IResourcePack resourcePack)
+    {
+        for (String s : resourcePack.getResourceDomains())
+        {
+            this.setResourceDomains.add(s);
+            FallbackResourceManager fallbackresourcemanager = (FallbackResourceManager)this.domainResourceManagers.get(s);
 
-        for (Iterator var2 = p_110545_1_.getResourceDomains().iterator(); var2.hasNext(); var4.addResourcePack(p_110545_1_)) {
-            String var3 = (String)var2.next();
-            this.setResourceDomains.add(var3);
-            var4 = (FallbackResourceManager)this.domainResourceManagers.get(var3);
-
-            if (var4 == null) {
-                var4 = new FallbackResourceManager(this.rmMetadataSerializer);
-                this.domainResourceManagers.put(var3, var4);
+            if (fallbackresourcemanager == null)
+            {
+                fallbackresourcemanager = new FallbackResourceManager(this.rmMetadataSerializer);
+                this.domainResourceManagers.put(s, fallbackresourcemanager);
             }
+
+            fallbackresourcemanager.addResourcePack(resourcePack);
         }
     }
 
-    public Set getResourceDomains() {
+    public Set<String> getResourceDomains()
+    {
         return this.setResourceDomains;
     }
 
-    public IResource getResource(ResourceLocation p_110536_1_) throws IOException {
-        IResourceManager var2 = (IResourceManager)this.domainResourceManagers.get(p_110536_1_.getResourceDomain());
+    public IResource getResource(ResourceLocation location) throws IOException
+    {
+        IResourceManager iresourcemanager = this.domainResourceManagers.get(location.getResourceDomain());
 
-        if (var2 != null) {
-            return var2.getResource(p_110536_1_);
-        } else {
-            throw new FileNotFoundException(p_110536_1_.toString());
+        if (iresourcemanager != null)
+        {
+            return iresourcemanager.getResource(location);
+        }
+        else
+        {
+            throw new FileNotFoundException(location.toString());
         }
     }
 
-    public List getAllResources(ResourceLocation p_135056_1_) throws IOException {
-        IResourceManager var2 = (IResourceManager)this.domainResourceManagers.get(p_135056_1_.getResourceDomain());
+    public List<IResource> getAllResources(ResourceLocation location) throws IOException
+    {
+        IResourceManager iresourcemanager = this.domainResourceManagers.get(location.getResourceDomain());
 
-        if (var2 != null) {
-            return var2.getAllResources(p_135056_1_);
-        } else {
-            throw new FileNotFoundException(p_135056_1_.toString());
+        if (iresourcemanager != null)
+        {
+            return iresourcemanager.getAllResources(location);
+        }
+        else
+        {
+            throw new FileNotFoundException(location.toString());
         }
     }
 
-    private void clearResources() {
+    private void clearResources()
+    {
         this.domainResourceManagers.clear();
         this.setResourceDomains.clear();
     }
 
-    public void reloadResources(List p_110541_1_) {
+    public void reloadResources(List<IResourcePack> resourcesPacksList)
+    {
         this.clearResources();
-        logger.info("Reloading ResourceManager: " + joinerResourcePacks.join(Iterables.transform(p_110541_1_, new Function() {
-
-            public String apply(IResourcePack p_apply_1_) {
+        logger.info("Reloading ResourceManager: " + joinerResourcePacks.join(Iterables.transform(resourcesPacksList, new Function<IResourcePack, String>()
+        {
+            public String apply(IResourcePack p_apply_1_)
+            {
                 return p_apply_1_.getPackName();
             }
-            public Object apply(Object p_apply_1_) {
-                return this.apply((IResourcePack)p_apply_1_);
-            }
         })));
-        Iterator var2 = p_110541_1_.iterator();
 
-        while (var2.hasNext()) {
-            IResourcePack var3 = (IResourcePack)var2.next();
-            this.reloadResourcePack(var3);
+        for (IResourcePack iresourcepack : resourcesPacksList)
+        {
+            this.reloadResourcePack(iresourcepack);
         }
 
         updatepack();
         this.notifyReloadListeners();
     }
 
-    public void registerReloadListener(IResourceManagerReloadListener p_110542_1_) {
-        this.reloadListeners.add(p_110542_1_);
-        p_110542_1_.onResourceManagerReload(this);
+    public void registerReloadListener(IResourceManagerReloadListener reloadListener)
+    {
+        this.reloadListeners.add(reloadListener);
+        reloadListener.onResourceManagerReload(this);
     }
 
-    private void notifyReloadListeners() {
-        Iterator var1 = this.reloadListeners.iterator();
-
-        while (var1.hasNext()) {
-            IResourceManagerReloadListener var2 = (IResourceManagerReloadListener)var1.next();
-            var2.onResourceManagerReload(this);
+    private void notifyReloadListeners()
+    {
+        for (IResourceManagerReloadListener iresourcemanagerreloadlistener : this.reloadListeners)
+        {
+            iresourcemanagerreloadlistener.onResourceManagerReload(this);
         }
     }
+
 
     /**
      * Last two classes are for the Pack Display Mod.
@@ -122,9 +133,13 @@ public class SimpleReloadableResourceManager implements IReloadableResourceManag
         if (CheatBreaker.getInstance() == null) {
             return;
         }
-        DynamicTexture texture;
-        texture = new DynamicTexture(getResourcePack().getPackImage());
-        CheatBreaker.icontexture = Minecraft.getMinecraft().getTextureManager().getDynamicTextureLocation("texturepackicon", texture);
+        DynamicTexture texture = null;
+        try {
+            texture = new DynamicTexture(getResourcePack().getPackImage());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        CheatBreaker.packIconTexture = Minecraft.getMinecraft().getTextureManager().getDynamicTextureLocation("texturepackicon", texture);
     }
 
     public static IResourcePack getResourcePack() {
@@ -135,18 +150,12 @@ public class SimpleReloadableResourceManager implements IReloadableResourceManag
         } else {
             IResourcePack[] names = new IResourcePack[rps.length];
 
-            System.arraycopy(rps, 0, names, 0, rps.length);
-            try {
-                if (CheatBreaker.getInstance().getModuleManager().packDisplayMod.order.getValue().equals("Bottom")) {
-                    return names[0];
-                } else if (CheatBreaker.getInstance().getModuleManager().packDisplayMod.order.getValue().equals("Rotate")) {
-                    return names[CheatBreaker.getInstance().getModuleManager().packDisplayMod.currentPack];
-                }
-                return names[names.length -1];
-            } catch (Exception e) {
-                return names[names.length -1];
+            for (int nameStr = 0; nameStr < rps.length; ++nameStr) {
+                names[nameStr] = rps[nameStr];
             }
 
+            String var3 = Config.arrayToString(names);
+            return names[names.length -1];
         }
     }
 }

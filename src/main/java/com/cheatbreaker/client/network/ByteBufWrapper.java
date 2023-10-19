@@ -2,78 +2,80 @@ package com.cheatbreaker.client.network;
 
 import com.google.common.base.Charsets;
 import io.netty.buffer.ByteBuf;
+
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+/**
+ * This aids in reading and writing data within packets.
+ */
 public class ByteBufWrapper {
     private final ByteBuf buf;
 
-    public ByteBufWrapper(ByteBuf byteBuf) {
-        this.buf = byteBuf;
+    public ByteBufWrapper(ByteBuf buf) {
+        this.buf = buf;
     }
 
-    public void writeVarInt(int n) {
-        while ((n & 0xFFFFFF80) != 0) {
-            this.buf.writeByte(n & 0x7F | 0x80);
-            n >>>= 7;
+    public void writeVarInt(int b) {
+        while ((b & 0xFFFFFF80) != 0x0) {
+            this.buf.writeByte((b & 0x7F) | 0x80);
+            b >>>= 7;
         }
-        this.buf.writeByte(n);
+        this.buf.writeByte(b);
     }
 
     public int readVarInt() {
-        byte by;
-        int n = 0;
-        int n2 = 0;
+        int i = 0;
+        int chunk = 0;
+        byte b;
         do {
-            by = this.buf.readByte();
-            n |= (by & 0x7F) << n2++ * 7;
-            if (n2 <= 5) continue;
-            throw new RuntimeException("VarInt too big");
-        } while ((by & 0x80) == 128);
-        return n;
+            b = this.buf.readByte();
+            i |= (b & 0x7F) << chunk++ * 7;
+            if (chunk > 5) {
+                throw new RuntimeException("VarInt too big");
+            }
+        } while ((b & 0x80) == 0x80);
+        return i;
     }
 
-    public void writeOptional(Object object, Consumer<Object> consumer) {
-        this.buf.writeBoolean(object != null);
-        if (object != null) {
-            consumer.accept(object);
+    public <T> void writeOptional(T obj, Consumer<T> consumer) {
+        this.buf.writeBoolean(obj != null);
+        if (obj != null) {
+            consumer.accept(obj);
         }
     }
 
-    public Object readOptional(Supplier supplier) {
-        boolean bl = this.buf.readBoolean();
-        if (bl) {
-            return supplier.get();
-        }
-        return null;
+    public <T> T readOptional(Supplier<T> supplier) {
+        boolean isPresent = this.buf.readBoolean();
+        return isPresent ? supplier.get() : null;
     }
 
-    public void writeString(String string) {
-        byte[] arrby = string.getBytes(Charsets.UTF_8);
-        this.writeVarInt(arrby.length);
-        this.buf.writeBytes(arrby);
+    public void writeString(String s) {
+        byte[] arr = s.getBytes(Charsets.UTF_8);
+        this.writeVarInt(arr.length);
+        this.buf.writeBytes(arr);
     }
 
     public String readString() {
-        int n = this.readVarInt();
-        byte[] arrby = new byte[n];
-        this.buf.readBytes(arrby);
-        return new String(arrby, Charsets.UTF_8);
+        int len = this.readVarInt();
+        byte[] buffer = new byte[len];
+        this.buf.readBytes(buffer);
+        return new String(buffer, Charsets.UTF_8);
     }
 
-    public void writeUUID(UUID uUID) {
-        this.buf.writeLong(uUID.getMostSignificantBits());
-        this.buf.writeLong(uUID.getLeastSignificantBits());
+    public void writeUUID(UUID uuid) {
+        this.buf.writeLong(uuid.getMostSignificantBits());
+        this.buf.writeLong(uuid.getLeastSignificantBits());
     }
 
     public UUID readUUID() {
-        long l = this.buf.readLong();
-        long l2 = this.buf.readLong();
-        return new UUID(l, l2);
+        long mostSigBits = this.buf.readLong();
+        long leastSigBits = this.buf.readLong();
+        return new UUID(mostSigBits, leastSigBits);
     }
 
-    public ByteBuf buf() {
+    public ByteBuf getBuf() {
         return this.buf;
     }
 }

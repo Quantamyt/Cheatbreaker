@@ -3,79 +3,89 @@ package net.minecraft.client.gui;
 import net.minecraft.client.Minecraft;
 import net.minecraft.realms.RealmsButton;
 
-public class GuiButtonRealmsProxy extends GuiButton {
-    private final RealmsButton field_154318_o;
-    
+public class GuiButtonRealmsProxy extends GuiButton
+{
+    private RealmsButton realmsButton;
 
-    public GuiButtonRealmsProxy(RealmsButton p_i46321_1_, int p_i46321_2_, int p_i46321_3_, int p_i46321_4_, String p_i46321_5_) {
-        super(p_i46321_2_, p_i46321_3_, p_i46321_4_, p_i46321_5_);
-        this.field_154318_o = p_i46321_1_;
+    public GuiButtonRealmsProxy(RealmsButton realmsButtonIn, int buttonId, int x, int y, String text)
+    {
+        super(buttonId, x, y, text);
+        this.realmsButton = realmsButtonIn;
     }
 
-    public GuiButtonRealmsProxy(RealmsButton p_i1090_1_, int p_i1090_2_, int p_i1090_3_, int p_i1090_4_, String p_i1090_5_, int p_i1090_6_, int p_i1090_7_) {
-        super(p_i1090_2_, p_i1090_3_, p_i1090_4_, p_i1090_6_, p_i1090_7_, p_i1090_5_);
-        this.field_154318_o = p_i1090_1_;
+    public GuiButtonRealmsProxy(RealmsButton realmsButtonIn, int buttonId, int x, int y, String text, int widthIn, int heightIn)
+    {
+        super(buttonId, x, y, widthIn, heightIn, text);
+        this.realmsButton = realmsButtonIn;
     }
 
-    public int func_154314_d() {
+    public int getId()
+    {
         return super.id;
     }
 
-    public boolean func_154315_e() {
+    public boolean getEnabled()
+    {
         return super.enabled;
     }
 
-    public void func_154313_b(boolean p_154313_1_) {
-        super.enabled = p_154313_1_;
+    public void setEnabled(boolean isEnabled)
+    {
+        super.enabled = isEnabled;
     }
 
-    public void func_154311_a(String p_154311_1_) {
-        super.displayString = p_154311_1_;
+    public void setText(String text)
+    {
+        super.displayString = text;
     }
 
-    public int func_146117_b() {
-        return super.func_146117_b();
+    public int getButtonWidth()
+    {
+        return super.getButtonWidth();
     }
 
-    public int func_154316_f() {
-        return super.field_146129_i;
+    public int getPositionY()
+    {
+        return super.yPosition;
     }
 
-    /**
-     * Returns true if the mouse has been pressed on this control. Equivalent of MouseListener.mousePressed(MouseEvent
-     * e).
-     */
-    public boolean mousePressed(Minecraft p_146116_1_, int p_146116_2_, int p_146116_3_) {
-        if (super.mousePressed(p_146116_1_, p_146116_2_, p_146116_3_)) {
-            this.field_154318_o.clicked(p_146116_2_, p_146116_3_);
+    public boolean mousePressed(Minecraft mc, int mouseX, int mouseY)
+    {
+        if (super.mousePressed(mc, mouseX, mouseY))
+        {
+            this.realmsButton.clicked(mouseX, mouseY);
         }
 
-        return super.mousePressed(p_146116_1_, p_146116_2_, p_146116_3_);
+        return super.mousePressed(mc, mouseX, mouseY);
     }
 
-    /**
-     * Fired when the mouse button is released. Equivalent of MouseListener.mouseReleased(MouseEvent e).
-     */
-    public void mouseReleased(int p_146118_1_, int p_146118_2_) {
-        this.field_154318_o.released(p_146118_1_, p_146118_2_);
+    public void mouseReleased(int mouseX, int mouseY)
+    {
+        this.realmsButton.released(mouseX, mouseY);
     }
 
-    /**
-     * Fired when the mouse button is dragged. Equivalent of MouseListener.mouseDragged(MouseEvent e).
-     */
-    public void mouseDragged(Minecraft p_146119_1_, int p_146119_2_, int p_146119_3_) {
-        this.field_154318_o.renderBg(p_146119_2_, p_146119_3_);
+    public void mouseDragged(Minecraft mc, int mouseX, int mouseY)
+    {
+        this.realmsButton.renderBg(mouseX, mouseY);
     }
 
-    public RealmsButton func_154317_g() {
-        return this.field_154318_o;
+    public RealmsButton getRealmsButton()
+    {
+        return this.realmsButton;
     }
 
-    public int getHoverState(boolean p_146114_1_) {
-        return this.field_154318_o.getYImage(p_146114_1_);
+    public int getHoverState(boolean mouseOver)
+    {
+        return this.realmsButton.getYImage(mouseOver);
     }
 
-    public int func_154312_c(boolean p_154312_1_) {
+    public int func_154312_c(boolean p_154312_1_)
+    {
         return super.getHoverState(p_154312_1_);
+    }
+
+    public int getHeight()
+    {
+        return this.height;
     }
 }

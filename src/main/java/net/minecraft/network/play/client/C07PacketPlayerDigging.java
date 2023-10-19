@@ -1,76 +1,70 @@
 package net.minecraft.network.play.client;
 
 import java.io.IOException;
-import net.minecraft.network.INetHandler;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayServer;
+import net.minecraft.util.BlockPos;
+import net.minecraft.util.EnumFacing;
 
-public class C07PacketPlayerDigging extends Packet {
-    private int field_149511_a;
-    private int field_149509_b;
-    private int field_149510_c;
-    private int field_149507_d;
-    private int field_149508_e;
+public class C07PacketPlayerDigging implements Packet<INetHandlerPlayServer>
+{
+    private BlockPos position;
+    private EnumFacing facing;
+    private C07PacketPlayerDigging.Action status;
 
-
-    public C07PacketPlayerDigging() {}
-
-    public C07PacketPlayerDigging(int p_i45258_1_, int p_i45258_2_, int p_i45258_3_, int p_i45258_4_, int p_i45258_5_) {
-        this.field_149508_e = p_i45258_1_;
-        this.field_149511_a = p_i45258_2_;
-        this.field_149509_b = p_i45258_3_;
-        this.field_149510_c = p_i45258_4_;
-        this.field_149507_d = p_i45258_5_;
+    public C07PacketPlayerDigging()
+    {
     }
 
-    /**
-     * Reads the raw packet data from the data stream.
-     */
-    public void readPacketData(PacketBuffer p_148837_1_) throws IOException {
-        this.field_149508_e = p_148837_1_.readUnsignedByte();
-        this.field_149511_a = p_148837_1_.readInt();
-        this.field_149509_b = p_148837_1_.readUnsignedByte();
-        this.field_149510_c = p_148837_1_.readInt();
-        this.field_149507_d = p_148837_1_.readUnsignedByte();
+    public C07PacketPlayerDigging(C07PacketPlayerDigging.Action statusIn, BlockPos posIn, EnumFacing facingIn)
+    {
+        this.status = statusIn;
+        this.position = posIn;
+        this.facing = facingIn;
     }
 
-    /**
-     * Writes the raw packet data to the data stream.
-     */
-    public void writePacketData(PacketBuffer p_148840_1_) throws IOException {
-        p_148840_1_.writeByte(this.field_149508_e);
-        p_148840_1_.writeInt(this.field_149511_a);
-        p_148840_1_.writeByte(this.field_149509_b);
-        p_148840_1_.writeInt(this.field_149510_c);
-        p_148840_1_.writeByte(this.field_149507_d);
+    public void readPacketData(PacketBuffer buf) throws IOException
+    {
+        this.status = (C07PacketPlayerDigging.Action)buf.readEnumValue(C07PacketPlayerDigging.Action.class);
+        this.position = buf.readBlockPos();
+        this.facing = EnumFacing.getFront(buf.readUnsignedByte());
     }
 
-    public void processPacket(INetHandlerPlayServer p_148833_1_) {
-        p_148833_1_.processPlayerDigging(this);
+    public void writePacketData(PacketBuffer buf) throws IOException
+    {
+        buf.writeEnumValue(this.status);
+        buf.writeBlockPos(this.position);
+        buf.writeByte(this.facing.getIndex());
     }
 
-    public int func_149505_c() {
-        return this.field_149511_a;
+    public void processPacket(INetHandlerPlayServer handler)
+    {
+        handler.processPlayerDigging(this);
     }
 
-    public int func_149503_d() {
-        return this.field_149509_b;
+    public BlockPos getPosition()
+    {
+        return this.position;
     }
 
-    public int func_149502_e() {
-        return this.field_149510_c;
+    public EnumFacing getFacing()
+    {
+        return this.facing;
     }
 
-    public int func_149501_f() {
-        return this.field_149507_d;
+    public C07PacketPlayerDigging.Action getStatus()
+    {
+        return this.status;
     }
 
-    public int func_149506_g() {
-        return this.field_149508_e;
-    }
-
-    public void processPacket(INetHandler p_148833_1_) {
-        this.processPacket((INetHandlerPlayServer)p_148833_1_);
+    public static enum Action
+    {
+        START_DESTROY_BLOCK,
+        ABORT_DESTROY_BLOCK,
+        STOP_DESTROY_BLOCK,
+        DROP_ALL_ITEMS,
+        DROP_ITEM,
+        RELEASE_USE_ITEM;
     }
 }

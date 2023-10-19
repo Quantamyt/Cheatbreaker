@@ -7,6 +7,12 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.MathHelper;
 import org.lwjgl.opengl.GL11;
 
+/**
+ * @Module - ModulePerspective
+ * @see AbstractModule
+ *
+ * This module controls the Perspective related things for Minecraft.
+ */
 public class ModulePerspective extends AbstractModule {
     private final Setting thirdPersonOptionsLabel;
     public Setting toggleFrontCamera;
@@ -35,14 +41,17 @@ public class ModulePerspective extends AbstractModule {
     public Setting hurtCameraIntensity;
 
     public Setting staticSwiftness;
-    //public Setting defaultFOV;
+    public Setting defaultFOV;
     public Setting aimingMultiplier;
+//    public Setting defaultFOV;
+//    public Setting defaultFOV;
 
     private float prevValue = 0.0F;
 
     public ModulePerspective() {
         super("Perspective");
         this.setDescription("Allows you to change how your perspective looks.");
+        this.setAliases("Freelook", "Snaplook", "360 Perspective");
         this.setDefaultState(true);
         this.setPreviewLabel("Perspective", 1.0F);
         this.thirdPersonOptionsLabel = new Setting(this, "label").setValue("Third Person Options");
@@ -71,7 +80,7 @@ public class ModulePerspective extends AbstractModule {
         this.hurtCameraIntensity = new Setting(this, "Hurt Camera Intensity").setUnit("%").setValue(14.0F).setMinMax(5.0F, 35.0F).setCondition(() -> this.damageAffectsCamera.getBooleanValue());
         // fov changer
         this.staticSwiftness = new Setting(this, "Static Swiftness", "Determines if your FOV changes as you move.").setValue(false);
-        //this.defaultFOV = new Setting(this, "Default FOV").setUnit(" FOV").setValue(30).setMinMax(30, 110);
+        this.defaultFOV = new Setting(this, "Default FOV").setUnit(" FOV").setValue(30).setMinMax(30, 110);
         this.aimingMultiplier = new Setting(this, "Aiming Multiplier").setUnit("x").setValue(0.15F).setMinMax(0.15F, 0.75F);
     }
 
@@ -79,8 +88,8 @@ public class ModulePerspective extends AbstractModule {
      * Setups all the GL settings for view bobbing. Args: partialTickTime
      */
     public void setupViewBobbing(float par1, Setting bobElement) {
-        if (this.mc.renderViewEntity instanceof EntityPlayer && bobElement.getBooleanValue()) {
-            EntityPlayer var2 = (EntityPlayer)this.mc.renderViewEntity;
+        if (this.mc.getRenderViewEntity() instanceof EntityPlayer && bobElement.getBooleanValue()) {
+            EntityPlayer var2 = (EntityPlayer)this.mc.getRenderViewEntity();
 
             boolean sprintingToggleCriteria = this.bobWhileSprinting.getValue().equals("Only Screen");
             float intensity = this.screenBobbingIntensity.getFloatValue() / 100.0F;

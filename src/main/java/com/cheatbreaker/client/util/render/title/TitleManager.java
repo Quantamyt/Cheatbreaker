@@ -1,55 +1,61 @@
 package com.cheatbreaker.client.util.render.title;
 
-import com.cheatbreaker.client.event.impl.GuiDrawEvent;
-import com.cheatbreaker.client.event.impl.TickEvent;
+import com.cheatbreaker.client.CheatBreaker;
+import com.cheatbreaker.client.event.impl.render.GuiDrawEvent;
+import com.cheatbreaker.client.event.impl.tick.TickEvent;
+import com.cheatbreaker.client.util.render.title.data.TitleType;
 import com.google.common.collect.Lists;
-import java.awt.Color;
-import java.util.List;
-
+import lombok.Getter;
 import net.minecraft.client.Minecraft;
 import org.lwjgl.opengl.GL11;
 
+import java.awt.*;
+import java.util.List;
+
 public class TitleManager {
     private final Minecraft mc = Minecraft.getMinecraft();
-    private final List<CBTitle> titles = Lists.newArrayList();
+    @Getter private final List<CBTitle> titles = Lists.newArrayList();
+
+    public TitleManager() {
+        CheatBreaker.getInstance().logger.info(CheatBreaker.getInstance().loggerPrefix + "Created Title Manager");
+    }
 
     public void onGuiDrawEvent(GuiDrawEvent event) {
-        if (this.titles.size() == 0) return;
-
         GL11.glEnable(3042);
         for (CBTitle title : this.titles) {
-            boolean isSubTitle = CBTitle.getCBTitleType(title) == TitleType.SUBTITLE;
-            float height = isSubTitle ? (float)4 : 1.5f;
-            float width = isSubTitle ? (float)-30 : (float)10;
-            GL11.glScalef(height *= CBTitle.getTitleScale(title), height, height);
+            this.mc.cbLoadingScreen.addPhase();
+            boolean isSubTitle = title.getTitletype() == TitleType.SUBTITLE;
+            float height = isSubTitle ? (float) 4 : 1.5f;
+            float width = isSubTitle ? (float) -30 : (float) 10;
+
+            GL11.glScalef(height *= title.getScale(), height, height);
+
             float f3 = 255;
             if (title.isFading()) {
-                long titleTime = CBTitle.getFadeInTimeMS(title) - (System.currentTimeMillis() - title.currentTimeMillis);
-                f3 = 1.0f - titleTime / (float)CBTitle.getFadeInTimeMS(title);
+                long titleTime = title.getFadeInTimeMs() - (System.currentTimeMillis() - title.currentTimeMillis);
+                f3 = 1.0f - titleTime / (float) title.getFadeInTimeMs();
             } else if (title.shouldDisplay()) {
-                long titleTime = CBTitle.getDisplayTimeMs(title) - (System.currentTimeMillis() - title.currentTimeMillis);
-                f3 = titleTime <= 0.0f ? 0.0f : titleTime / (float)CBTitle.getFadeOutTimeMs(title);
+                long titleTime = title.getDisplayTimeMs() - (System.currentTimeMillis() - title.currentTimeMillis);
+                f3 = titleTime <= 0.0f ? 0.0f : titleTime / (float) title.getFadeOutTimeMs();
             }
+
             f3 = Math.min(1.0f, Math.max(0.0f, f3));
-            if ((double)f3 <= 0.15) {
+            if ((double) f3 <= 0.15) {
                 f3 = 0.15f;
             }
-            this.mc.fontRenderer.drawCenteredStringWithShadow(CBTitle.getTitleMessage(title),
-                    (int)((float)(event.getScaledResolution().getScaledWidth() / 2) / height),
-                    (int)(((float)(event.getScaledResolution().getScaledHeight() / 2 - this.mc.fontRenderer.FONT_HEIGHT / 2) + width) / height),
+
+            this.mc.fontRendererObj.drawCenteredStringWithShadow(title.getMessage(),
+                    (int) ((float) (event.getScaledResolution().getScaledWidth() / 2) / height),
+                    (int) (((float) (event.getScaledResolution().getScaledHeight() / 2 - this.mc.fontRendererObj.FONT_HEIGHT / 2) + width) / height),
                     new Color(1.0f, 1.0f, 1.0f, f3).getRGB());
             GL11.glScalef(1.0f / height, 1.0f / height, 1.0f / height);
         }
         GL11.glDisable(3042);
     }
 
-    public void onTickEvent(TickEvent event) {
+    public void onTickEvent(TickEvent ignored) {
         if (!this.titles.isEmpty()) {
-            this.titles.removeIf(cBTitle -> cBTitle.currentTimeMillis + CBTitle.getDisplayTimeMs(cBTitle) < System.currentTimeMillis());
+            this.titles.removeIf(cBTitle -> cBTitle.currentTimeMillis + cBTitle.getDisplayTimeMs() < System.currentTimeMillis());
         }
-    }
-
-    public List<CBTitle> getTitles() {
-        return this.titles;
     }
 }

@@ -1,44 +1,40 @@
 package net.minecraft.network.play.server;
 
 import java.io.IOException;
-import net.minecraft.network.INetHandler;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayClient;
 
-public class S09PacketHeldItemChange extends Packet {
-    private int field_149387_a;
+public class S09PacketHeldItemChange implements Packet<INetHandlerPlayClient>
+{
+    private int heldItemHotbarIndex;
 
-
-    public S09PacketHeldItemChange() {}
-
-    public S09PacketHeldItemChange(int p_i45215_1_) {
-        this.field_149387_a = p_i45215_1_;
+    public S09PacketHeldItemChange()
+    {
     }
 
-    /**
-     * Reads the raw packet data from the data stream.
-     */
-    public void readPacketData(PacketBuffer p_148837_1_) throws IOException {
-        this.field_149387_a = p_148837_1_.readByte();
+    public S09PacketHeldItemChange(int hotbarIndexIn)
+    {
+        this.heldItemHotbarIndex = hotbarIndexIn;
     }
 
-    /**
-     * Writes the raw packet data to the data stream.
-     */
-    public void writePacketData(PacketBuffer p_148840_1_) throws IOException {
-        p_148840_1_.writeByte(this.field_149387_a);
+    public void readPacketData(PacketBuffer buf) throws IOException
+    {
+        this.heldItemHotbarIndex = buf.readByte();
     }
 
-    public void processPacket(INetHandlerPlayClient p_148833_1_) {
-        p_148833_1_.handleHeldItemChange(this);
+    public void writePacketData(PacketBuffer buf) throws IOException
+    {
+        buf.writeByte(this.heldItemHotbarIndex);
     }
 
-    public int func_149385_c() {
-        return this.field_149387_a;
+    public void processPacket(INetHandlerPlayClient handler)
+    {
+        handler.handleHeldItemChange(this);
     }
 
-    public void processPacket(INetHandler p_148833_1_) {
-        this.processPacket((INetHandlerPlayClient)p_148833_1_);
+    public int getHeldItemHotbarIndex()
+    {
+        return this.heldItemHotbarIndex;
     }
 }

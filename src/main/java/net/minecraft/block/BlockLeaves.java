@@ -2,25 +2,30 @@ package net.minecraft.block;
 
 import java.util.Random;
 import net.minecraft.block.material.Material;
+import net.minecraft.block.properties.PropertyBool;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.creativetab.CreativeTabs;
-import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
-import net.minecraft.init.Items;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.stats.StatList;
-import net.minecraft.util.IIcon;
+import net.minecraft.util.BlockPos;
+import net.minecraft.util.EnumParticleTypes;
+import net.minecraft.util.EnumWorldBlockLayer;
 import net.minecraft.world.ColorizerFoliage;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
+import net.minecraft.world.biome.BiomeColorHelper;
 
-public abstract class BlockLeaves extends BlockLeavesBase {
-    int[] field_150128_a;
-    protected int field_150127_b;
-    protected IIcon[][] field_150129_M = new IIcon[2][];
+public abstract class BlockLeaves extends BlockLeavesBase
+{
+    public static final PropertyBool DECAYABLE = PropertyBool.create("decayable");
+    public static final PropertyBool CHECK_DECAY = PropertyBool.create("check_decay");
+    int[] surroundings;
+    protected int iconIndex;
+    protected boolean isTransparent;
 
-
-    public BlockLeaves() {
+    public BlockLeaves()
+    {
         super(Material.leaves, false);
         this.setTickRandomly(true);
         this.setCreativeTab(CreativeTabs.tabDecorations);
@@ -29,51 +34,43 @@ public abstract class BlockLeaves extends BlockLeavesBase {
         this.setStepSound(soundTypeGrass);
     }
 
-    public int getBlockColor() {
-        double var1 = 0.5D;
-        double var3 = 1.0D;
-        return ColorizerFoliage.getFoliageColor(var1, var3);
+    public int getBlockColor()
+    {
+        return ColorizerFoliage.getFoliageColor(0.5D, 1.0D);
     }
 
-    /**
-     * Returns the color this block should be rendered. Used by leaves.
-     */
-    public int getRenderColor(int p_149741_1_) {
+    public int getRenderColor(IBlockState state)
+    {
         return ColorizerFoliage.getFoliageColorBasic();
     }
 
-    /**
-     * Returns a integer with hex for 0xrrggbb with this color multiplied against the blocks color. Note only called
-     * when first determining what to render.
-     */
-    public int colorMultiplier(IBlockAccess p_149720_1_, int p_149720_2_, int p_149720_3_, int p_149720_4_) {
-        int var5 = 0;
-        int var6 = 0;
-        int var7 = 0;
-
-        for (int var8 = -1; var8 <= 1; ++var8) {
-            for (int var9 = -1; var9 <= 1; ++var9) {
-                int var10 = p_149720_1_.getBiomeGenForCoords(p_149720_2_ + var9, p_149720_4_ + var8).getBiomeFoliageColor(p_149720_2_ + var9, p_149720_3_, p_149720_4_ + var8);
-                var5 += (var10 & 16711680) >> 16;
-                var6 += (var10 & 65280) >> 8;
-                var7 += var10 & 255;
-            }
-        }
-
-        return (var5 / 9 & 255) << 16 | (var6 / 9 & 255) << 8 | var7 / 9 & 255;
+    public int colorMultiplier(IBlockAccess worldIn, BlockPos pos, int renderPass)
+    {
+        return BiomeColorHelper.getFoliageColorAtPos(worldIn, pos);
     }
 
-    public void breakBlock(World p_149749_1_, int p_149749_2_, int p_149749_3_, int p_149749_4_, Block p_149749_5_, int p_149749_6_) {
-        byte var7 = 1;
-        int var8 = var7 + 1;
+    public void breakBlock(World worldIn, BlockPos pos, IBlockState state)
+    {
+        int i = 1;
+        int j = i + 1;
+        int k = pos.getX();
+        int l = pos.getY();
+        int i1 = pos.getZ();
 
-        if (p_149749_1_.checkChunksExist(p_149749_2_ - var8, p_149749_3_ - var8, p_149749_4_ - var8, p_149749_2_ + var8, p_149749_3_ + var8, p_149749_4_ + var8)) {
-            for (int var9 = -var7; var9 <= var7; ++var9) {
-                for (int var10 = -var7; var10 <= var7; ++var10) {
-                    for (int var11 = -var7; var11 <= var7; ++var11) {
-                        if (p_149749_1_.getBlock(p_149749_2_ + var9, p_149749_3_ + var10, p_149749_4_ + var11).getMaterial() == Material.leaves) {
-                            int var12 = p_149749_1_.getBlockMetadata(p_149749_2_ + var9, p_149749_3_ + var10, p_149749_4_ + var11);
-                            p_149749_1_.setBlockMetadataWithNotify(p_149749_2_ + var9, p_149749_3_ + var10, p_149749_4_ + var11, var12 | 8, 4);
+        if (worldIn.isAreaLoaded(new BlockPos(k - j, l - j, i1 - j), new BlockPos(k + j, l + j, i1 + j)))
+        {
+            for (int j1 = -i; j1 <= i; ++j1)
+            {
+                for (int k1 = -i; k1 <= i; ++k1)
+                {
+                    for (int l1 = -i; l1 <= i; ++l1)
+                    {
+                        BlockPos blockpos = pos.add(j1, k1, l1);
+                        IBlockState iblockstate = worldIn.getBlockState(blockpos);
+
+                        if (iblockstate.getBlock().getMaterial() == Material.leaves && !((Boolean)iblockstate.getValue(CHECK_DECAY)).booleanValue())
+                        {
+                            worldIn.setBlockState(blockpos, iblockstate.withProperty(CHECK_DECAY, Boolean.valueOf(true)), 4);
                         }
                     }
                 }
@@ -81,76 +78,95 @@ public abstract class BlockLeaves extends BlockLeavesBase {
         }
     }
 
-    /**
-     * Ticks the block if it's been scheduled
-     */
-    public void updateTick(World p_149674_1_, int p_149674_2_, int p_149674_3_, int p_149674_4_, Random p_149674_5_) {
-        if (!p_149674_1_.isClient) {
-            int var6 = p_149674_1_.getBlockMetadata(p_149674_2_, p_149674_3_, p_149674_4_);
+    public void updateTick(World worldIn, BlockPos pos, IBlockState state, Random rand)
+    {
+        if (!worldIn.isRemote)
+        {
+            if (((Boolean)state.getValue(CHECK_DECAY)).booleanValue() && ((Boolean)state.getValue(DECAYABLE)).booleanValue())
+            {
+                int i = 4;
+                int j = i + 1;
+                int k = pos.getX();
+                int l = pos.getY();
+                int i1 = pos.getZ();
+                int j1 = 32;
+                int k1 = j1 * j1;
+                int l1 = j1 / 2;
 
-            if ((var6 & 8) != 0 && (var6 & 4) == 0) {
-                byte var7 = 4;
-                int var8 = var7 + 1;
-                byte var9 = 32;
-                int var10 = var9 * var9;
-                int var11 = var9 / 2;
-
-                if (this.field_150128_a == null) {
-                    this.field_150128_a = new int[var9 * var9 * var9];
+                if (this.surroundings == null)
+                {
+                    this.surroundings = new int[j1 * j1 * j1];
                 }
 
-                int var12;
+                if (worldIn.isAreaLoaded(new BlockPos(k - j, l - j, i1 - j), new BlockPos(k + j, l + j, i1 + j)))
+                {
+                    BlockPos.MutableBlockPos blockpos$mutableblockpos = new BlockPos.MutableBlockPos();
 
-                if (p_149674_1_.checkChunksExist(p_149674_2_ - var8, p_149674_3_ - var8, p_149674_4_ - var8, p_149674_2_ + var8, p_149674_3_ + var8, p_149674_4_ + var8)) {
-                    int var13;
-                    int var14;
+                    for (int i2 = -i; i2 <= i; ++i2)
+                    {
+                        for (int j2 = -i; j2 <= i; ++j2)
+                        {
+                            for (int k2 = -i; k2 <= i; ++k2)
+                            {
+                                Block block = worldIn.getBlockState(blockpos$mutableblockpos.set(k + i2, l + j2, i1 + k2)).getBlock();
 
-                    for (var12 = -var7; var12 <= var7; ++var12) {
-                        for (var13 = -var7; var13 <= var7; ++var13) {
-                            for (var14 = -var7; var14 <= var7; ++var14) {
-                                Block var15 = p_149674_1_.getBlock(p_149674_2_ + var12, p_149674_3_ + var13, p_149674_4_ + var14);
-
-                                if (var15 != Blocks.log && var15 != Blocks.log2) {
-                                    if (var15.getMaterial() == Material.leaves) {
-                                        this.field_150128_a[(var12 + var11) * var10 + (var13 + var11) * var9 + var14 + var11] = -2;
+                                if (block != Blocks.log && block != Blocks.log2)
+                                {
+                                    if (block.getMaterial() == Material.leaves)
+                                    {
+                                        this.surroundings[(i2 + l1) * k1 + (j2 + l1) * j1 + k2 + l1] = -2;
                                     }
-                                    else {
-                                        this.field_150128_a[(var12 + var11) * var10 + (var13 + var11) * var9 + var14 + var11] = -1;
+                                    else
+                                    {
+                                        this.surroundings[(i2 + l1) * k1 + (j2 + l1) * j1 + k2 + l1] = -1;
                                     }
-                                } else {
-                                    this.field_150128_a[(var12 + var11) * var10 + (var13 + var11) * var9 + var14 + var11] = 0;
+                                }
+                                else
+                                {
+                                    this.surroundings[(i2 + l1) * k1 + (j2 + l1) * j1 + k2 + l1] = 0;
                                 }
                             }
                         }
                     }
 
-                    for (var12 = 1; var12 <= 4; ++var12) {
-                        for (var13 = -var7; var13 <= var7; ++var13) {
-                            for (var14 = -var7; var14 <= var7; ++var14) {
-                                for (int var16 = -var7; var16 <= var7; ++var16) {
-                                    if (this.field_150128_a[(var13 + var11) * var10 + (var14 + var11) * var9 + var16 + var11] == var12 - 1) {
-                                        if (this.field_150128_a[(var13 + var11 - 1) * var10 + (var14 + var11) * var9 + var16 + var11] == -2) {
-                                            this.field_150128_a[(var13 + var11 - 1) * var10 + (var14 + var11) * var9 + var16 + var11] = var12;
+                    for (int i3 = 1; i3 <= 4; ++i3)
+                    {
+                        for (int j3 = -i; j3 <= i; ++j3)
+                        {
+                            for (int k3 = -i; k3 <= i; ++k3)
+                            {
+                                for (int l3 = -i; l3 <= i; ++l3)
+                                {
+                                    if (this.surroundings[(j3 + l1) * k1 + (k3 + l1) * j1 + l3 + l1] == i3 - 1)
+                                    {
+                                        if (this.surroundings[(j3 + l1 - 1) * k1 + (k3 + l1) * j1 + l3 + l1] == -2)
+                                        {
+                                            this.surroundings[(j3 + l1 - 1) * k1 + (k3 + l1) * j1 + l3 + l1] = i3;
                                         }
 
-                                        if (this.field_150128_a[(var13 + var11 + 1) * var10 + (var14 + var11) * var9 + var16 + var11] == -2) {
-                                            this.field_150128_a[(var13 + var11 + 1) * var10 + (var14 + var11) * var9 + var16 + var11] = var12;
+                                        if (this.surroundings[(j3 + l1 + 1) * k1 + (k3 + l1) * j1 + l3 + l1] == -2)
+                                        {
+                                            this.surroundings[(j3 + l1 + 1) * k1 + (k3 + l1) * j1 + l3 + l1] = i3;
                                         }
 
-                                        if (this.field_150128_a[(var13 + var11) * var10 + (var14 + var11 - 1) * var9 + var16 + var11] == -2) {
-                                            this.field_150128_a[(var13 + var11) * var10 + (var14 + var11 - 1) * var9 + var16 + var11] = var12;
+                                        if (this.surroundings[(j3 + l1) * k1 + (k3 + l1 - 1) * j1 + l3 + l1] == -2)
+                                        {
+                                            this.surroundings[(j3 + l1) * k1 + (k3 + l1 - 1) * j1 + l3 + l1] = i3;
                                         }
 
-                                        if (this.field_150128_a[(var13 + var11) * var10 + (var14 + var11 + 1) * var9 + var16 + var11] == -2) {
-                                            this.field_150128_a[(var13 + var11) * var10 + (var14 + var11 + 1) * var9 + var16 + var11] = var12;
+                                        if (this.surroundings[(j3 + l1) * k1 + (k3 + l1 + 1) * j1 + l3 + l1] == -2)
+                                        {
+                                            this.surroundings[(j3 + l1) * k1 + (k3 + l1 + 1) * j1 + l3 + l1] = i3;
                                         }
 
-                                        if (this.field_150128_a[(var13 + var11) * var10 + (var14 + var11) * var9 + (var16 + var11 - 1)] == -2) {
-                                            this.field_150128_a[(var13 + var11) * var10 + (var14 + var11) * var9 + (var16 + var11 - 1)] = var12;
+                                        if (this.surroundings[(j3 + l1) * k1 + (k3 + l1) * j1 + (l3 + l1 - 1)] == -2)
+                                        {
+                                            this.surroundings[(j3 + l1) * k1 + (k3 + l1) * j1 + (l3 + l1 - 1)] = i3;
                                         }
 
-                                        if (this.field_150128_a[(var13 + var11) * var10 + (var14 + var11) * var9 + var16 + var11 + 1] == -2) {
-                                            this.field_150128_a[(var13 + var11) * var10 + (var14 + var11) * var9 + var16 + var11 + 1] = var12;
+                                        if (this.surroundings[(j3 + l1) * k1 + (k3 + l1) * j1 + l3 + l1 + 1] == -2)
+                                        {
+                                            this.surroundings[(j3 + l1) * k1 + (k3 + l1) * j1 + l3 + l1 + 1] = i3;
                                         }
                                     }
                                 }
@@ -159,122 +175,115 @@ public abstract class BlockLeaves extends BlockLeavesBase {
                     }
                 }
 
-                var12 = this.field_150128_a[var11 * var10 + var11 * var9 + var11];
+                int l2 = this.surroundings[l1 * k1 + l1 * j1 + l1];
 
-                if (var12 >= 0) {
-                    p_149674_1_.setBlockMetadataWithNotify(p_149674_2_, p_149674_3_, p_149674_4_, var6 & -9, 4);
-                } else {
-                    this.func_150126_e(p_149674_1_, p_149674_2_, p_149674_3_, p_149674_4_);
+                if (l2 >= 0)
+                {
+                    worldIn.setBlockState(pos, state.withProperty(CHECK_DECAY, Boolean.valueOf(false)), 4);
+                }
+                else
+                {
+                    this.destroy(worldIn, pos);
                 }
             }
         }
     }
 
-    /**
-     * A randomly called display update to be able to add particles or other items for display
-     */
-    public void randomDisplayTick(World p_149734_1_, int p_149734_2_, int p_149734_3_, int p_149734_4_, Random p_149734_5_) {
-        if (p_149734_1_.canLightningStrikeAt(p_149734_2_, p_149734_3_ + 1, p_149734_4_) && !World.doesBlockHaveSolidTopSurface(p_149734_1_, p_149734_2_, p_149734_3_ - 1, p_149734_4_) && p_149734_5_.nextInt(15) == 1) {
-            double var6 = (float)p_149734_2_ + p_149734_5_.nextFloat();
-            double var8 = (double)p_149734_3_ - 0.05D;
-            double var10 = (float)p_149734_4_ + p_149734_5_.nextFloat();
-            p_149734_1_.spawnParticle("dripWater", var6, var8, var10, 0.0D, 0.0D, 0.0D);
+    public void randomDisplayTick(World worldIn, BlockPos pos, IBlockState state, Random rand)
+    {
+        if (worldIn.isRainingAt(pos.up()) && !World.doesBlockHaveSolidTopSurface(worldIn, pos.down()) && rand.nextInt(15) == 1)
+        {
+            double d0 = (double)((float)pos.getX() + rand.nextFloat());
+            double d1 = (double)pos.getY() - 0.05D;
+            double d2 = (double)((float)pos.getZ() + rand.nextFloat());
+            worldIn.spawnParticle(EnumParticleTypes.DRIP_WATER, d0, d1, d2, 0.0D, 0.0D, 0.0D, new int[0]);
         }
     }
 
-    private void func_150126_e(World p_150126_1_, int p_150126_2_, int p_150126_3_, int p_150126_4_) {
-        this.dropBlockAsItem(p_150126_1_, p_150126_2_, p_150126_3_, p_150126_4_, p_150126_1_.getBlockMetadata(p_150126_2_, p_150126_3_, p_150126_4_), 0);
-        p_150126_1_.setBlockToAir(p_150126_2_, p_150126_3_, p_150126_4_);
+    private void destroy(World worldIn, BlockPos pos)
+    {
+        this.dropBlockAsItem(worldIn, pos, worldIn.getBlockState(pos), 0);
+        worldIn.setBlockToAir(pos);
     }
 
-    /**
-     * Returns the quantity of items to drop on block destruction.
-     */
-    public int quantityDropped(Random p_149745_1_) {
-        return p_149745_1_.nextInt(20) == 0 ? 1 : 0;
+    public int quantityDropped(Random random)
+    {
+        return random.nextInt(20) == 0 ? 1 : 0;
     }
 
-    public Item getItemDropped(int p_149650_1_, Random p_149650_2_, int p_149650_3_) {
+    public Item getItemDropped(IBlockState state, Random rand, int fortune)
+    {
         return Item.getItemFromBlock(Blocks.sapling);
     }
 
-    /**
-     * Drops the block items with a specified chance of dropping the specified items
-     */
-    public void dropBlockAsItemWithChance(World p_149690_1_, int p_149690_2_, int p_149690_3_, int p_149690_4_, int p_149690_5_, float p_149690_6_, int p_149690_7_) {
-        if (!p_149690_1_.isClient) {
-            int var8 = this.func_150123_b(p_149690_5_);
+    public void dropBlockAsItemWithChance(World worldIn, BlockPos pos, IBlockState state, float chance, int fortune)
+    {
+        if (!worldIn.isRemote)
+        {
+            int i = this.getSaplingDropChance(state);
 
-            if (p_149690_7_ > 0) {
-                var8 -= 2 << p_149690_7_;
+            if (fortune > 0)
+            {
+                i -= 2 << fortune;
 
-                if (var8 < 10) {
-                    var8 = 10;
+                if (i < 10)
+                {
+                    i = 10;
                 }
             }
 
-            if (p_149690_1_.rand.nextInt(var8) == 0) {
-                Item var9 = this.getItemDropped(p_149690_5_, p_149690_1_.rand, p_149690_7_);
-                this.dropBlockAsItem_do(p_149690_1_, p_149690_2_, p_149690_3_, p_149690_4_, new ItemStack(var9, 1, this.damageDropped(p_149690_5_)));
+            if (worldIn.rand.nextInt(i) == 0)
+            {
+                Item item = this.getItemDropped(state, worldIn.rand, fortune);
+                spawnAsEntity(worldIn, pos, new ItemStack(item, 1, this.damageDropped(state)));
             }
 
-            var8 = 200;
+            i = 200;
 
-            if (p_149690_7_ > 0) {
-                var8 -= 10 << p_149690_7_;
+            if (fortune > 0)
+            {
+                i -= 10 << fortune;
 
-                if (var8 < 40) {
-                    var8 = 40;
+                if (i < 40)
+                {
+                    i = 40;
                 }
             }
 
-            this.func_150124_c(p_149690_1_, p_149690_2_, p_149690_3_, p_149690_4_, p_149690_5_, var8);
+            this.dropApple(worldIn, pos, state, i);
         }
     }
 
-    protected void func_150124_c(World p_150124_1_, int p_150124_2_, int p_150124_3_, int p_150124_4_, int p_150124_5_, int p_150124_6_) {}
+    protected void dropApple(World worldIn, BlockPos pos, IBlockState state, int chance)
+    {
+    }
 
-    protected int func_150123_b(int p_150123_1_) {
+    protected int getSaplingDropChance(IBlockState state)
+    {
         return 20;
     }
 
-    public void harvestBlock(World p_149636_1_, EntityPlayer p_149636_2_, int p_149636_3_, int p_149636_4_, int p_149636_5_, int p_149636_6_) {
-        if (!p_149636_1_.isClient && p_149636_2_.getCurrentEquippedItem() != null && p_149636_2_.getCurrentEquippedItem().getItem() == Items.shears) {
-            p_149636_2_.addStat(StatList.mineBlockStatArray[Block.getIdFromBlock(this)], 1);
-            this.dropBlockAsItem_do(p_149636_1_, p_149636_3_, p_149636_4_, p_149636_5_, new ItemStack(Item.getItemFromBlock(this), 1, p_149636_6_ & 3));
-        } else {
-            super.harvestBlock(p_149636_1_, p_149636_2_, p_149636_3_, p_149636_4_, p_149636_5_, p_149636_6_);
-        }
+    public boolean isOpaqueCube()
+    {
+        return !this.fancyGraphics;
     }
 
-    /**
-     * Determines the damage on the item the block drops. Used in cloth and wood.
-     */
-    public int damageDropped(int p_149692_1_) {
-        return p_149692_1_ & 3;
+    public void setGraphicsLevel(boolean fancy)
+    {
+        this.isTransparent = fancy;
+        this.fancyGraphics = fancy;
+        this.iconIndex = fancy ? 0 : 1;
     }
 
-    public boolean isOpaqueCube() {
-        return !this.field_150121_P;
+    public EnumWorldBlockLayer getBlockLayer()
+    {
+        return this.isTransparent ? EnumWorldBlockLayer.CUTOUT_MIPPED : EnumWorldBlockLayer.SOLID;
     }
 
-    /**
-     * Gets the block's texture. Args: side, meta
-     */
-    public abstract IIcon getIcon(int p_149691_1_, int p_149691_2_);
-
-    public void func_150122_b(boolean p_150122_1_) {
-        this.field_150121_P = p_150122_1_;
-        this.field_150127_b = p_150122_1_ ? 0 : 1;
+    public boolean isVisuallyOpaque()
+    {
+        return false;
     }
 
-    /**
-     * Returns an item stack containing a single instance of the current block type. 'i' is the block's subtype/damage
-     * and is ignored for blocks which do not support subtypes. Blocks which cannot be harvested should return null.
-     */
-    protected ItemStack createStackedBlock(int p_149644_1_) {
-        return new ItemStack(Item.getItemFromBlock(this), 1, p_149644_1_ & 3);
-    }
-
-    public abstract String[] func_150125_e();
+    public abstract BlockPlanks.EnumType getWoodType(int meta);
 }

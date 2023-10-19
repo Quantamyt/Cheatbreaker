@@ -3,10 +3,9 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
     <groupId>com.cheatbreaker</groupId>
     <artifactId>CheatBreaker</artifactId>
-    <version>Production</version>
+    <version>Beta</version>
 
     <build>
         <plugins>
@@ -64,77 +63,7 @@
                     </includeOnlyProperties>
                 </configuration>
             </plugin>
-            <plugin>
-                <artifactId>exec-maven-plugin</artifactId>
-                <groupId>org.codehaus.mojo</groupId>
-                <executions>
-                    <execution>
-                        <id>Jar Transformer</id>
-                        <phase>package</phase>
-                        <goals><goal>exec</goal></goals>
-                        <configuration>
-                            <workingDirectory>${basedir}\target</workingDirectory>
-                            <executable>java</executable>
-                            <arguments>
-                                <argument>-jar</argument>
-                                <argument>${basedir}\obf\Transformer.jar</argument>
-                                <argument>obf</argument>
-                                <argument>--input</argument>
-                                <argument>${project.build.finalName}.jar</argument>
-                                <argument>--output</argument>
-                                <argument>${project.build.finalName}-T.jar</argument>
-                            </arguments>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>ProGuard Mapping Dictionary</id>
-                        <phase>package</phase>
-                        <goals><goal>exec</goal></goals>
-                        <configuration>
-                            <workingDirectory>${basedir}\target</workingDirectory>
-                            <executable>java</executable>
-                            <arguments>
-                                <argument>-jar</argument>
-                                <argument>${basedir}\obf\Mappings.jar</argument>
-                            </arguments>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>com.github.wvengen</groupId>
-                <artifactId>proguard-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals><goal>proguard</goal></goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <obfuscate>true</obfuscate>
-                    <injar>${project.build.finalName}-T.jar</injar>
-                    <outjar>${project.build.finalName}.jar</outjar>
-                    <outputDirectory>${project.build.directory}</outputDirectory>
-                    <proguardInclude>${basedir}/proguard.conf</proguardInclude>
-                    <options>
-                        <option>-dontnote</option> <!-- Ignore all the notes ProGuard sends -->
-                        <option>-dontwarn</option> <!-- Ignore com.sun missing classes -->
-                        <option>-keepattributes Signature</option>
-                        <option>-keep public class com.cheatbreaker.client.network.messages.Message { *; }</option> <!-- Used so the Agent (In future purposes) Library can read this class and alphabetical methods. -->
-                        <option>-keep public class net.minecraft.client.main.Main { public static void main(java.lang.String[]); }</option> <!-- Ensure the Main class and main method can be detected by the json. -->
-                        <option>-keep public class com.jagrosh.discordipc.**</option> <!-- Used to prevent ProGuard optimizer from deleting actual used init methods. -->
-                        <option>-keepclassmembers class net.** { &lt;init&gt;(...); }</option> <!-- Used to prevent ProGuard optimizer from deleting actual used init methods. -->
-                        <option>-keepclassmembers class * extends java.lang.Enum { public static **[] values(); }</option> <!-- Ensures the client can actually read the enum classes properly -->
-                        <option>-repackageclasses</option> <!-- Move all affected classes to the root directory of the jar -->
-                        <option>-classobfuscationdictionary target/OBF.csv</option>
-                        <option>-obfuscationdictionary target/OBF.csv</option>
-                    </options>
-                    <libs>
-                        <lib>${java.home}/lib/rt.jar</lib>
-                        <lib>${java.home}/lib/jsse.jar</lib>
-                    </libs>
-                </configuration>
-            </plugin>
+
         </plugins>
     </build>
 
@@ -142,6 +71,11 @@
         <repository>
             <id>minecraft-repo</id>
             <url>https://libraries.minecraft.net/</url>
+        </repository>
+        <repository>
+            <id>central</id>
+            <name>bintray</name>
+            <url>https://jcenter.bintray.com</url>
         </repository>
     </repositories>
 
@@ -159,12 +93,6 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.java-websocket</groupId>
-            <artifactId>Java-WebSocket</artifactId>
-            <version>1.4.1</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
             <groupId>net.sf.trove4j</groupId>
             <artifactId>trove4j</artifactId>
             <version>3.0.1</version>
@@ -177,16 +105,15 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.json</groupId>
-            <artifactId>json</artifactId>
-            <version>20211205</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
             <groupId>net.java.dev.jna</groupId>
             <artifactId>jna</artifactId>
             <version>3.4.0</version>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.jagrosh</groupId>
+            <artifactId>DiscordIPC</artifactId>
+            <version>LATEST</version>
         </dependency>
         <dependency>
             <groupId>net.java.dev.jna</groupId>
@@ -236,12 +163,13 @@
             <version>20120107</version>
             <scope>provided</scope>
         </dependency>
+
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-all</artifactId>
-            <version>4.0.10.Final</version>
-            <scope>provided</scope>
+            <version>4.0.23.Final</version>
         </dependency>
+
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
@@ -334,27 +262,38 @@
         </dependency>
         <dependency>
             <groupId>com.mojang</groupId>
-            <artifactId>realms</artifactId>
-            <version>1.3.5</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.mojang</groupId>
             <artifactId>authlib</artifactId>
             <version>1.5.21</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>tv.twitch</groupId>
-            <artifactId>twitch</artifactId>
-            <version>5.16</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>javax.vecmath</groupId>
             <artifactId>vecmath</artifactId>
             <version>1.5.2</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.mojang</groupId>
+            <artifactId>realms</artifactId>
+            <version>1.7.39</version>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>tv.twitch</groupId>
+            <artifactId>twitch</artifactId>
+            <version>6.5</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.java-websocket</groupId>
+            <artifactId>Java-WebSocket</artifactId>
+            <version>1.5.1</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>javazoom</groupId>
+            <artifactId>jlayer</artifactId>
+            <version>1.0.1</version>
         </dependency>
         <dependency>
             <groupId>com.jagrosh</groupId>
@@ -362,16 +301,6 @@
             <version>0.4</version>
             <scope>compile</scope>
         </dependency>
-        <dependency>
-            <groupId>com.github.wvengen</groupId>
-            <artifactId>proguard-maven-plugin</artifactId>
-            <version>2.5.2</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.cheatbreaker.bridge</groupId>
-            <artifactId>Bridge</artifactId>
-            <version>1.0.0</version>
-        </dependency>
     </dependencies>
+
 </project>

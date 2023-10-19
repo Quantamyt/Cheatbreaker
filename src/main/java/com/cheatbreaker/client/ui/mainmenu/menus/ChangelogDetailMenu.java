@@ -5,7 +5,7 @@ import com.cheatbreaker.client.ui.element.type.ScrollableElement;
 import com.cheatbreaker.client.ui.mainmenu.GradientTextButton;
 import com.cheatbreaker.client.ui.mainmenu.MainMenuBase;
 import com.cheatbreaker.client.ui.util.RenderUtil;
-import com.cheatbreaker.client.util.render.wordwrap.WordWrap;
+import com.cheatbreaker.client.util.lang.WordWrap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.PositionedSoundRecord;
 import net.minecraft.client.gui.Gui;
@@ -43,7 +43,7 @@ public class ChangelogDetailMenu extends MainMenuBase {
     }
 
     @Override
-    public void handleMouseInput() {
+    public void handleMouseInput() throws IOException {
         super.handleMouseInput();
         this.scrollableElement.handleElementMouse();
     }
@@ -87,8 +87,8 @@ public class ChangelogDetailMenu extends MainMenuBase {
     public void mouseClicked(float f, float f2, int n) {
         super.mouseClicked(f, f2, n);
         if (this.backButton.isMouseInside(f, f2)) {
-            Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.func_147674_a(new ResourceLocation("gui.button.press"), 1.0f));
-            this.mc.displayGuiScreen(this.mc.lastScreen);
+            Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("gui.button.press"), 1.0f));
+            this.mc.displayGuiScreen(CheatBreaker.getInstance().lastScreen);
         } else if (this.scrollableElement.isMouseInside(f, f2)) {
             this.scrollableElement.handleElementMouseClicked(f, f2, n, true);
         }

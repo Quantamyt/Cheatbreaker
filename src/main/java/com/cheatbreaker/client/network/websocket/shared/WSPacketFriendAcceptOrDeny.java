@@ -2,24 +2,26 @@ package com.cheatbreaker.client.network.websocket.shared;
 
 import com.cheatbreaker.client.network.websocket.WSNetHandler;
 import com.cheatbreaker.client.network.websocket.WSPacket;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 import net.minecraft.network.PacketBuffer;
 
+/**
+ * @WSPacket WSPacketFriendAcceptOrDeny
+ * @see WSPacket
+ *
+ * This packet accepts or denies a friend request.
+ */
+@Getter @AllArgsConstructor @NoArgsConstructor
 public class WSPacketFriendAcceptOrDeny extends WSPacket {
     private boolean added;
     private String playerId;
 
-    public WSPacketFriendAcceptOrDeny() {
-    }
-
-    public WSPacketFriendAcceptOrDeny(boolean bl, String string) {
-        this.added = bl;
-        this.playerId = string;
-    }
-
     @Override
     public void write(PacketBuffer packetBuffer) {
         packetBuffer.writeBoolean(this.added);
-        packetBuffer.writeStringToBuffer(this.playerId);
+        packetBuffer.writeString(this.playerId);
     }
 
     @Override
@@ -31,13 +33,5 @@ public class WSPacketFriendAcceptOrDeny extends WSPacket {
     @Override
     public void process(WSNetHandler wSNetHandler) {
         wSNetHandler.handlePacketFriendAcceptOrDeny(this);
-    }
-
-    public boolean isAdd() {
-        return this.added;
-    }
-
-    public String getPlayerId() {
-        return this.playerId;
     }
 }

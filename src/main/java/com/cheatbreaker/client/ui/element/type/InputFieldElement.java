@@ -5,7 +5,6 @@ import com.cheatbreaker.client.ui.util.font.CBFontRenderer;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.util.ChatAllowedCharacters;
-import net.minecraft.client.renderer.Tessellator;
 import org.lwjgl.opengl.GL11;
 
 public class InputFieldElement extends AbstractElement {
@@ -56,7 +55,7 @@ public class InputFieldElement extends AbstractElement {
     public void writeText(String string) {
         int n;
         String string2 = "";
-        String string3 = ChatAllowedCharacters.filerAllowedCharacters(string);
+        String string3 = ChatAllowedCharacters.filterAllowedCharacters(string);
         int n2 = Math.min(this.cursorPosition, this.selectionEnd);
         int n3 = Math.max(this.cursorPosition, this.selectionEnd);
         int n4 = this.maxStringLength - this.text.length() - (n2 - this.selectionEnd);
@@ -210,7 +209,7 @@ public class InputFieldElement extends AbstractElement {
                     this.setCursorPositionZero();
                 }
                 return true;
-            case 203: //work?
+            case 203:
                 if (GuiScreen.isShiftKeyDown()) {
                     if (GuiScreen.isCtrlKeyDown()) {
                         this.setSelectionPos(this.getNthWordFromPos(-1, this.getSelectionEnd()));
@@ -280,7 +279,7 @@ public class InputFieldElement extends AbstractElement {
         if (this.isFocused && n == 0) {
             float f3 = f - this.xPosition;
             if (this.enableBackgroundDrawing) {
-                f3 -= (float)4;
+                f3 -= (float) 4;
             }
             String string = this.font.setWrapWords(this.text.substring(this.lineScrollOffset), this.IIIIIIlIlIlIllllllIlllIlI());
             this.setCursorPosition(this.font.setWrapWords(string, f3).length() + this.lineScrollOffset);
@@ -299,8 +298,8 @@ public class InputFieldElement extends AbstractElement {
             String string = this.font.setWrapWords(this.text.substring(this.lineScrollOffset), this.IIIIIIlIlIlIllllllIlllIlI());
             boolean bl = n2 >= 0 && n2 <= string.length();
             boolean bl2 = this.isFocused && this.cursorCounter / 6 % 2 == 0 && bl;
-            float f = this.enableBackgroundDrawing ? this.xPosition + (float)4 : this.xPosition;
-            float f2 = this.enableBackgroundDrawing ? this.yPosition + (this.height - (float)8) / 2.0f : this.yPosition;
+            float f = this.enableBackgroundDrawing ? this.xPosition + (float) 4 : this.xPosition;
+            float f2 = this.enableBackgroundDrawing ? this.yPosition + (this.height - (float) 8) / 2.0f : this.yPosition;
             float f3 = f;
             if (n3 > string.length()) {
                 n3 = string.length();
@@ -324,14 +323,14 @@ public class InputFieldElement extends AbstractElement {
             }
             if (bl2) {
                 if (bl3) {
-                    Gui.drawRect(f4, f2 - 1.0f, f4 + 1.0f, f2 + 1.0f + (float)this.font.getHeight(), -3092272);
+                    Gui.drawRect(f4, f2 - 1.0f, f4 + 1.0f, f2 + 1.0f + (float) this.font.getHeight(), -3092272);
                 } else {
                     this.font.drawString("_", f4, f2, n);
                 }
             }
             if (n3 != n2) {
-                float f5 = f + (float)this.font.getStringWidth(string.substring(0, n3));
-                this.drawCursorVertical(f4, f2 - 1.0f + 2.0f, f5 - 1.0f, f2 + 1.0f + (float)this.font.getHeight() + 2.0f);
+                float f5 = f + (float) this.font.getStringWidth(string.substring(0, n3));
+                this.drawCursorVertical(f4, f2 - 1.0f + 2.0f, f5 - 1.0f, f2 + 1.0f + (float) this.font.getHeight() + 2.0f);
             }
         }
     }
@@ -354,17 +353,17 @@ public class InputFieldElement extends AbstractElement {
         if (f > this.xPosition + this.width) {
             f = this.xPosition + this.width;
         }
-        Tessellator tessellator = Tessellator.instance;
+//        Tessellator tessellator = Tessellator.getInstance();
         GL11.glColor4f(0.0f, 0.0f, 255, 255);
         GL11.glDisable(3553);
         GL11.glEnable(3058);
         GL11.glLogicOp(5387);
-        tessellator.startDrawingQuads();
-        tessellator.addVertex(f, f4, 0.0);
-        tessellator.addVertex(f3, f4, 0.0);
-        tessellator.addVertex(f3, f2, 0.0);
-        tessellator.addVertex(f, f2, 0.0);
-        tessellator.draw();
+//        tessellator.startDrawingQuads();
+//        tessellator.addVertex(f, f4, 0.0);
+//        tessellator.addVertex(f3, f4, 0.0);
+//        tessellator.addVertex(f3, f2, 0.0);
+//        tessellator.addVertex(f, f2, 0.0);
+//        tessellator.draw();
         GL11.glDisable(3058);
         GL11.glEnable(3553);
     }
@@ -420,7 +419,7 @@ public class InputFieldElement extends AbstractElement {
     }
 
     public float IIIIIIlIlIlIllllllIlllIlI() {
-        return this.getEnableBackgroundDrawing() ? this.width - (float)8 : this.width;
+        return this.getEnableBackgroundDrawing() ? this.width - (float) 8 : this.width;
     }
 
     public void setSelectionPos(int n) {

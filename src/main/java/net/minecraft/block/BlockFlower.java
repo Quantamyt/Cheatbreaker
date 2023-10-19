@@ -1,102 +1,177 @@
 package net.minecraft.block;
 
+import com.google.common.base.Predicate;
+import com.google.common.collect.Collections2;
+import com.google.common.collect.Lists;
+import java.util.Collection;
 import java.util.List;
-import net.minecraft.block.material.Material;
-import net.minecraft.client.renderer.texture.IIconRegister;
+import net.minecraft.block.properties.IProperty;
+import net.minecraft.block.properties.PropertyEnum;
+import net.minecraft.block.state.BlockState;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.IIcon;
+import net.minecraft.util.IStringSerializable;
 
-public class BlockFlower extends BlockBush {
-    private static final String[][] field_149860_M = new String[][] {{"flower_dandelion"}, {"flower_rose", "flower_blue_orchid", "flower_allium", "flower_houstonia", "flower_tulip_red", "flower_tulip_orange", "flower_tulip_white", "flower_tulip_pink", "flower_oxeye_daisy"}};
-    public static final String[] field_149859_a = new String[] {"poppy", "blueOrchid", "allium", "houstonia", "tulipRed", "tulipOrange", "tulipWhite", "tulipPink", "oxeyeDaisy"};
-    public static final String[] field_149858_b = new String[] {"dandelion"};
-    private IIcon[] field_149861_N;
-    private final int field_149862_O;
-    
+public abstract class BlockFlower extends BlockBush
+{
+    protected PropertyEnum<BlockFlower.EnumFlowerType> type;
 
-    protected BlockFlower(int p_i2173_1_) {
-        super(Material.plants);
-        this.field_149862_O = p_i2173_1_;
+    protected BlockFlower()
+    {
+        this.setDefaultState(this.blockState.getBaseState().withProperty(this.getTypeProperty(), this.getBlockType() == BlockFlower.EnumFlowerColor.RED ? BlockFlower.EnumFlowerType.POPPY : BlockFlower.EnumFlowerType.DANDELION));
     }
 
-    /**
-     * Gets the block's texture. Args: side, meta
-     */
-    public IIcon getIcon(int p_149691_1_, int p_149691_2_) {
-        if (p_149691_2_ >= this.field_149861_N.length) {
-            p_149691_2_ = 0;
-        }
-
-        return this.field_149861_N[p_149691_2_];
+    public int damageDropped(IBlockState state)
+    {
+        return ((BlockFlower.EnumFlowerType)state.getValue(this.getTypeProperty())).getMeta();
     }
 
-    public void registerBlockIcons(IIconRegister p_149651_1_) {
-        this.field_149861_N = new IIcon[field_149860_M[this.field_149862_O].length];
-
-        for (int var2 = 0; var2 < this.field_149861_N.length; ++var2) {
-            this.field_149861_N[var2] = p_149651_1_.registerIcon(field_149860_M[this.field_149862_O][var2]);
+    public void getSubBlocks(Item itemIn, CreativeTabs tab, List<ItemStack> list)
+    {
+        for (BlockFlower.EnumFlowerType blockflower$enumflowertype : BlockFlower.EnumFlowerType.getTypes(this.getBlockType()))
+        {
+            list.add(new ItemStack(itemIn, 1, blockflower$enumflowertype.getMeta()));
         }
     }
 
-    /**
-     * Determines the damage on the item the block drops. Used in cloth and wood.
-     */
-    public int damageDropped(int p_149692_1_) {
-        return p_149692_1_;
+    public IBlockState getStateFromMeta(int meta)
+    {
+        return this.getDefaultState().withProperty(this.getTypeProperty(), BlockFlower.EnumFlowerType.getType(this.getBlockType(), meta));
     }
 
-    public void getSubBlocks(Item p_149666_1_, CreativeTabs p_149666_2_, List p_149666_3_) {
-        for (int var4 = 0; var4 < this.field_149861_N.length; ++var4) {
-            p_149666_3_.add(new ItemStack(p_149666_1_, 1, var4));
+    public abstract BlockFlower.EnumFlowerColor getBlockType();
+
+    public IProperty<BlockFlower.EnumFlowerType> getTypeProperty()
+    {
+        if (this.type == null)
+        {
+            this.type = PropertyEnum.<BlockFlower.EnumFlowerType>create("type", BlockFlower.EnumFlowerType.class, new Predicate<BlockFlower.EnumFlowerType>()
+            {
+                public boolean apply(BlockFlower.EnumFlowerType p_apply_1_)
+                {
+                    return p_apply_1_.getBlockType() == BlockFlower.this.getBlockType();
+                }
+            });
+        }
+
+        return this.type;
+    }
+
+    public int getMetaFromState(IBlockState state)
+    {
+        return ((BlockFlower.EnumFlowerType)state.getValue(this.getTypeProperty())).getMeta();
+    }
+
+    protected BlockState createBlockState()
+    {
+        return new BlockState(this, new IProperty[] {this.getTypeProperty()});
+    }
+
+    public Block.EnumOffsetType getOffsetType()
+    {
+        return Block.EnumOffsetType.XZ;
+    }
+
+    public static enum EnumFlowerColor
+    {
+        YELLOW,
+        RED;
+
+        public BlockFlower getBlock()
+        {
+            return this == YELLOW ? Blocks.yellow_flower : Blocks.red_flower;
         }
     }
 
-    public static BlockFlower func_149857_e(String p_149857_0_) {
-        String[] var1 = field_149858_b;
-        int var2 = var1.length;
-        int var3;
-        String var4;
+    public static enum EnumFlowerType implements IStringSerializable
+    {
+        DANDELION(BlockFlower.EnumFlowerColor.YELLOW, 0, "dandelion"),
+        POPPY(BlockFlower.EnumFlowerColor.RED, 0, "poppy"),
+        BLUE_ORCHID(BlockFlower.EnumFlowerColor.RED, 1, "blue_orchid", "blueOrchid"),
+        ALLIUM(BlockFlower.EnumFlowerColor.RED, 2, "allium"),
+        HOUSTONIA(BlockFlower.EnumFlowerColor.RED, 3, "houstonia"),
+        RED_TULIP(BlockFlower.EnumFlowerColor.RED, 4, "red_tulip", "tulipRed"),
+        ORANGE_TULIP(BlockFlower.EnumFlowerColor.RED, 5, "orange_tulip", "tulipOrange"),
+        WHITE_TULIP(BlockFlower.EnumFlowerColor.RED, 6, "white_tulip", "tulipWhite"),
+        PINK_TULIP(BlockFlower.EnumFlowerColor.RED, 7, "pink_tulip", "tulipPink"),
+        OXEYE_DAISY(BlockFlower.EnumFlowerColor.RED, 8, "oxeye_daisy", "oxeyeDaisy");
 
-        for (var3 = 0; var3 < var2; ++var3) {
-            var4 = var1[var3];
+        private static final BlockFlower.EnumFlowerType[][] TYPES_FOR_BLOCK = new BlockFlower.EnumFlowerType[BlockFlower.EnumFlowerColor.values().length][];
+        private final BlockFlower.EnumFlowerColor blockType;
+        private final int meta;
+        private final String name;
+        private final String unlocalizedName;
 
-            if (var4.equals(p_149857_0_)) {
-                return Blocks.yellow_flower;
+        private EnumFlowerType(BlockFlower.EnumFlowerColor blockType, int meta, String name)
+        {
+            this(blockType, meta, name, name);
+        }
+
+        private EnumFlowerType(BlockFlower.EnumFlowerColor blockType, int meta, String name, String unlocalizedName)
+        {
+            this.blockType = blockType;
+            this.meta = meta;
+            this.name = name;
+            this.unlocalizedName = unlocalizedName;
+        }
+
+        public BlockFlower.EnumFlowerColor getBlockType()
+        {
+            return this.blockType;
+        }
+
+        public int getMeta()
+        {
+            return this.meta;
+        }
+
+        public static BlockFlower.EnumFlowerType getType(BlockFlower.EnumFlowerColor blockType, int meta)
+        {
+            BlockFlower.EnumFlowerType[] ablockflower$enumflowertype = TYPES_FOR_BLOCK[blockType.ordinal()];
+
+            if (meta < 0 || meta >= ablockflower$enumflowertype.length)
+            {
+                meta = 0;
+            }
+
+            return ablockflower$enumflowertype[meta];
+        }
+
+        public static BlockFlower.EnumFlowerType[] getTypes(BlockFlower.EnumFlowerColor flowerColor)
+        {
+            return TYPES_FOR_BLOCK[flowerColor.ordinal()];
+        }
+
+        public String toString()
+        {
+            return this.name;
+        }
+
+        public String getName()
+        {
+            return this.name;
+        }
+
+        public String getUnlocalizedName()
+        {
+            return this.unlocalizedName;
+        }
+
+        static {
+            for (final BlockFlower.EnumFlowerColor blockflower$enumflowercolor : BlockFlower.EnumFlowerColor.values())
+            {
+                Collection<BlockFlower.EnumFlowerType> collection = Collections2.<BlockFlower.EnumFlowerType>filter(Lists.newArrayList(values()), new Predicate<BlockFlower.EnumFlowerType>()
+                {
+                    public boolean apply(BlockFlower.EnumFlowerType p_apply_1_)
+                    {
+                        return p_apply_1_.getBlockType() == blockflower$enumflowercolor;
+                    }
+                });
+                TYPES_FOR_BLOCK[blockflower$enumflowercolor.ordinal()] = (BlockFlower.EnumFlowerType[])collection.toArray(new BlockFlower.EnumFlowerType[collection.size()]);
             }
         }
-
-        var1 = field_149859_a;
-        var2 = var1.length;
-
-        for (var3 = 0; var3 < var2; ++var3) {
-            var4 = var1[var3];
-
-            if (var4.equals(p_149857_0_)) {
-                return Blocks.red_flower;
-            }
-        }
-
-        return null;
-    }
-
-    public static int func_149856_f(String p_149856_0_) {
-        int var1;
-
-        for (var1 = 0; var1 < field_149858_b.length; ++var1) {
-            if (field_149858_b[var1].equals(p_149856_0_)) {
-                return var1;
-            }
-        }
-
-        for (var1 = 0; var1 < field_149859_a.length; ++var1) {
-            if (field_149859_a[var1].equals(p_149856_0_)) {
-                return var1;
-            }
-        }
-
-        return 0;
     }
 }

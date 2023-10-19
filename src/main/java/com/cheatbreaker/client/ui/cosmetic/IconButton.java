@@ -4,9 +4,10 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import net.minecraft.util.ResourceLocation;
 
-@AllArgsConstructor @Getter
+@AllArgsConstructor
+@Getter
 public class IconButton {
     private final Object object;
-    private final String text;
+    private final String name;
     private final ResourceLocation image;
 }

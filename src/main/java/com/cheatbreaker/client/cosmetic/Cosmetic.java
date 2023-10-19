@@ -7,8 +7,7 @@ import net.minecraft.util.ResourceLocation;
 /**
  * This defines the CheatBreaker Client's cosmetic Object.
  */
-@Getter
-@Setter
+@Getter @Setter
 public class Cosmetic {
     private String playerId;
     private String name;

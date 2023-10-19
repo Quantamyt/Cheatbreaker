@@ -9,13 +9,14 @@ import java.util.stream.Collectors;
 
 public class EmoteGUI extends WheelGUI {
     public EmoteGUI(int n) {
-        super(n, CheatBreaker.getInstance().getEmoteManager().getEmotes().stream()
-                .map(CheatBreaker.getInstance().getEmoteManager()::getEmote).filter(Objects::nonNull).limit(8L)
+        super(n, CheatBreaker.getInstance().getCosmeticManager().getEmotes().stream()
+                .map(CheatBreaker.getInstance().getCosmeticManager()::getEmoteById).filter(Objects::nonNull).limit(8L)
                 .map(emote -> new IconButton(emote, emote.getName(), emote.getResourceLocation())).collect(Collectors.toList()));
+
         this.consumer = (iconButton -> {
-            if (iconButton != null) {
-                CheatBreaker.getInstance().getEmoteManager().playEmote(Minecraft.getMinecraft().thePlayer, (Emote) iconButton.getObject());
-            }
+            Emote emote = CheatBreaker.getInstance().getCosmeticManager().getEmoteById(n);
+            System.out.println("Playing Emote: " + emote.getName());
+            CheatBreaker.getInstance().getCosmeticManager().playEmote(Minecraft.getMinecraft().thePlayer, emote);
         });
     }
 
@@ -29,4 +30,3 @@ public class EmoteGUI extends WheelGUI {
         return false;
     }
 }
- 

@@ -1,30 +1,51 @@
 package net.minecraft.command;
 
-import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.util.ChatComponentTranslation;
-import net.minecraft.util.DamageSource;
+import java.util.List;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.util.BlockPos;
 
-public class CommandKill extends CommandBase {
-
-
-    public String getCommandName() {
+public class CommandKill extends CommandBase
+{
+    public String getCommandName()
+    {
         return "kill";
     }
 
-    /**
-     * Return the required permission level for this command.
-     */
-    public int getRequiredPermissionLevel() {
-        return 0;
+    public int getRequiredPermissionLevel()
+    {
+        return 2;
     }
 
-    public String getCommandUsage(ICommandSender p_71518_1_) {
+    public String getCommandUsage(ICommandSender sender)
+    {
         return "commands.kill.usage";
     }
 
-    public void processCommand(ICommandSender p_71515_1_, String[] p_71515_2_) {
-        EntityPlayerMP var3 = getCommandSenderAsPlayer(p_71515_1_);
-        var3.attackEntityFrom(DamageSource.outOfWorld, Float.MAX_VALUE);
-        p_71515_1_.addChatMessage(new ChatComponentTranslation("commands.kill.success"));
+    public void processCommand(ICommandSender sender, String[] args) throws CommandException
+    {
+        if (args.length == 0)
+        {
+            EntityPlayer entityplayer = getCommandSenderAsPlayer(sender);
+            entityplayer.onKillCommand();
+            notifyOperators(sender, this, "commands.kill.successful", new Object[] {entityplayer.getDisplayName()});
+        }
+        else
+        {
+            Entity entity = getEntity(sender, args[0]);
+            entity.onKillCommand();
+            notifyOperators(sender, this, "commands.kill.successful", new Object[] {entity.getDisplayName()});
+        }
+    }
+
+    public boolean isUsernameIndex(String[] args, int index)
+    {
+        return index == 0;
+    }
+
+    public List<String> addTabCompletionOptions(ICommandSender sender, String[] args, BlockPos pos)
+    {
+        return args.length == 1 ? getListOfStringsMatchingLastWord(args, MinecraftServer.getServer().getAllUsernames()) : null;
     }
 }

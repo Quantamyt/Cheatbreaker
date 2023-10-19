@@ -6,9 +6,13 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.ResourcePackRepository;
 
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -21,11 +25,11 @@ public class PackUtils {
      */
     @SneakyThrows
     public static boolean isResourcePack(File file) {
-        if(file.isFile() && file.getName().endsWith(".zip")) {
+        if (file.isFile() && file.getName().endsWith(".zip")) {
             try {
                 ZipFile sourceZipFile = new ZipFile(file);
-                ZipEntry entry =  sourceZipFile.getEntry("pack.mcmeta");
-                if(entry == null) {
+                ZipEntry entry = sourceZipFile.getEntry("pack.mcmeta");
+                if (entry == null) {
                     System.out.println("Not found in: " + file.getName());
                     return false;
 
@@ -57,6 +61,8 @@ public class PackUtils {
             entry = Optional.empty();
         } catch (IllegalAccessException | InstantiationException | InvocationTargetException exception) {
             CheatBreaker.getInstance().getLogger().error("Failed to create entry", exception);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
 
         return entry;

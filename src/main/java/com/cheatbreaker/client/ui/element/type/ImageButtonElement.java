@@ -4,7 +4,6 @@ package com.cheatbreaker.client.ui.element.type;
 import com.cheatbreaker.client.CheatBreaker;
 import com.cheatbreaker.client.ui.util.RenderUtil;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.util.ResourceLocation;
@@ -26,24 +25,23 @@ public class ImageButtonElement extends GuiButton {
 
     @Override
     public void drawButton(Minecraft mc, int n, int n2) {
-        if (this.field_146125_m) {
-            FontRenderer fontRenderer = mc.fontRenderer;
+        if (this.visible) {
             GL11.glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-            this.field_146123_n = n >= this.field_146128_h && n2 >= this.field_146129_i && n < this.field_146128_h + this.field_146120_f && n2 < this.field_146129_i + this.field_146121_g;
-            int n3 = this.getHoverState(this.field_146123_n);
+            this.hovered = n >= this.xPosition && n2 >= this.yPosition && n < this.xPosition + this.width && n2 < this.yPosition + this.height;
+            int n3 = this.getHoverState(this.hovered);
             if (this.lIIIIlIIllIIlIIlIIIlIIllI) {
-                Gui.drawRect(this.field_146128_h, this.field_146129_i, this.field_146128_h + this.field_146120_f, this.field_146129_i + this.field_146121_g, this.field_146123_n ? -15395563 : -14540254);
+                Gui.drawRect(this.xPosition, this.yPosition, this.xPosition + this.width, this.yPosition + this.height, this.hovered ? -15395563 : -14540254);
             }
             this.mouseDragged(mc, n, n2);
             int n4 = -3092272;
             if (!this.enabled) {
                 n4 = -986896;
-            } else if (this.field_146123_n) {
+            } else if (this.hovered) {
                 n4 = -1;
             }
-            CheatBreaker.getInstance().playRegular16px.drawCenteredString(this.displayString, this.field_146128_h + this.field_146120_f / 2, this.field_146129_i + this.field_146121_g / 2 - (this.lIIIIlIIllIIlIIlIIIlIIllI ? 6 : 5), n4);
+            CheatBreaker.getInstance().playRegular16px.drawCenteredString(this.displayString, this.xPosition + this.width / 2F, this.yPosition + this.height / 2F - (this.lIIIIlIIllIIlIIlIIIlIIllI ? 6 : 5), n4);
             GL11.glColor4f(1.0f, 1.0f, 1.0f, 1.0363636f * 0.2894737f);
-            RenderUtil.renderIcon(this.image, 7.0F, (float)(this.field_146128_h + this.field_146120_f - 20), (float)(this.field_146129_i + 5));
+            RenderUtil.renderIcon(this.image, 7.0F, (float) (this.xPosition + this.width - 20), (float) (this.yPosition + 5));
         }
     }
 }

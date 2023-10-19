@@ -2,6 +2,7 @@ package net.minecraft.client.gui;
 
 import com.cheatbreaker.client.CheatBreaker;
 import com.cheatbreaker.client.ui.fading.CosineFade;
+import com.cheatbreaker.client.ui.mainmenu.menus.MainMenu;
 import com.cheatbreaker.client.ui.mainmenu.menus.VanillaMenu;
 import com.cheatbreaker.client.ui.module.HudLayoutEditorGui;
 import com.cheatbreaker.client.ui.util.RenderUtil;
@@ -10,11 +11,13 @@ import com.cheatbreaker.client.util.sessionserver.SessionServer;
 import net.minecraft.client.gui.achievement.GuiAchievements;
 import net.minecraft.client.gui.achievement.GuiStats;
 import net.minecraft.client.resources.I18n;
+import net.minecraft.realms.RealmsBridge;
 import net.minecraft.util.ResourceLocation;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
 
 import java.awt.*;
+import java.io.IOException;
 
 public class GuiIngameMenu extends GuiScreen {
     private int selectedButton;
@@ -28,7 +31,6 @@ public class GuiIngameMenu extends GuiScreen {
     private boolean modsButtonHeldDown = false;
     private final CosineFade loginServicesFadeTime = new CosineFade(1500L);
 
-    @Override
     public void initGui() {
         this.selectedButton = 0;
         this.buttonList.clear();
@@ -63,26 +65,36 @@ public class GuiIngameMenu extends GuiScreen {
                 this.logoRotationTime.loopAnimation();
             }
             float f = 18;
-            double d3 = d / (double)2 - (double)f;
-            double d4 = this.buttonList.size() > 2 ? (double)((float) this.buttonList.get(1).field_146129_i - f - (float)32) : (double)-100;
+            double d3 = d / (double) 2 - (double) f;
+            double d4 = this.buttonList.size() > 2 ? (double) ((float) this.buttonList.get(1).yPosition - f - (float) 32) : (double) -100;
+
             GL11.glPushMatrix();
-            GL11.glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-            GL11.glTranslatef((float)d3, (float)d4, 1.0f);
+            GL11.glColor4f(0.0f, 0.0f, 0.0f, 0.4f);
+            GL11.glTranslatef((float) d3 + 1.0F, (float) d4 + 1.0F, 1.0f);
             GL11.glTranslatef(f, f, f);
-            GL11.glRotatef((float)180 * this.logoRotationTime.getFadeAmount(), 0.0f, 0.0f, 1.0f);
+            GL11.glRotatef((float) 180 * this.logoRotationTime.getFadeAmount(), 0.0f, 0.0f, 1.0f);
             GL11.glTranslatef(-f, -f, -f);
             RenderUtil.renderEIcon(this.outerLogo, f, 0.0f, 0.0f);
             GL11.glPopMatrix();
-            RenderUtil.renderEIcon(this.innerLogo, f, (float)d3, (float)d4);
+            RenderUtil.renderEIcon(this.innerLogo, f, (float) d3 + 1.0F, (float) d4 + 1.0F);
+
+            GL11.glPushMatrix();
+            GL11.glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+            GL11.glTranslatef((float) d3, (float) d4, 1.0f);
+            GL11.glTranslatef(f, f, f);
+            GL11.glRotatef((float) 180 * this.logoRotationTime.getFadeAmount(), 0.0f, 0.0f, 1.0f);
+            GL11.glTranslatef(-f, -f, -f);
+            RenderUtil.renderEIcon(this.outerLogo, f, 0.0f, 0.0f);
+            GL11.glPopMatrix();
+            RenderUtil.renderEIcon(this.innerLogo, f, (float) d3, (float) d4);
         } catch (Exception exception) {
 
         }
     }
 
-    @Override
-    protected void actionPerformed(GuiButton guiButton) {
+    protected void actionPerformed(GuiButton button) throws IOException {
         this.modsButtonHeldDown = false;
-        switch (guiButton.id) {
+        switch (button.id) {
             case 16:
                 this.mc.displayGuiScreen(new GuiMultiplayer(this));
                 break;
@@ -90,14 +102,14 @@ public class GuiIngameMenu extends GuiScreen {
                 this.mc.displayGuiScreen(new GuiOptions(this, this.mc.gameSettings));
                 break;
             case 1:
-                if (CheatBreaker.getInstance().getCbNetHandler().isCompetitveGamemode()) {
+                if (CheatBreaker.getInstance().getCBNetHandler().isCompetitiveGameMode()) {
                     this.mc.displayGuiScreen(new CompetitiveGameWarningGui(this));
                     break;
                 }
-                guiButton.enabled = false;
+                button.enabled = false;
                 this.mc.theWorld.sendQuittingDisconnectingPacket();
                 this.mc.loadWorld(null);
-                this.mc.displayGuiScreen(new VanillaMenu());
+                this.mc.displayGuiScreen(new MainMenu());
             default:
                 break;
             case 4:
@@ -105,41 +117,44 @@ public class GuiIngameMenu extends GuiScreen {
                 this.mc.setIngameFocus();
                 break;
             case 5:
-                this.mc.displayGuiScreen(new GuiAchievements(this, this.mc.thePlayer.func_146107_m()));
+                this.mc.displayGuiScreen(new GuiAchievements(this, this.mc.thePlayer.getStatFileWriter()));
                 break;
             case 6:
-                this.mc.displayGuiScreen(new GuiStats(this, this.mc.thePlayer.func_146107_m()));
+                this.mc.displayGuiScreen(new GuiStats(this, this.mc.thePlayer.getStatFileWriter()));
                 break;
             case 7:
                 this.mc.displayGuiScreen(new GuiShareToLan(this));
                 break;
             case 10:
-                if (CheatBreaker.getInstance().getGlobalSettings().streamerMode.getBooleanValue() && CheatBreaker.getInstance().getGlobalSettings().holdDownModsGameMenuButton.getBooleanValue()) {
+                if (CheatBreaker.getInstance().getGlobalSettings().streamerMode.getBooleanValue()
+                        && CheatBreaker.getInstance().getGlobalSettings().holdDownModsGameMenuButton.getBooleanValue()) {
                     this.modsButtonHeldDown = true;
                     this.currentTime = System.currentTimeMillis();
-                } else{
+                } else {
                     this.mc.displayGuiScreen(new HudLayoutEditorGui());
                 }
         }
     }
 
-    @Override
     public void updateScreen() {
         super.updateScreen();
         ++this.eventButton;
     }
 
-    @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
         this.drawDefaultBackground();
         int n3 = 600;
         int n4 = 356;
-        double d = (double)Math.min(this.width, this.height) / ((double)n3 * (double)9);
-        int n5 = (int)((double)n3 * d);
-        int n6 = (int)((double)n4 * d);
+        double d = (double) Math.min(this.width, this.height) / ((double) n3 * (double) 9);
+        int n5 = (int) ((double) n3 * d);
+        int n6 = (int) ((double) n4 * d);
         if (CheatBreaker.getInstance().getGlobalSettings().getCurrentMenuSetting().getIntegerValue() == 1) {
             this.drawLogo(this.width, this.height);
         } else {
+            GL11.glColor4f(0.0f, 0.0f, 0.0f, 0.4f);
+            RenderUtil.renderIcon(this.logo, this.width / 2 - n5 / 2 + 1.0F, n6 * 2 + 1.0F, n5, n6);
+
+            GL11.glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
             RenderUtil.renderIcon(this.logo, this.width / 2 - n5 / 2, n6 * 2, n5, n6);
         }
 
@@ -150,7 +165,7 @@ public class GuiIngameMenu extends GuiScreen {
             bl = true;
         }
         if (this.modsButtonHeldDown && Mouse.isButtonDown(0) && CheatBreaker.getInstance().getGlobalSettings().streamerMode.getBooleanValue() && CheatBreaker.getInstance().getGlobalSettings().holdDownModsGameMenuButton.getBooleanValue()) {
-            int countdown = this.currentTime == 0L ? (int) CheatBreaker.getInstance().getGlobalSettings().holdDuration.getFloatValue() : (int)((CheatBreaker.getInstance().getGlobalSettings().holdDuration.getFloatValue() * 1000.0f + 999L - (System.currentTimeMillis() - this.currentTime)) / 1000L);
+            int countdown = this.currentTime == 0L ? (int) CheatBreaker.getInstance().getGlobalSettings().holdDuration.getFloatValue() : (int) ((CheatBreaker.getInstance().getGlobalSettings().holdDuration.getFloatValue() * 1000.0f + 999L - (System.currentTimeMillis() - this.currentTime)) / 1000L);
             this.modsButton.displayString = "Mods (" + countdown + ")";
             if (countdown <= 0) {
                 this.mc.displayGuiScreen(new HudLayoutEditorGui());

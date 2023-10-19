@@ -4,7 +4,7 @@ import com.cheatbreaker.client.CheatBreaker;
 import com.sun.javafx.geom.Vec2d;
 import net.minecraft.entity.Entity;
 
-import java.awt.Color;
+import java.awt.*;
 
 public class WorldBorder {
     private final String id;
@@ -45,7 +45,7 @@ public class WorldBorder {
             double d2 = this.currentMax.x - this.newMax.x;
             double d3 = this.currentMin.y - this.newMin.y;
             double d4 = this.currentMax.y - this.newMax.y;
-            double d5 = (float)this.moveTicks / (float)this.durationTicks;
+            double d5 = (float) this.moveTicks / (float) this.durationTicks;
             double d6 = this.currentMin.x - d * d5;
             double d7 = this.currentMax.x - d2 * d5;
             double d8 = this.currentMin.y - d3 * d5;
@@ -64,7 +64,7 @@ public class WorldBorder {
     }
 
     boolean worldEqualsWorld() {
-        return CheatBreaker.getInstance().getCbNetHandler().getWorldUID().equals(this.world);
+        return CheatBreaker.getInstance().getCBNetHandler().getWorldUID().equals(this.world);
     }
 
     double getStartingMaxX() {
@@ -96,9 +96,10 @@ public class WorldBorder {
         d7 = Math.min(d7, d3);
         return Math.min(d7, d4);
     }
+
     boolean doesCollide(double d, double d2) {
         return !this.cancelExit ||
-                !this.world.equals(WorldBorderManager.getCheatBreaker(this.manager).getCbNetHandler().getWorldUID()) ||
+                !this.world.equals(CheatBreaker.getInstance().getCBNetHandler().getWorldUID()) ||
                 d + 1.0 > this.getStartingMinX() && d < this.getStartingMaxX() && d2 + 1.0 > this.getStartingMinZ() && d2 < this.getStartingMaxZ();
     }
 

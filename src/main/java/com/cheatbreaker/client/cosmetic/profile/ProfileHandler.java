@@ -1,11 +1,12 @@
 package com.cheatbreaker.client.cosmetic.profile;
 
 import com.cheatbreaker.client.CheatBreaker;
-import com.cheatbreaker.client.module.impl.normal.misc.ModuleNickHider;
+import com.cheatbreaker.client.module.impl.normal.hypixel.ModuleNickHider;
 import lombok.Getter;
-import net.minecraft.client.Minecraft;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 /**
  * Handles everything to do with ClientProfiles.
@@ -24,7 +25,10 @@ public class ProfileHandler {
      * Returns a dashed UUID since 1.7 is weird as fuck.
      */
     public String recompileUUID(String uuidIn) {
-        return UUID.fromString(uuidIn.replaceAll("-", "").replaceFirst("(\\p{XDigit}{8})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}+)", "$1-$2-$3-$4-$5")).toString();
+        return UUID.fromString(uuidIn.replaceFirst (
+                "(\\p{XDigit}{8})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}+)",
+                "$1-$2-$3-$4-$5"
+        )).toString();
     }
 
     public boolean validate(String target, boolean username) {
@@ -43,6 +47,8 @@ public class ProfileHandler {
         } else {
             try {
                 for (UUID playerId : this.wsOnlineUsers.keySet()) {
+//                    System.out.println(target);
+//                    System.out.println(playerId);
                     if (UUID.fromString(target).equals(playerId)) {
                         return true;
                     }

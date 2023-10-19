@@ -1,52 +1,40 @@
 package net.minecraft.network.play.server;
 
 import java.io.IOException;
-import net.minecraft.network.INetHandler;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayClient;
 
-public class S00PacketKeepAlive extends Packet {
-    private int field_149136_a;
+public class S00PacketKeepAlive implements Packet<INetHandlerPlayClient>
+{
+    private int id;
 
-
-    public S00PacketKeepAlive() {}
-
-    public S00PacketKeepAlive(int p_i45195_1_) {
-        this.field_149136_a = p_i45195_1_;
+    public S00PacketKeepAlive()
+    {
     }
 
-    public void processPacket(INetHandlerPlayClient p_148833_1_) {
-        p_148833_1_.handleKeepAlive(this);
+    public S00PacketKeepAlive(int idIn)
+    {
+        this.id = idIn;
     }
 
-    /**
-     * Reads the raw packet data from the data stream.
-     */
-    public void readPacketData(PacketBuffer p_148837_1_) throws IOException {
-        this.field_149136_a = p_148837_1_.readInt();
+    public void processPacket(INetHandlerPlayClient handler)
+    {
+        handler.handleKeepAlive(this);
     }
 
-    /**
-     * Writes the raw packet data to the data stream.
-     */
-    public void writePacketData(PacketBuffer p_148840_1_) throws IOException {
-        p_148840_1_.writeInt(this.field_149136_a);
+    public void readPacketData(PacketBuffer buf) throws IOException
+    {
+        this.id = buf.readVarIntFromBuffer();
     }
 
-    /**
-     * If true, the network manager will process the packet immediately when received, otherwise it will queue it for
-     * processing. Currently true for: Disconnect, LoginSuccess, KeepAlive, ServerQuery/Info, Ping/Pong
-     */
-    public boolean hasPriority() {
-        return true;
+    public void writePacketData(PacketBuffer buf) throws IOException
+    {
+        buf.writeVarIntToBuffer(this.id);
     }
 
-    public int func_149134_c() {
-        return this.field_149136_a;
-    }
-
-    public void processPacket(INetHandler p_148833_1_) {
-        this.processPacket((INetHandlerPlayClient)p_148833_1_);
+    public int func_149134_c()
+    {
+        return this.id;
     }
 }

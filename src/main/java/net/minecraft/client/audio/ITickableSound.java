@@ -1,7 +1,8 @@
 package net.minecraft.client.audio;
 
-import net.minecraft.server.gui.IUpdatePlayerListBox;
+import net.minecraft.util.ITickable;
 
-public interface ITickableSound extends ISound, IUpdatePlayerListBox {
-    boolean func_147667_k();
+public interface ITickableSound extends ISound, ITickable
+{
+    boolean isDonePlaying();
 }

@@ -9,8 +9,8 @@ import com.cheatbreaker.client.ui.element.type.FlatButtonElement;
 import com.cheatbreaker.client.ui.mainmenu.AbstractElement;
 import com.cheatbreaker.client.ui.overlay.friend.*;
 import com.cheatbreaker.client.ui.util.RenderUtil;
-import com.cheatbreaker.client.util.friend.Friend;
-import com.cheatbreaker.client.util.friend.FriendRequest;
+import com.cheatbreaker.client.util.friend.data.Friend;
+import com.cheatbreaker.client.util.friend.data.FriendRequest;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.PositionedSoundRecord;
 import net.minecraft.client.gui.GuiScreen;
@@ -18,6 +18,7 @@ import net.minecraft.util.ResourceLocation;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.GL11;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -40,21 +41,30 @@ public class OverlayGui extends AbstractGui {
 
     public OverlayGui() {
         ArrayList<FriendElement> friendElements = new ArrayList<>();
+        AbstractElement[] guiElements = new AbstractElement[5];
         CheatBreaker.getInstance().getFriendsManager().getFriends().forEach((string, friend) -> friendElements.add(new FriendElement(friend)));
-        AbstractElement[] arrabstractElement = new AbstractElement[5];
+
         this.friendsListElement = new FriendsListElement(friendElements);
-        arrabstractElement[0] = this.friendsListElement;
+        guiElements[0] = this.friendsListElement;
+
         this.friendRequestsElement = new FriendRequestListElement(new ArrayList());
-        arrabstractElement[1] = this.friendRequestsElement;
+        guiElements[1] = this.friendRequestsElement;
+
         this.requestsButton = new FlatButtonElement("REQUESTS");
-        arrabstractElement[2] = this.requestsButton;
+        guiElements[2] = this.requestsButton;
+
         this.friendsButton = new FlatButtonElement("FRIENDS");
-        arrabstractElement[3] = this.friendsButton;
+        guiElements[3] = this.friendsButton;
+
         this.radioButton = new RadioElement();
-        arrabstractElement[4] = this.radioButton;
-        this.setElements(arrabstractElement);
+        guiElements[4] = this.radioButton;
+
+        this.setElements(guiElements);
         this.addElements(this.friendsListElement, this.friendRequestsElement, this.requestsButton, this.friendsButton);
+
         this.selectedFriendElement = this.friendsListElement;
+
+        CheatBreaker.getInstance().logger.info(CheatBreaker.getInstance().loggerPrefix + "Loaded Overlay Gui");
     }
 
     public void setMessages(Friend friend) {
@@ -62,7 +72,7 @@ public class OverlayGui extends AbstractGui {
             MessagesElement messagesElement = null;
             for (AbstractElement abstractElement : this.selectedButton) {
                 if (!(abstractElement instanceof MessagesElement)) continue;
-                messagesElement = (MessagesElement)abstractElement;
+                messagesElement = (MessagesElement) abstractElement;
             }
             if (messagesElement == null) {
                 this.messages = new MessagesElement(friend);
@@ -81,16 +91,16 @@ public class OverlayGui extends AbstractGui {
     public void initGui() {
         Keyboard.enableRepeatEvents(true);
         this.openTime = System.currentTimeMillis();
-        if (this.mc.lastScreen != this) {
+        if (CheatBreaker.getInstance().lastScreen != this) {
             this.blurGui();
         }
         friendsListElement.getElements().clear();
-        for(Friend friend : CheatBreaker.getInstance().getFriendsManager().getFriends().values()) {
+        for (Friend friend : CheatBreaker.getInstance().getFriendsManager().getFriends().values()) {
             friendsListElement.getElements().add(new FriendElement(friend));
         }
         this.friendsButton.setElementSize(0.0f, 28.0f, 96.976746f * 0.71666664f, 20);
         this.requestsButton.setElementSize(55.315384f * 1.2745098f, 28.0f, 0.5588235f * 124.36842f, 20);
-        float f = (float)28 + this.friendsButton.getHeight() + 1.0f;
+        float f = (float) 28 + this.friendsButton.getHeight() + 1.0f;
         this.friendsListElement.setElementSize(0.0f, f, 140.0f, this.getScaledHeight() - f);
         this.friendRequestsElement.setElementSize(0.0f, f, 140.0f, this.getScaledHeight() - f);
         float f2 = 190;
@@ -98,7 +108,7 @@ public class OverlayGui extends AbstractGui {
     }
 
     @Override
-    public void handleMouseInput() {
+    public void handleMouseInput() throws IOException {
         super.handleMouseInput();
         this.handleElementMouse();
     }
@@ -112,12 +122,12 @@ public class OverlayGui extends AbstractGui {
         OverlayGui.drawRect(0.0f, 0.0f, 140, 28, -15395563);
         OverlayGui.drawRect(6, 6, 22, 22, Friend.getStatusColor(CheatBreaker.getInstance().getPlayerStatus()));
         GL11.glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-        ResourceLocation resourceLocation = CheatBreaker.getInstance().getHeadIcon(this.mc.getSession().getUsername(), this.mc.getSession().getPlayerID());
+        ResourceLocation resourceLocation = CheatBreaker.getInstance().getHeadIcon(this.mc.getSession().getUsername());
         RenderUtil.renderIcon(resourceLocation, 7.0F, 7.0F, 7.0F);
         CheatBreaker.getInstance().playRegular16px.drawString(this.mc.getSession().getUsername(), 28, 6.0f, -1);
         CheatBreaker.getInstance().playRegular12px.drawString(CheatBreaker.getInstance().getStatusString(), 28, 15.0f, -5460820);
         boolean bl = f > 6.0F && f < 134.0F && f2 > 6.0F && f2 < 22.0F;
-        if (this.mouseClicked(this.friendsButton, f, f2) && bl && CheatBreaker.getInstance().getWSNetHandler().isOpen()) {
+        if (this.mouseClicked(this.friendsButton, f, f2) && bl && CheatBreaker.getInstance().getWsNetHandler().isOpen()) {
             OverlayGui.drawRect(22, 0.0f, 140, 28, -15395563);
             OverlayGui.drawRect(24, 6, 40, 22, Friend.getStatusColor(Friend.Status.ONLINE));
             OverlayGui.drawRect(42, 6, 58, 22, Friend.getStatusColor(Friend.Status.AWAY));
@@ -164,32 +174,32 @@ public class OverlayGui extends AbstractGui {
         this.swapElement(mouseX, mouseY, n, this.friendsListElement, this.friendRequestsElement);
         boolean bl2 = this.mouseClicked(this.friendsButton, mouseX, mouseY);
         if (bl2 && this.friendsButton.isMouseInside(mouseX, mouseY) && this.selectedFriendElement != this.friendsListElement) {
-            this.mc.getSoundHandler().playSound(PositionedSoundRecord.func_147674_a(new ResourceLocation("gui.button.press"), 1.0f));
+            this.mc.getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("gui.button.press"), 1.0f));
             this.selectedFriendElement = this.friendsListElement;
         } else if (bl2 && this.requestsButton.isMouseInside(mouseX, mouseY) && this.selectedFriendElement != this.friendRequestsElement) {
-            this.mc.getSoundHandler().playSound(PositionedSoundRecord.func_147674_a(new ResourceLocation("gui.button.press"), 1.0f));
+            this.mc.getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("gui.button.press"), 1.0f));
             this.selectedFriendElement = this.friendRequestsElement;
         }
         boolean bl = mouseX > 6.0f && mouseX < 134.0f && mouseY > 6.0f && mouseY < 22.0f;
-        if (bl2 && bl && CheatBreaker.getInstance().getWSNetHandler().isOpen()) {
+        if (bl2 && bl && CheatBreaker.getInstance().getWsNetHandler().isOpen()) {
             boolean bl5 = mouseX > 24.0f && mouseX < 40.0f;
             boolean bl6 = mouseX > 42.0f && mouseX < 58.0f;
             boolean bl7 = mouseX > 60.0f && mouseX < 76.0f;
             boolean bl4 = mouseX > 78.0f && mouseX < 94.0f;
             if (bl5) {
                 CheatBreaker.getInstance().setPlayerStatus(Friend.Status.ONLINE);
-                this.mc.getSoundHandler().playSound(PositionedSoundRecord.func_147674_a(new ResourceLocation("gui.button.press"), 1.0f));
+                this.mc.getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("gui.button.press"), 1.0f));
             } else if (bl6) {
                 CheatBreaker.getInstance().setPlayerStatus(Friend.Status.AWAY);
-                this.mc.getSoundHandler().playSound(PositionedSoundRecord.func_147674_a(new ResourceLocation("gui.button.press"), 1.0f));
+                this.mc.getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("gui.button.press"), 1.0f));
             } else if (bl7) {
                 CheatBreaker.getInstance().setPlayerStatus(Friend.Status.BUSY);
-                this.mc.getSoundHandler().playSound(PositionedSoundRecord.func_147674_a(new ResourceLocation("gui.button.press"), 1.0f));
+                this.mc.getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("gui.button.press"), 1.0f));
             } else if (bl4) {
                 CheatBreaker.getInstance().setPlayerStatus(Friend.Status.OFFLINE);
-                this.mc.getSoundHandler().playSound(PositionedSoundRecord.func_147674_a(new ResourceLocation("gui.button.press"), 1.0f));
+                this.mc.getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("gui.button.press"), 1.0f));
             }
-            CheatBreaker.getInstance().getWSNetHandler().updateClientStatus();
+            CheatBreaker.getInstance().getWsNetHandler().updateClientStatus();
         }
     }
 
@@ -228,8 +238,8 @@ public class OverlayGui extends AbstractGui {
         }
         if (bl) {
             CBAlert cBAlert3 = this.alertQueue.poll();
-            cBAlert3.setMaxHeight(this.getScaledHeight() - (float)CBAlert.getHeight());
-            this.alertList.forEach(cBAlert -> cBAlert.setMaxHeight(cBAlert.getMaxHeight() - (float)CBAlert.getHeight()));
+            cBAlert3.setMaxHeight(this.getScaledHeight() - (float) CBAlert.getHeight());
+            this.alertList.forEach(cBAlert -> cBAlert.setMaxHeight(cBAlert.getMaxHeight() - (float) CBAlert.getHeight()));
             this.alertList.add(cBAlert3);
         }
     }
@@ -239,6 +249,7 @@ public class OverlayGui extends AbstractGui {
         if (this.mc != null && this.mc.currentScreen == null && (Boolean) CheatBreaker.getInstance().getGlobalSettings().pinRadio.getValue() && DashUtil.isActive()) {
             this.radioButton.drawElementHover(0.0f, 0.0f, false);
         }
+
     }
 
     @Override
@@ -246,16 +257,16 @@ public class OverlayGui extends AbstractGui {
         if (this.context != null) {
             this.context.setWorldAndResolution(mc, n, n2);
         }
-        float f = this.getScaledHeight();
+        float scaledHeight = this.getScaledHeight();
         super.setWorldAndResolution(mc, n, n2);
-        this.alertList.forEach(cBAlert -> this.setDimensions(cBAlert, this.getScaledHeight() + f));
-        this.alertQueue.forEach(cBAlert -> this.setDimensions(cBAlert, this.getScaledHeight() + f));
+        this.alertList.forEach(cBAlert -> this.setDimensions(cBAlert, this.getScaledHeight() - scaledHeight));
+        this.alertQueue.forEach(cBAlert -> this.setDimensions(cBAlert, this.getScaledHeight() - scaledHeight));
     }
 
-    private void setDimensions(CBAlert cBAlert, float f) {
-        cBAlert.setHeight(this.getScaledWidth() - (float)CBAlert.getWidth());
-        cBAlert.setCurrentHeight(cBAlert.getLastHeight() - f);
-        cBAlert.setHeight(cBAlert.getMaxHeight() - f);
+    private void setDimensions(CBAlert alert, float scaledHeight) {
+        alert.setWidth(this.getScaledWidth() - (float) CBAlert.getWidth());
+        alert.setCurrentHeight(alert.getCurrentHeight() + scaledHeight);
+        alert.setHeight(alert.getMaxHeight() + scaledHeight);
     }
 
     @Override
@@ -276,7 +287,6 @@ public class OverlayGui extends AbstractGui {
         CBAlert cBAlert = new CBAlert(title, message.split("\n"), this.getScaledHeight());
         cBAlert.showTitleBar(title.equals(""));
         this.alertQueue.add(cBAlert);
-        System.out.println(message);
     }
 
     public void handleFriend(Friend friend, boolean bl) {

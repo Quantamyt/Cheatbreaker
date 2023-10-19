@@ -1,9 +1,8 @@
 package com.cheatbreaker.client.module.impl.normal.hud;
 
-import com.cheatbreaker.client.event.impl.GuiDrawBypassDebugEvent;
-import com.cheatbreaker.client.event.impl.GuiDrawEvent;
-import com.cheatbreaker.client.event.impl.KeyboardEvent;
-import com.cheatbreaker.client.event.impl.PreviewDrawEvent;
+import com.cheatbreaker.client.CheatBreaker;
+import com.cheatbreaker.client.event.impl.render.GuiDrawBypassDebugEvent;
+import com.cheatbreaker.client.event.impl.render.PreviewDrawEvent;
 import com.cheatbreaker.client.module.AbstractModule;
 import com.cheatbreaker.client.module.data.CustomizationLevel;
 import com.cheatbreaker.client.module.data.MiniMapRules;
@@ -12,7 +11,11 @@ import com.cheatbreaker.client.ui.module.GuiAnchor;
 import com.cheatbreaker.client.ui.module.HudLayoutEditorGui;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.Gui;
-import net.minecraft.scoreboard.*;
+import net.minecraft.client.renderer.GlStateManager;
+import net.minecraft.scoreboard.IScoreObjectiveCriteria;
+import net.minecraft.scoreboard.Score;
+import net.minecraft.scoreboard.ScoreObjective;
+import net.minecraft.scoreboard.ScorePlayerTeam;
 import net.minecraft.util.EnumChatFormatting;
 import org.lwjgl.opengl.GL11;
 
@@ -20,7 +23,10 @@ import java.util.Collection;
 import java.util.regex.Pattern;
 
 /**
- * Allows the user to move and customize the Minecraft scoreboard.
+ * @Module - ModuleScoreboard
+ * @see AbstractModule
+ *
+ * This module displays the server's Scoreboard.
  */
 public class ModuleScoreboard extends AbstractModule {
 
@@ -56,7 +62,7 @@ public class ModuleScoreboard extends AbstractModule {
         this.shadow = new Setting(this, "Text Shadow").setValue(false).setCustomizationLevel(CustomizationLevel.SIMPLE);
 
         new Setting(this, "label").setValue("Color Options").setCustomizationLevel(CustomizationLevel.SIMPLE);
-        this.customTextColor = new Setting(this, "Strip Formatting Colors").setValue(false).setCustomizationLevel(CustomizationLevel.MEDIUM);
+        this.customTextColor = new Setting(this, "Custom Text Color").setValue(false).setCustomizationLevel(CustomizationLevel.MEDIUM);
         this.textColor = new Setting(this, "Text Color").setValue(-1).setMinMax(Integer.MIN_VALUE, Integer.MAX_VALUE).setCustomizationLevel(CustomizationLevel.MEDIUM).setCondition(() -> (Boolean) this.customTextColor.getValue());
         this.numbersColor = new Setting(this, "Scoreboard Numbers Color").setValue(0xFFFF5555).setMinMax(Integer.MIN_VALUE, Integer.MAX_VALUE).setCustomizationLevel(CustomizationLevel.MEDIUM).setCondition(() -> !(Boolean) this.removeNumbers.getValue());
         this.topBackgroundColor = new Setting(this, "Top Background Color").setValue(0x60000000).setMinMax(Integer.MIN_VALUE, Integer.MAX_VALUE).setCustomizationLevel(CustomizationLevel.SIMPLE).setCondition(() -> (Boolean) this.background.getValue());
@@ -64,6 +70,7 @@ public class ModuleScoreboard extends AbstractModule {
         this.borderColor = new Setting(this, "Border Color").setValue(0x80000000).setMinMax(Integer.MIN_VALUE, Integer.MAX_VALUE).setCustomizationLevel(CustomizationLevel.SIMPLE).setCondition(() -> (Boolean) this.border.getValue());
 
         this.setDescription("Move and customize the Minecraft scoreboard to your liking.");
+        this.setAliases("Sidebar");
         this.addEvent(PreviewDrawEvent.class, this::onPreviewDraw);
         this.addEvent(GuiDrawBypassDebugEvent.class, this::onGuiDraw);
         this.setDefaultState(true);
@@ -73,18 +80,18 @@ public class ModuleScoreboard extends AbstractModule {
         if (!this.isRenderHud()) {
             return;
         }
-        if (this.mc.theWorld.getScoreboard().func_96539_a(1) != null) {
+        if (this.mc.theWorld.getScoreboard().getObjectiveInDisplaySlot(1) != null) {
             return;
         }
         GL11.glPushMatrix();
         this.scaleAndTranslate(event.getScaledResolution());
-        GL11.glTranslatef(this.removeNumbers() ? (float)-12 : 2.0f, this.height, 0.0f);
-        Scoreboard scoreboard = new Scoreboard();
-        ScoreObjective scoreObjective = new ScoreObjective(scoreboard, "CheatBreaker", IScoreObjectiveCriteria.field_96641_b);
+        GL11.glTranslatef(this.removeNumbers() ? (float) -12 : 2.0f, this.height, 0.0f);
+        net.minecraft.scoreboard.Scoreboard scoreboard = new net.minecraft.scoreboard.Scoreboard();
+        ScoreObjective scoreObjective = new ScoreObjective(scoreboard, "CheatBreaker", IScoreObjectiveCriteria.DUMMY);
         scoreObjective.setDisplayName(EnumChatFormatting.RED + "" + EnumChatFormatting.BOLD + "Cheat" + EnumChatFormatting.WHITE + "" + EnumChatFormatting.BOLD + "Breaker");
-        scoreboard.func_96529_a("Steve", scoreObjective);
-        scoreboard.func_96529_a("Alex", scoreObjective);
-        this.renderObjective(scoreObjective, event.getScaledResolution().getScaledHeight(), event.getScaledResolution().getScaledWidth(), this.mc.fontRenderer, (Float) this.masterScale());
+        scoreboard.getValueFromObjective("Steve", scoreObjective);
+        scoreboard.getValueFromObjective("Alex", scoreObjective);
+        this.renderObjective(scoreObjective, event.getScaledResolution().getScaledHeight(), event.getScaledResolution().getScaledWidth(), this.mc.fontRendererObj, this.masterScale());
         GL11.glPopMatrix();
     }
 
@@ -94,21 +101,21 @@ public class ModuleScoreboard extends AbstractModule {
         }
         GL11.glPushMatrix();
         this.scaleAndTranslate(event.getScaledResolution());
-        GL11.glTranslatef(this.removeNumbers() ? (float)-12 : 2.0f, this.height, 0.0f);
-        ScoreObjective scoreObjective = this.mc.theWorld.getScoreboard().func_96539_a(1);
+        GL11.glTranslatef(this.removeNumbers() ? (float) -12 : 2.0f, this.height, 0.0f);
+        ScoreObjective scoreObjective = this.mc.theWorld.getScoreboard().getObjectiveInDisplaySlot(1);
         if (scoreObjective != null) {
             this.renderObjective(scoreObjective, event.getScaledResolution().getScaledHeight(),
-                    event.getScaledResolution().getScaledWidth(), this.mc.fontRenderer, (Float) this.masterScale());
+                    event.getScaledResolution().getScaledWidth(), this.mc.fontRendererObj, this.masterScale());
         }
         GL11.glPopMatrix();
     }
 
     private void renderObjective(ScoreObjective scoreObjective, int n, int n2, FontRenderer fontRenderer, float f) {
-        GL11.glEnable(GL11.GL_BLEND);
+        GlStateManager.enableBlend();
         net.minecraft.scoreboard.Scoreboard scoreboard = scoreObjective.getScoreboard();
-        Collection<Score> collection = scoreboard.func_96534_i(scoreObjective);
+        Collection<Score> collection = scoreboard.getSortedScores(scoreObjective);
         boolean removeNumbers = this.removeNumbers();
-        boolean isCustomTextColorEnabled = (Boolean)customTextColor.getValue();
+        boolean isCustomTextColorEnabled = (Boolean) customTextColor.getValue();
         if (collection.size() <= 15) {
             int n3 = fontRenderer.getStringWidth(scoreObjective.getDisplayName());
             int n4 = n3 + 16;
@@ -122,7 +129,7 @@ public class ModuleScoreboard extends AbstractModule {
             int n7 = 0;
             int n8 = 0;
             float n9 = 0;
-            float width = this.removeNumbers() ?  - 4 + ((float) backgroundWidthPadding.getValue()) : 0.0f;
+            float width = this.removeNumbers() ? -4 + ((float) backgroundWidthPadding.getValue()) : 0.0f;
 
             for (Score score : collection) {
                 ScorePlayerTeam scorePlayerTeam = scoreboard.getPlayersTeam(score.getPlayerName());
@@ -137,7 +144,7 @@ public class ModuleScoreboard extends AbstractModule {
                     Gui.drawRect(n7 - 2 + (removeNumbers ? 14 : 0), n10, n11 + width, n10 + fontRenderer.FONT_HEIGHT, backgroundColor.getColorValue());
                 }
                 n9 = n11 - (n7 - 2 + (removeNumbers ? 18 - ((float) backgroundWidthPadding.getValue()) : 0));
-                GL11.glEnable(GL11.GL_BLEND);
+                GlStateManager.enableBlend();
                 fontRenderer.drawString(isCustomTextColorEnabled ? stripColor(string) : string, n7 + (removeNumbers ? 14 + (float) backgroundWidthPadding.getValue() / 2 : 0), n10, isCustomTextColorEnabled ? textColor.getColorValue() : -1, (Boolean) shadow.getValue());
                 if (!removeNumbers) {
                     fontRenderer.drawString(string2, n11 - fontRenderer.getStringWidth(string2) - 2, n10, numbersColor.getColorValue(), (Boolean) shadow.getValue());
@@ -148,16 +155,16 @@ public class ModuleScoreboard extends AbstractModule {
                     Gui.drawRect(n7 - 2 + (removeNumbers ? 14 : 0), n10 - fontRenderer.FONT_HEIGHT - 1, n11 + width, n10 - 1, topBackgroundColor.getColorValue());
                     Gui.drawRect(n7 - 2 + (removeNumbers ? 14 : 0), n10 - 1, n11 + width, n10, backgroundColor.getColorValue());
                 }
-                fontRenderer.drawString(isCustomTextColorEnabled ? stripColor(string3) : string3, n7 + n3 / 2 - fontRenderer.getStringWidth(string3) / 2 + (removeNumbers ? 12 + (float) backgroundWidthPadding.getValue() / 2 : 0), n10 - fontRenderer.FONT_HEIGHT, isCustomTextColorEnabled ? textColor.getColorValue() : -1, (Boolean) shadow.getValue());
-                GL11.glDisable(GL11.GL_BLEND);
+                fontRenderer.drawString(isCustomTextColorEnabled ? stripColor(string3) : string3, n7 + n3 / 2F - fontRenderer.getStringWidth(string3) / 2F + (removeNumbers ? 12 + (float) backgroundWidthPadding.getValue() / 2 : 0), n10 - fontRenderer.FONT_HEIGHT, isCustomTextColorEnabled ? textColor.getColorValue() : -1, (Boolean) shadow.getValue());
+                GlStateManager.disableBlend();
             }
             int var23 = n3 + n6 + 6;
             if (var23 < n4) {
                 var23 = n4;
             }
             if ((Boolean) border.getValue()) {
-                float bT = (Float)borderThickness.getValue();
-                Gui.drawOutline((float)(n7 - 2 + (removeNumbers ? 14 : 0)) - bT, -(collection.size() * fontRenderer.FONT_HEIGHT + 10) - bT, var23 + bT + width, 0.0F + bT, bT, borderColor.getColorValue());
+                float bT = (Float) borderThickness.getValue();
+                Gui.drawOutline((float) (n7 - 2 + (removeNumbers ? 14 : 0)) - bT, -(collection.size() * fontRenderer.FONT_HEIGHT + 10) - bT, var23 + bT + width, 0.0F + bT, bT, borderColor.getColorValue());
             }
             this.setDimensions(n9, collection.size() * fontRenderer.FONT_HEIGHT + 10);
         }
@@ -167,11 +174,12 @@ public class ModuleScoreboard extends AbstractModule {
      * @return True if Minimap Rule is set to Neutral and if the remove numbers option is set to true or if Minimap rule is set to Forced Off.
      */
     private boolean removeNumbers() {
-        return minimapRule == MiniMapRules.NEUTRAL ? (Boolean)this.removeNumbers.getValue() : minimapRule == MiniMapRules.FORCED_OFF;
+        return minimapRule == MiniMapRules.NEUTRAL ? (Boolean) this.removeNumbers.getValue() : minimapRule == MiniMapRules.FORCED_OFF;
     }
 
     /**
      * Replaces all non-neutral color codes with §r
+     *
      * @param input String input
      */
     private String stripColor(String input) {

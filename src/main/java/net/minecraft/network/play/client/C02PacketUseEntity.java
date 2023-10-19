@@ -2,77 +2,82 @@ package net.minecraft.network.play.client;
 
 import java.io.IOException;
 import net.minecraft.entity.Entity;
-import net.minecraft.network.INetHandler;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayServer;
+import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
 
-public class C02PacketUseEntity extends Packet {
-    private int field_149567_a;
-    private C02PacketUseEntity.Action field_149566_b;
+public class C02PacketUseEntity implements Packet<INetHandlerPlayServer>
+{
+    private int entityId;
+    private C02PacketUseEntity.Action action;
+    private Vec3 hitVec;
 
-
-    public C02PacketUseEntity() {}
-
-    public C02PacketUseEntity(Entity p_i45251_1_, C02PacketUseEntity.Action p_i45251_2_) {
-        this.field_149567_a = p_i45251_1_.getEntityId();
-        this.field_149566_b = p_i45251_2_;
+    public C02PacketUseEntity()
+    {
     }
 
-    /**
-     * Reads the raw packet data from the data stream.
-     */
-    public void readPacketData(PacketBuffer p_148837_1_) throws IOException {
-        this.field_149567_a = p_148837_1_.readInt();
-        this.field_149566_b = C02PacketUseEntity.Action.field_151421_c[p_148837_1_.readByte() % C02PacketUseEntity.Action.field_151421_c.length];
+    public C02PacketUseEntity(Entity entity, C02PacketUseEntity.Action action)
+    {
+        this.entityId = entity.getEntityId();
+        this.action = action;
     }
 
-    /**
-     * Writes the raw packet data to the data stream.
-     */
-    public void writePacketData(PacketBuffer p_148840_1_) throws IOException {
-        p_148840_1_.writeInt(this.field_149567_a);
-        p_148840_1_.writeByte(this.field_149566_b.field_151418_d);
+    public C02PacketUseEntity(Entity entity, Vec3 hitVec)
+    {
+        this(entity, C02PacketUseEntity.Action.INTERACT_AT);
+        this.hitVec = hitVec;
     }
 
-    public void processPacket(INetHandlerPlayServer p_148833_1_) {
-        p_148833_1_.processUseEntity(this);
-    }
+    public void readPacketData(PacketBuffer buf) throws IOException
+    {
+        this.entityId = buf.readVarIntFromBuffer();
+        this.action = (C02PacketUseEntity.Action)buf.readEnumValue(C02PacketUseEntity.Action.class);
 
-    public Entity func_149564_a(World p_149564_1_) {
-        return p_149564_1_.getEntityByID(this.field_149567_a);
-    }
-
-    public C02PacketUseEntity.Action func_149565_c() {
-        return this.field_149566_b;
-    }
-
-    public void processPacket(INetHandler p_148833_1_) {
-        this.processPacket((INetHandlerPlayServer)p_148833_1_);
-    }
-
-    public enum Action {
-        INTERACT("INTERACT", 0, 0),
-        ATTACK("ATTACK", 1, 1);
-        private static final C02PacketUseEntity.Action[] field_151421_c = new C02PacketUseEntity.Action[values().length];
-        private final int field_151418_d;
-
-        private static final C02PacketUseEntity.Action[] $VALUES = new C02PacketUseEntity.Action[]{INTERACT, ATTACK};
-
-
-        Action(String p_i45250_1_, int p_i45250_2_, int p_i45250_3_) {
-            this.field_151418_d = p_i45250_3_;
+        if (this.action == C02PacketUseEntity.Action.INTERACT_AT)
+        {
+            this.hitVec = new Vec3((double)buf.readFloat(), (double)buf.readFloat(), (double)buf.readFloat());
         }
+    }
 
-        static {
-            C02PacketUseEntity.Action[] var0 = values();
-            int var1 = var0.length;
+    public void writePacketData(PacketBuffer buf) throws IOException
+    {
+        buf.writeVarIntToBuffer(this.entityId);
+        buf.writeEnumValue(this.action);
 
-            for (int var2 = 0; var2 < var1; ++var2) {
-                C02PacketUseEntity.Action var3 = var0[var2];
-                field_151421_c[var3.field_151418_d] = var3;
-            }
+        if (this.action == C02PacketUseEntity.Action.INTERACT_AT)
+        {
+            buf.writeFloat((float)this.hitVec.xCoord);
+            buf.writeFloat((float)this.hitVec.yCoord);
+            buf.writeFloat((float)this.hitVec.zCoord);
         }
+    }
+
+    public void processPacket(INetHandlerPlayServer handler)
+    {
+        handler.processUseEntity(this);
+    }
+
+    public Entity getEntityFromWorld(World worldIn)
+    {
+        return worldIn.getEntityByID(this.entityId);
+    }
+
+    public C02PacketUseEntity.Action getAction()
+    {
+        return this.action;
+    }
+
+    public Vec3 getHitVec()
+    {
+        return this.hitVec;
+    }
+
+    public static enum Action
+    {
+        INTERACT,
+        ATTACK,
+        INTERACT_AT;
     }
 }

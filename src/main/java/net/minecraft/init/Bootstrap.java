@@ -1,10 +1,18 @@
 package net.minecraft.init;
 
+import com.mojang.authlib.GameProfile;
+import java.io.PrintStream;
 import java.util.Random;
+import java.util.UUID;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockDispenser;
 import net.minecraft.block.BlockFire;
+import net.minecraft.block.BlockLiquid;
+import net.minecraft.block.BlockPumpkin;
+import net.minecraft.block.BlockSkull;
+import net.minecraft.block.BlockTNT;
 import net.minecraft.block.material.Material;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.dispenser.BehaviorDefaultDispenseItem;
 import net.minecraft.dispenser.BehaviorProjectileDispense;
 import net.minecraft.dispenser.IBehaviorDispenseItem;
@@ -23,305 +31,497 @@ import net.minecraft.entity.projectile.EntityEgg;
 import net.minecraft.entity.projectile.EntityPotion;
 import net.minecraft.entity.projectile.EntitySmallFireball;
 import net.minecraft.entity.projectile.EntitySnowball;
+import net.minecraft.item.EnumDyeColor;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemBucket;
 import net.minecraft.item.ItemDye;
 import net.minecraft.item.ItemMonsterPlacer;
 import net.minecraft.item.ItemPotion;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.NBTUtil;
 import net.minecraft.stats.StatList;
+import net.minecraft.tileentity.TileEntity;
 import net.minecraft.tileentity.TileEntityDispenser;
+import net.minecraft.tileentity.TileEntitySkull;
+import net.minecraft.util.BlockPos;
 import net.minecraft.util.EnumFacing;
+import net.minecraft.util.LoggingPrintStream;
+import net.minecraft.util.StringUtils;
 import net.minecraft.world.World;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-public class Bootstrap {
-    private static boolean field_151355_a = false;
+public class Bootstrap
+{
+    private static final PrintStream SYSOUT = System.out;
+    private static boolean alreadyRegistered = false;
+    private static final Logger LOGGER = LogManager.getLogger();
 
+    public static boolean isRegistered()
+    {
+        return alreadyRegistered;
+    }
 
-    static void func_151353_a() {
-        BlockDispenser.dispenseBehaviorRegistry.putObject(Items.arrow, new BehaviorProjectileDispense() {
-
-            protected IProjectile getProjectileEntity(World p_82499_1_, IPosition p_82499_2_) {
-                EntityArrow var3 = new EntityArrow(p_82499_1_, p_82499_2_.getX(), p_82499_2_.getY(), p_82499_2_.getZ());
-                var3.canBePickedUp = 1;
-                return var3;
+    static void registerDispenserBehaviors()
+    {
+        BlockDispenser.dispenseBehaviorRegistry.putObject(Items.arrow, new BehaviorProjectileDispense()
+        {
+            protected IProjectile getProjectileEntity(World worldIn, IPosition position)
+            {
+                EntityArrow entityarrow = new EntityArrow(worldIn, position.getX(), position.getY(), position.getZ());
+                entityarrow.canBePickedUp = 1;
+                return entityarrow;
             }
         });
-        BlockDispenser.dispenseBehaviorRegistry.putObject(Items.egg, new BehaviorProjectileDispense() {
-
-            protected IProjectile getProjectileEntity(World p_82499_1_, IPosition p_82499_2_) {
-                return new EntityEgg(p_82499_1_, p_82499_2_.getX(), p_82499_2_.getY(), p_82499_2_.getZ());
+        BlockDispenser.dispenseBehaviorRegistry.putObject(Items.egg, new BehaviorProjectileDispense()
+        {
+            protected IProjectile getProjectileEntity(World worldIn, IPosition position)
+            {
+                return new EntityEgg(worldIn, position.getX(), position.getY(), position.getZ());
             }
         });
-        BlockDispenser.dispenseBehaviorRegistry.putObject(Items.snowball, new BehaviorProjectileDispense() {
-
-            protected IProjectile getProjectileEntity(World p_82499_1_, IPosition p_82499_2_) {
-                return new EntitySnowball(p_82499_1_, p_82499_2_.getX(), p_82499_2_.getY(), p_82499_2_.getZ());
+        BlockDispenser.dispenseBehaviorRegistry.putObject(Items.snowball, new BehaviorProjectileDispense()
+        {
+            protected IProjectile getProjectileEntity(World worldIn, IPosition position)
+            {
+                return new EntitySnowball(worldIn, position.getX(), position.getY(), position.getZ());
             }
         });
-        BlockDispenser.dispenseBehaviorRegistry.putObject(Items.experience_bottle, new BehaviorProjectileDispense() {
-
-            protected IProjectile getProjectileEntity(World p_82499_1_, IPosition p_82499_2_) {
-                return new EntityExpBottle(p_82499_1_, p_82499_2_.getX(), p_82499_2_.getY(), p_82499_2_.getZ());
+        BlockDispenser.dispenseBehaviorRegistry.putObject(Items.experience_bottle, new BehaviorProjectileDispense()
+        {
+            protected IProjectile getProjectileEntity(World worldIn, IPosition position)
+            {
+                return new EntityExpBottle(worldIn, position.getX(), position.getY(), position.getZ());
             }
-            protected float func_82498_a() {
+            protected float func_82498_a()
+            {
                 return super.func_82498_a() * 0.5F;
             }
-            protected float func_82500_b() {
+            protected float func_82500_b()
+            {
                 return super.func_82500_b() * 1.25F;
             }
         });
-        BlockDispenser.dispenseBehaviorRegistry.putObject(Items.potionitem, new IBehaviorDispenseItem() {
+        BlockDispenser.dispenseBehaviorRegistry.putObject(Items.potionitem, new IBehaviorDispenseItem()
+        {
             private final BehaviorDefaultDispenseItem field_150843_b = new BehaviorDefaultDispenseItem();
-
-            public ItemStack dispense(IBlockSource p_82482_1_, final ItemStack p_82482_2_) {
-                return ItemPotion.isSplash(p_82482_2_.getItemDamage()) ? (new BehaviorProjectileDispense() {
-
-                    protected IProjectile getProjectileEntity(World p_82499_1_, IPosition p_82499_2_) {
-                        return new EntityPotion(p_82499_1_, p_82499_2_.getX(), p_82499_2_.getY(), p_82499_2_.getZ(), p_82482_2_.copy());
+            public ItemStack dispense(IBlockSource source, final ItemStack stack)
+            {
+                return ItemPotion.isSplash(stack.getMetadata()) ? (new BehaviorProjectileDispense()
+                {
+                    protected IProjectile getProjectileEntity(World worldIn, IPosition position)
+                    {
+                        return new EntityPotion(worldIn, position.getX(), position.getY(), position.getZ(), stack.copy());
                     }
-                    protected float func_82498_a() {
+                    protected float func_82498_a()
+                    {
                         return super.func_82498_a() * 0.5F;
                     }
-                    protected float func_82500_b() {
+                    protected float func_82500_b()
+                    {
                         return super.func_82500_b() * 1.25F;
                     }
-                }).dispense(p_82482_1_, p_82482_2_): this.field_150843_b.dispense(p_82482_1_, p_82482_2_);
+                }).dispense(source, stack): this.field_150843_b.dispense(source, stack);
             }
         });
-        BlockDispenser.dispenseBehaviorRegistry.putObject(Items.spawn_egg, new BehaviorDefaultDispenseItem() {
+        BlockDispenser.dispenseBehaviorRegistry.putObject(Items.spawn_egg, new BehaviorDefaultDispenseItem()
+        {
+            public ItemStack dispenseStack(IBlockSource source, ItemStack stack)
+            {
+                EnumFacing enumfacing = BlockDispenser.getFacing(source.getBlockMetadata());
+                double d0 = source.getX() + (double)enumfacing.getFrontOffsetX();
+                double d1 = (double)((float)source.getBlockPos().getY() + 0.2F);
+                double d2 = source.getZ() + (double)enumfacing.getFrontOffsetZ();
+                Entity entity = ItemMonsterPlacer.spawnCreature(source.getWorld(), stack.getMetadata(), d0, d1, d2);
 
-            public ItemStack dispenseStack(IBlockSource p_82487_1_, ItemStack p_82487_2_) {
-                EnumFacing var3 = BlockDispenser.func_149937_b(p_82487_1_.getBlockMetadata());
-                double var4 = p_82487_1_.getX() + (double)var3.getFrontOffsetX();
-                double var6 = (float)p_82487_1_.getYInt() + 0.2F;
-                double var8 = p_82487_1_.getZ() + (double)var3.getFrontOffsetZ();
-                Entity var10 = ItemMonsterPlacer.spawnCreature(p_82487_1_.getWorld(), p_82487_2_.getItemDamage(), var4, var6, var8);
-
-                if (var10 instanceof EntityLivingBase && p_82487_2_.hasDisplayName()) {
-                    ((EntityLiving)var10).setCustomNameTag(p_82487_2_.getDisplayName());
+                if (entity instanceof EntityLivingBase && stack.hasDisplayName())
+                {
+                    ((EntityLiving)entity).setCustomNameTag(stack.getDisplayName());
                 }
 
-                p_82487_2_.splitStack(1);
-                return p_82487_2_;
+                stack.splitStack(1);
+                return stack;
             }
         });
-        BlockDispenser.dispenseBehaviorRegistry.putObject(Items.fireworks, new BehaviorDefaultDispenseItem() {
-
-            public ItemStack dispenseStack(IBlockSource p_82487_1_, ItemStack p_82487_2_) {
-                EnumFacing var3 = BlockDispenser.func_149937_b(p_82487_1_.getBlockMetadata());
-                double var4 = p_82487_1_.getX() + (double)var3.getFrontOffsetX();
-                double var6 = (float)p_82487_1_.getYInt() + 0.2F;
-                double var8 = p_82487_1_.getZ() + (double)var3.getFrontOffsetZ();
-                EntityFireworkRocket var10 = new EntityFireworkRocket(p_82487_1_.getWorld(), var4, var6, var8, p_82487_2_);
-                p_82487_1_.getWorld().spawnEntityInWorld(var10);
-                p_82487_2_.splitStack(1);
-                return p_82487_2_;
+        BlockDispenser.dispenseBehaviorRegistry.putObject(Items.fireworks, new BehaviorDefaultDispenseItem()
+        {
+            public ItemStack dispenseStack(IBlockSource source, ItemStack stack)
+            {
+                EnumFacing enumfacing = BlockDispenser.getFacing(source.getBlockMetadata());
+                double d0 = source.getX() + (double)enumfacing.getFrontOffsetX();
+                double d1 = (double)((float)source.getBlockPos().getY() + 0.2F);
+                double d2 = source.getZ() + (double)enumfacing.getFrontOffsetZ();
+                EntityFireworkRocket entityfireworkrocket = new EntityFireworkRocket(source.getWorld(), d0, d1, d2, stack);
+                source.getWorld().spawnEntityInWorld(entityfireworkrocket);
+                stack.splitStack(1);
+                return stack;
             }
-            protected void playDispenseSound(IBlockSource p_82485_1_) {
-                p_82485_1_.getWorld().playAuxSFX(1002, p_82485_1_.getXInt(), p_82485_1_.getYInt(), p_82485_1_.getZInt(), 0);
-            }
-        });
-        BlockDispenser.dispenseBehaviorRegistry.putObject(Items.fire_charge, new BehaviorDefaultDispenseItem() {
-
-            public ItemStack dispenseStack(IBlockSource p_82487_1_, ItemStack p_82487_2_) {
-                EnumFacing var3 = BlockDispenser.func_149937_b(p_82487_1_.getBlockMetadata());
-                IPosition var4 = BlockDispenser.func_149939_a(p_82487_1_);
-                double var5 = var4.getX() + (double)((float)var3.getFrontOffsetX() * 0.3F);
-                double var7 = var4.getY() + (double)((float)var3.getFrontOffsetX() * 0.3F);
-                double var9 = var4.getZ() + (double)((float)var3.getFrontOffsetZ() * 0.3F);
-                World var11 = p_82487_1_.getWorld();
-                Random var12 = var11.rand;
-                double var13 = var12.nextGaussian() * 0.05D + (double)var3.getFrontOffsetX();
-                double var15 = var12.nextGaussian() * 0.05D + (double)var3.getFrontOffsetY();
-                double var17 = var12.nextGaussian() * 0.05D + (double)var3.getFrontOffsetZ();
-                var11.spawnEntityInWorld(new EntitySmallFireball(var11, var5, var7, var9, var13, var15, var17));
-                p_82487_2_.splitStack(1);
-                return p_82487_2_;
-            }
-            protected void playDispenseSound(IBlockSource p_82485_1_) {
-                p_82485_1_.getWorld().playAuxSFX(1009, p_82485_1_.getXInt(), p_82485_1_.getYInt(), p_82485_1_.getZInt(), 0);
+            protected void playDispenseSound(IBlockSource source)
+            {
+                source.getWorld().playAuxSFX(1002, source.getBlockPos(), 0);
             }
         });
-        BlockDispenser.dispenseBehaviorRegistry.putObject(Items.boat, new BehaviorDefaultDispenseItem() {
+        BlockDispenser.dispenseBehaviorRegistry.putObject(Items.fire_charge, new BehaviorDefaultDispenseItem()
+        {
+            public ItemStack dispenseStack(IBlockSource source, ItemStack stack)
+            {
+                EnumFacing enumfacing = BlockDispenser.getFacing(source.getBlockMetadata());
+                IPosition iposition = BlockDispenser.getDispensePosition(source);
+                double d0 = iposition.getX() + (double)((float)enumfacing.getFrontOffsetX() * 0.3F);
+                double d1 = iposition.getY() + (double)((float)enumfacing.getFrontOffsetY() * 0.3F);
+                double d2 = iposition.getZ() + (double)((float)enumfacing.getFrontOffsetZ() * 0.3F);
+                World world = source.getWorld();
+                Random random = world.rand;
+                double d3 = random.nextGaussian() * 0.05D + (double)enumfacing.getFrontOffsetX();
+                double d4 = random.nextGaussian() * 0.05D + (double)enumfacing.getFrontOffsetY();
+                double d5 = random.nextGaussian() * 0.05D + (double)enumfacing.getFrontOffsetZ();
+                world.spawnEntityInWorld(new EntitySmallFireball(world, d0, d1, d2, d3, d4, d5));
+                stack.splitStack(1);
+                return stack;
+            }
+            protected void playDispenseSound(IBlockSource source)
+            {
+                source.getWorld().playAuxSFX(1009, source.getBlockPos(), 0);
+            }
+        });
+        BlockDispenser.dispenseBehaviorRegistry.putObject(Items.boat, new BehaviorDefaultDispenseItem()
+        {
             private final BehaviorDefaultDispenseItem field_150842_b = new BehaviorDefaultDispenseItem();
+            public ItemStack dispenseStack(IBlockSource source, ItemStack stack)
+            {
+                EnumFacing enumfacing = BlockDispenser.getFacing(source.getBlockMetadata());
+                World world = source.getWorld();
+                double d0 = source.getX() + (double)((float)enumfacing.getFrontOffsetX() * 1.125F);
+                double d1 = source.getY() + (double)((float)enumfacing.getFrontOffsetY() * 1.125F);
+                double d2 = source.getZ() + (double)((float)enumfacing.getFrontOffsetZ() * 1.125F);
+                BlockPos blockpos = source.getBlockPos().offset(enumfacing);
+                Material material = world.getBlockState(blockpos).getBlock().getMaterial();
+                double d3;
 
-            public ItemStack dispenseStack(IBlockSource p_82487_1_, ItemStack p_82487_2_) {
-                EnumFacing var3 = BlockDispenser.func_149937_b(p_82487_1_.getBlockMetadata());
-                World var4 = p_82487_1_.getWorld();
-                double var5 = p_82487_1_.getX() + (double)((float)var3.getFrontOffsetX() * 1.125F);
-                double var7 = p_82487_1_.getY() + (double)((float)var3.getFrontOffsetY() * 1.125F);
-                double var9 = p_82487_1_.getZ() + (double)((float)var3.getFrontOffsetZ() * 1.125F);
-                int var11 = p_82487_1_.getXInt() + var3.getFrontOffsetX();
-                int var12 = p_82487_1_.getYInt() + var3.getFrontOffsetY();
-                int var13 = p_82487_1_.getZInt() + var3.getFrontOffsetZ();
-                Material var14 = var4.getBlock(var11, var12, var13).getMaterial();
-                double var15;
-
-                if (Material.water.equals(var14)) {
-                    var15 = 1.0D;
-                } else {
-                    if (!Material.air.equals(var14) || !Material.water.equals(var4.getBlock(var11, var12 - 1, var13).getMaterial())) {
-                        return this.field_150842_b.dispense(p_82487_1_, p_82487_2_);
+                if (Material.water.equals(material))
+                {
+                    d3 = 1.0D;
+                }
+                else
+                {
+                    if (!Material.air.equals(material) || !Material.water.equals(world.getBlockState(blockpos.down()).getBlock().getMaterial()))
+                    {
+                        return this.field_150842_b.dispense(source, stack);
                     }
 
-                    var15 = 0.0D;
+                    d3 = 0.0D;
                 }
 
-                EntityBoat var17 = new EntityBoat(var4, var5, var7 + var15, var9);
-                var4.spawnEntityInWorld(var17);
-                p_82487_2_.splitStack(1);
-                return p_82487_2_;
+                EntityBoat entityboat = new EntityBoat(world, d0, d1 + d3, d2);
+                world.spawnEntityInWorld(entityboat);
+                stack.splitStack(1);
+                return stack;
             }
-            protected void playDispenseSound(IBlockSource p_82485_1_) {
-                p_82485_1_.getWorld().playAuxSFX(1000, p_82485_1_.getXInt(), p_82485_1_.getYInt(), p_82485_1_.getZInt(), 0);
+            protected void playDispenseSound(IBlockSource source)
+            {
+                source.getWorld().playAuxSFX(1000, source.getBlockPos(), 0);
             }
         });
-        BehaviorDefaultDispenseItem var0 = new BehaviorDefaultDispenseItem() {
+        IBehaviorDispenseItem ibehaviordispenseitem = new BehaviorDefaultDispenseItem()
+        {
             private final BehaviorDefaultDispenseItem field_150841_b = new BehaviorDefaultDispenseItem();
+            public ItemStack dispenseStack(IBlockSource source, ItemStack stack)
+            {
+                ItemBucket itembucket = (ItemBucket)stack.getItem();
+                BlockPos blockpos = source.getBlockPos().offset(BlockDispenser.getFacing(source.getBlockMetadata()));
 
-            public ItemStack dispenseStack(IBlockSource p_82487_1_, ItemStack p_82487_2_) {
-                ItemBucket var3 = (ItemBucket)p_82487_2_.getItem();
-                int var4 = p_82487_1_.getXInt();
-                int var5 = p_82487_1_.getYInt();
-                int var6 = p_82487_1_.getZInt();
-                EnumFacing var7 = BlockDispenser.func_149937_b(p_82487_1_.getBlockMetadata());
-
-                if (var3.tryPlaceContainedLiquid(p_82487_1_.getWorld(), var4 + var7.getFrontOffsetX(), var5 + var7.getFrontOffsetY(), var6 + var7.getFrontOffsetZ())) {
-                    p_82487_2_.func_150996_a(Items.bucket);
-                    p_82487_2_.stackSize = 1;
-                    return p_82487_2_;
-                } else {
-                    return this.field_150841_b.dispense(p_82487_1_, p_82487_2_);
+                if (itembucket.tryPlaceContainedLiquid(source.getWorld(), blockpos))
+                {
+                    stack.setItem(Items.bucket);
+                    stack.stackSize = 1;
+                    return stack;
+                }
+                else
+                {
+                    return this.field_150841_b.dispense(source, stack);
                 }
             }
         };
-        BlockDispenser.dispenseBehaviorRegistry.putObject(Items.lava_bucket, var0);
-        BlockDispenser.dispenseBehaviorRegistry.putObject(Items.water_bucket, var0);
-        BlockDispenser.dispenseBehaviorRegistry.putObject(Items.bucket, new BehaviorDefaultDispenseItem() {
+        BlockDispenser.dispenseBehaviorRegistry.putObject(Items.lava_bucket, ibehaviordispenseitem);
+        BlockDispenser.dispenseBehaviorRegistry.putObject(Items.water_bucket, ibehaviordispenseitem);
+        BlockDispenser.dispenseBehaviorRegistry.putObject(Items.bucket, new BehaviorDefaultDispenseItem()
+        {
             private final BehaviorDefaultDispenseItem field_150840_b = new BehaviorDefaultDispenseItem();
+            public ItemStack dispenseStack(IBlockSource source, ItemStack stack)
+            {
+                World world = source.getWorld();
+                BlockPos blockpos = source.getBlockPos().offset(BlockDispenser.getFacing(source.getBlockMetadata()));
+                IBlockState iblockstate = world.getBlockState(blockpos);
+                Block block = iblockstate.getBlock();
+                Material material = block.getMaterial();
+                Item item;
 
-            public ItemStack dispenseStack(IBlockSource p_82487_1_, ItemStack p_82487_2_) {
-                EnumFacing var3 = BlockDispenser.func_149937_b(p_82487_1_.getBlockMetadata());
-                World var4 = p_82487_1_.getWorld();
-                int var5 = p_82487_1_.getXInt() + var3.getFrontOffsetX();
-                int var6 = p_82487_1_.getYInt() + var3.getFrontOffsetY();
-                int var7 = p_82487_1_.getZInt() + var3.getFrontOffsetZ();
-                Material var8 = var4.getBlock(var5, var6, var7).getMaterial();
-                int var9 = var4.getBlockMetadata(var5, var6, var7);
-                Item var10;
-
-                if (Material.water.equals(var8) && var9 == 0) {
-                    var10 = Items.water_bucket;
-                } else {
-                    if (!Material.lava.equals(var8) || var9 != 0) {
-                        return super.dispenseStack(p_82487_1_, p_82487_2_);
+                if (Material.water.equals(material) && block instanceof BlockLiquid && ((Integer)iblockstate.getValue(BlockLiquid.LEVEL)).intValue() == 0)
+                {
+                    item = Items.water_bucket;
+                }
+                else
+                {
+                    if (!Material.lava.equals(material) || !(block instanceof BlockLiquid) || ((Integer)iblockstate.getValue(BlockLiquid.LEVEL)).intValue() != 0)
+                    {
+                        return super.dispenseStack(source, stack);
                     }
 
-                    var10 = Items.lava_bucket;
+                    item = Items.lava_bucket;
                 }
 
-                var4.setBlockToAir(var5, var6, var7);
+                world.setBlockToAir(blockpos);
 
-                if (--p_82487_2_.stackSize == 0) {
-                    p_82487_2_.func_150996_a(var10);
-                    p_82487_2_.stackSize = 1;
-                } else if (((TileEntityDispenser)p_82487_1_.getBlockTileEntity()).func_146019_a(new ItemStack(var10)) < 0) {
-                    this.field_150840_b.dispense(p_82487_1_, new ItemStack(var10));
+                if (--stack.stackSize == 0)
+                {
+                    stack.setItem(item);
+                    stack.stackSize = 1;
+                }
+                else if (((TileEntityDispenser)source.getBlockTileEntity()).addItemStack(new ItemStack(item)) < 0)
+                {
+                    this.field_150840_b.dispense(source, new ItemStack(item));
                 }
 
-                return p_82487_2_;
+                return stack;
             }
         });
-        BlockDispenser.dispenseBehaviorRegistry.putObject(Items.flint_and_steel, new BehaviorDefaultDispenseItem() {
+        BlockDispenser.dispenseBehaviorRegistry.putObject(Items.flint_and_steel, new BehaviorDefaultDispenseItem()
+        {
             private boolean field_150839_b = true;
+            protected ItemStack dispenseStack(IBlockSource source, ItemStack stack)
+            {
+                World world = source.getWorld();
+                BlockPos blockpos = source.getBlockPos().offset(BlockDispenser.getFacing(source.getBlockMetadata()));
 
-            protected ItemStack dispenseStack(IBlockSource p_82487_1_, ItemStack p_82487_2_) {
-                EnumFacing var3 = BlockDispenser.func_149937_b(p_82487_1_.getBlockMetadata());
-                World var4 = p_82487_1_.getWorld();
-                int var5 = p_82487_1_.getXInt() + var3.getFrontOffsetX();
-                int var6 = p_82487_1_.getYInt() + var3.getFrontOffsetY();
-                int var7 = p_82487_1_.getZInt() + var3.getFrontOffsetZ();
+                if (world.isAirBlock(blockpos))
+                {
+                    world.setBlockState(blockpos, Blocks.fire.getDefaultState());
 
-                if (var4.isAirBlock(var5, var6, var7)) {
-                    var4.setBlock(var5, var6, var7, Blocks.fire);
-
-                    if (p_82487_2_.attemptDamageItem(1, var4.rand)) {
-                        p_82487_2_.stackSize = 0;
+                    if (stack.attemptDamageItem(1, world.rand))
+                    {
+                        stack.stackSize = 0;
                     }
-                } else if (var4.getBlock(var5, var6, var7) == Blocks.tnt) {
-                    Blocks.tnt.onBlockDestroyedByPlayer(var4, var5, var6, var7, 1);
-                    var4.setBlockToAir(var5, var6, var7);
-                } else {
+                }
+                else if (world.getBlockState(blockpos).getBlock() == Blocks.tnt)
+                {
+                    Blocks.tnt.onBlockDestroyedByPlayer(world, blockpos, Blocks.tnt.getDefaultState().withProperty(BlockTNT.EXPLODE, Boolean.valueOf(true)));
+                    world.setBlockToAir(blockpos);
+                }
+                else
+                {
                     this.field_150839_b = false;
                 }
 
-                return p_82487_2_;
+                return stack;
             }
-            protected void playDispenseSound(IBlockSource p_82485_1_) {
-                if (this.field_150839_b) {
-                    p_82485_1_.getWorld().playAuxSFX(1000, p_82485_1_.getXInt(), p_82485_1_.getYInt(), p_82485_1_.getZInt(), 0);
-                } else {
-                    p_82485_1_.getWorld().playAuxSFX(1001, p_82485_1_.getXInt(), p_82485_1_.getYInt(), p_82485_1_.getZInt(), 0);
+            protected void playDispenseSound(IBlockSource source)
+            {
+                if (this.field_150839_b)
+                {
+                    source.getWorld().playAuxSFX(1000, source.getBlockPos(), 0);
+                }
+                else
+                {
+                    source.getWorld().playAuxSFX(1001, source.getBlockPos(), 0);
                 }
             }
         });
-        BlockDispenser.dispenseBehaviorRegistry.putObject(Items.dye, new BehaviorDefaultDispenseItem() {
+        BlockDispenser.dispenseBehaviorRegistry.putObject(Items.dye, new BehaviorDefaultDispenseItem()
+        {
             private boolean field_150838_b = true;
+            protected ItemStack dispenseStack(IBlockSource source, ItemStack stack)
+            {
+                if (EnumDyeColor.WHITE == EnumDyeColor.byDyeDamage(stack.getMetadata()))
+                {
+                    World world = source.getWorld();
+                    BlockPos blockpos = source.getBlockPos().offset(BlockDispenser.getFacing(source.getBlockMetadata()));
 
-            protected ItemStack dispenseStack(IBlockSource p_82487_1_, ItemStack p_82487_2_) {
-                if (p_82487_2_.getItemDamage() == 15) {
-                    EnumFacing var3 = BlockDispenser.func_149937_b(p_82487_1_.getBlockMetadata());
-                    World var4 = p_82487_1_.getWorld();
-                    int var5 = p_82487_1_.getXInt() + var3.getFrontOffsetX();
-                    int var6 = p_82487_1_.getYInt() + var3.getFrontOffsetY();
-                    int var7 = p_82487_1_.getZInt() + var3.getFrontOffsetZ();
-
-                    if (ItemDye.func_150919_a(p_82487_2_, var4, var5, var6, var7)) {
-                        if (!var4.isClient) {
-                            var4.playAuxSFX(2005, var5, var6, var7, 0);
+                    if (ItemDye.applyBonemeal(stack, world, blockpos))
+                    {
+                        if (!world.isRemote)
+                        {
+                            world.playAuxSFX(2005, blockpos, 0);
                         }
-                    } else {
+                    }
+                    else
+                    {
                         this.field_150838_b = false;
                     }
 
-                    return p_82487_2_;
-                } else {
-                    return super.dispenseStack(p_82487_1_, p_82487_2_);
+                    return stack;
+                }
+                else
+                {
+                    return super.dispenseStack(source, stack);
                 }
             }
-            protected void playDispenseSound(IBlockSource p_82485_1_) {
-                if (this.field_150838_b) {
-                    p_82485_1_.getWorld().playAuxSFX(1000, p_82485_1_.getXInt(), p_82485_1_.getYInt(), p_82485_1_.getZInt(), 0);
-                } else {
-                    p_82485_1_.getWorld().playAuxSFX(1001, p_82485_1_.getXInt(), p_82485_1_.getYInt(), p_82485_1_.getZInt(), 0);
+            protected void playDispenseSound(IBlockSource source)
+            {
+                if (this.field_150838_b)
+                {
+                    source.getWorld().playAuxSFX(1000, source.getBlockPos(), 0);
+                }
+                else
+                {
+                    source.getWorld().playAuxSFX(1001, source.getBlockPos(), 0);
                 }
             }
         });
-        BlockDispenser.dispenseBehaviorRegistry.putObject(Item.getItemFromBlock(Blocks.tnt), new BehaviorDefaultDispenseItem() {
+        BlockDispenser.dispenseBehaviorRegistry.putObject(Item.getItemFromBlock(Blocks.tnt), new BehaviorDefaultDispenseItem()
+        {
+            protected ItemStack dispenseStack(IBlockSource source, ItemStack stack)
+            {
+                World world = source.getWorld();
+                BlockPos blockpos = source.getBlockPos().offset(BlockDispenser.getFacing(source.getBlockMetadata()));
+                EntityTNTPrimed entitytntprimed = new EntityTNTPrimed(world, (double)blockpos.getX() + 0.5D, (double)blockpos.getY(), (double)blockpos.getZ() + 0.5D, (EntityLivingBase)null);
+                world.spawnEntityInWorld(entitytntprimed);
+                world.playSoundAtEntity(entitytntprimed, "game.tnt.primed", 1.0F, 1.0F);
+                --stack.stackSize;
+                return stack;
+            }
+        });
+        BlockDispenser.dispenseBehaviorRegistry.putObject(Items.skull, new BehaviorDefaultDispenseItem()
+        {
+            private boolean field_179240_b = true;
+            protected ItemStack dispenseStack(IBlockSource source, ItemStack stack)
+            {
+                World world = source.getWorld();
+                EnumFacing enumfacing = BlockDispenser.getFacing(source.getBlockMetadata());
+                BlockPos blockpos = source.getBlockPos().offset(enumfacing);
+                BlockSkull blockskull = Blocks.skull;
 
-            protected ItemStack dispenseStack(IBlockSource p_82487_1_, ItemStack p_82487_2_) {
-                EnumFacing var3 = BlockDispenser.func_149937_b(p_82487_1_.getBlockMetadata());
-                World var4 = p_82487_1_.getWorld();
-                int var5 = p_82487_1_.getXInt() + var3.getFrontOffsetX();
-                int var6 = p_82487_1_.getYInt() + var3.getFrontOffsetY();
-                int var7 = p_82487_1_.getZInt() + var3.getFrontOffsetZ();
-                EntityTNTPrimed var8 = new EntityTNTPrimed(var4, (float)var5 + 0.5F, (float)var6 + 0.5F, (float)var7 + 0.5F, null);
-                var4.spawnEntityInWorld(var8);
-                --p_82487_2_.stackSize;
-                return p_82487_2_;
+                if (world.isAirBlock(blockpos) && blockskull.canDispenserPlace(world, blockpos, stack))
+                {
+                    if (!world.isRemote)
+                    {
+                        world.setBlockState(blockpos, blockskull.getDefaultState().withProperty(BlockSkull.FACING, EnumFacing.UP), 3);
+                        TileEntity tileentity = world.getTileEntity(blockpos);
+
+                        if (tileentity instanceof TileEntitySkull)
+                        {
+                            if (stack.getMetadata() == 3)
+                            {
+                                GameProfile gameprofile = null;
+
+                                if (stack.hasTagCompound())
+                                {
+                                    NBTTagCompound nbttagcompound = stack.getTagCompound();
+
+                                    if (nbttagcompound.hasKey("SkullOwner", 10))
+                                    {
+                                        gameprofile = NBTUtil.readGameProfileFromNBT(nbttagcompound.getCompoundTag("SkullOwner"));
+                                    }
+                                    else if (nbttagcompound.hasKey("SkullOwner", 8))
+                                    {
+                                        String s = nbttagcompound.getString("SkullOwner");
+
+                                        if (!StringUtils.isNullOrEmpty(s))
+                                        {
+                                            gameprofile = new GameProfile((UUID)null, s);
+                                        }
+                                    }
+                                }
+
+                                ((TileEntitySkull)tileentity).setPlayerProfile(gameprofile);
+                            }
+                            else
+                            {
+                                ((TileEntitySkull)tileentity).setType(stack.getMetadata());
+                            }
+
+                            ((TileEntitySkull)tileentity).setSkullRotation(enumfacing.getOpposite().getHorizontalIndex() * 4);
+                            Blocks.skull.checkWitherSpawn(world, blockpos, (TileEntitySkull)tileentity);
+                        }
+
+                        --stack.stackSize;
+                    }
+                }
+                else
+                {
+                    this.field_179240_b = false;
+                }
+
+                return stack;
+            }
+            protected void playDispenseSound(IBlockSource source)
+            {
+                if (this.field_179240_b)
+                {
+                    source.getWorld().playAuxSFX(1000, source.getBlockPos(), 0);
+                }
+                else
+                {
+                    source.getWorld().playAuxSFX(1001, source.getBlockPos(), 0);
+                }
+            }
+        });
+        BlockDispenser.dispenseBehaviorRegistry.putObject(Item.getItemFromBlock(Blocks.pumpkin), new BehaviorDefaultDispenseItem()
+        {
+            private boolean field_179241_b = true;
+            protected ItemStack dispenseStack(IBlockSource source, ItemStack stack)
+            {
+                World world = source.getWorld();
+                BlockPos blockpos = source.getBlockPos().offset(BlockDispenser.getFacing(source.getBlockMetadata()));
+                BlockPumpkin blockpumpkin = (BlockPumpkin)Blocks.pumpkin;
+
+                if (world.isAirBlock(blockpos) && blockpumpkin.canDispenserPlace(world, blockpos))
+                {
+                    if (!world.isRemote)
+                    {
+                        world.setBlockState(blockpos, blockpumpkin.getDefaultState(), 3);
+                    }
+
+                    --stack.stackSize;
+                }
+                else
+                {
+                    this.field_179241_b = false;
+                }
+
+                return stack;
+            }
+            protected void playDispenseSound(IBlockSource source)
+            {
+                if (this.field_179241_b)
+                {
+                    source.getWorld().playAuxSFX(1000, source.getBlockPos(), 0);
+                }
+                else
+                {
+                    source.getWorld().playAuxSFX(1001, source.getBlockPos(), 0);
+                }
             }
         });
     }
 
-    public static void func_151354_b() {
-        if (!field_151355_a) {
-            field_151355_a = true;
+    public static void register()
+    {
+        if (!alreadyRegistered)
+        {
+            alreadyRegistered = true;
+
+            if (LOGGER.isDebugEnabled())
+            {
+                redirectOutputToLog();
+            }
+
             Block.registerBlocks();
-            BlockFire.func_149843_e();
+            BlockFire.init();
             Item.registerItems();
-            StatList.func_151178_a();
-            func_151353_a();
+            StatList.init();
+            registerDispenserBehaviors();
         }
+    }
+
+    private static void redirectOutputToLog()
+    {
+        System.setErr(new LoggingPrintStream("STDERR", System.err));
+        System.setOut(new LoggingPrintStream("STDOUT", SYSOUT));
+    }
+
+    public static void printToSYSOUT(String p_179870_0_)
+    {
+        SYSOUT.println(p_179870_0_);
     }
 }

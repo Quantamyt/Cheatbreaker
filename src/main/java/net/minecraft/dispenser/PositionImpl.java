@@ -1,26 +1,30 @@
 package net.minecraft.dispenser;
 
-public class PositionImpl implements IPosition {
+public class PositionImpl implements IPosition
+{
     protected final double x;
     protected final double y;
     protected final double z;
 
-
-    public PositionImpl(double p_i1368_1_, double p_i1368_3_, double p_i1368_5_) {
-        this.x = p_i1368_1_;
-        this.y = p_i1368_3_;
-        this.z = p_i1368_5_;
+    public PositionImpl(double xCoord, double yCoord, double zCoord)
+    {
+        this.x = xCoord;
+        this.y = yCoord;
+        this.z = zCoord;
     }
 
-    public double getX() {
+    public double getX()
+    {
         return this.x;
     }
 
-    public double getY() {
+    public double getY()
+    {
         return this.y;
     }
 
-    public double getZ() {
+    public double getZ()
+    {
         return this.z;
     }
 }

@@ -1,66 +1,114 @@
 package net.minecraft.block;
 
 import java.util.List;
+import net.minecraft.block.material.MapColor;
 import net.minecraft.block.material.Material;
-import net.minecraft.client.renderer.texture.IIconRegister;
+import net.minecraft.block.properties.IProperty;
+import net.minecraft.block.properties.PropertyEnum;
+import net.minecraft.block.state.BlockState;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.IIcon;
+import net.minecraft.util.IStringSerializable;
 
-public class BlockSandStone extends Block {
-    public static final String[] field_150157_a = new String[] {"default", "chiseled", "smooth"};
-    private static final String[] field_150156_b = new String[] {"normal", "carved", "smooth"};
-    private IIcon[] field_150158_M;
-    private IIcon field_150159_N;
-    private IIcon field_150160_O;
+public class BlockSandStone extends Block
+{
+    public static final PropertyEnum<BlockSandStone.EnumType> TYPE = PropertyEnum.<BlockSandStone.EnumType>create("type", BlockSandStone.EnumType.class);
 
-
-    public BlockSandStone() {
+    public BlockSandStone()
+    {
         super(Material.rock);
+        this.setDefaultState(this.blockState.getBaseState().withProperty(TYPE, BlockSandStone.EnumType.DEFAULT));
         this.setCreativeTab(CreativeTabs.tabBlock);
     }
 
-    /**
-     * Gets the block's texture. Args: side, meta
-     */
-    public IIcon getIcon(int p_149691_1_, int p_149691_2_) {
-        if (p_149691_1_ != 1 && (p_149691_1_ != 0 || p_149691_2_ != 1 && p_149691_2_ != 2)) {
-            if (p_149691_1_ == 0) {
-                return this.field_150160_O;
-            } else {
-                if (p_149691_2_ < 0 || p_149691_2_ >= this.field_150158_M.length) {
-                    p_149691_2_ = 0;
-                }
+    public int damageDropped(IBlockState state)
+    {
+        return ((BlockSandStone.EnumType)state.getValue(TYPE)).getMetadata();
+    }
 
-                return this.field_150158_M[p_149691_2_];
+    public void getSubBlocks(Item itemIn, CreativeTabs tab, List<ItemStack> list)
+    {
+        for (BlockSandStone.EnumType blocksandstone$enumtype : BlockSandStone.EnumType.values())
+        {
+            list.add(new ItemStack(itemIn, 1, blocksandstone$enumtype.getMetadata()));
+        }
+    }
+
+    public MapColor getMapColor(IBlockState state)
+    {
+        return MapColor.sandColor;
+    }
+
+    public IBlockState getStateFromMeta(int meta)
+    {
+        return this.getDefaultState().withProperty(TYPE, BlockSandStone.EnumType.byMetadata(meta));
+    }
+
+    public int getMetaFromState(IBlockState state)
+    {
+        return ((BlockSandStone.EnumType)state.getValue(TYPE)).getMetadata();
+    }
+
+    protected BlockState createBlockState()
+    {
+        return new BlockState(this, new IProperty[] {TYPE});
+    }
+
+    public static enum EnumType implements IStringSerializable
+    {
+        DEFAULT(0, "sandstone", "default"),
+        CHISELED(1, "chiseled_sandstone", "chiseled"),
+        SMOOTH(2, "smooth_sandstone", "smooth");
+
+        private static final BlockSandStone.EnumType[] META_LOOKUP = new BlockSandStone.EnumType[values().length];
+        private final int metadata;
+        private final String name;
+        private final String unlocalizedName;
+
+        private EnumType(int meta, String name, String unlocalizedName)
+        {
+            this.metadata = meta;
+            this.name = name;
+            this.unlocalizedName = unlocalizedName;
+        }
+
+        public int getMetadata()
+        {
+            return this.metadata;
+        }
+
+        public String toString()
+        {
+            return this.name;
+        }
+
+        public static BlockSandStone.EnumType byMetadata(int meta)
+        {
+            if (meta < 0 || meta >= META_LOOKUP.length)
+            {
+                meta = 0;
             }
-        } else {
-            return this.field_150159_N;
-        }
-    }
 
-    /**
-     * Determines the damage on the item the block drops. Used in cloth and wood.
-     */
-    public int damageDropped(int p_149692_1_) {
-        return p_149692_1_;
-    }
-
-    public void getSubBlocks(Item p_149666_1_, CreativeTabs p_149666_2_, List p_149666_3_) {
-        p_149666_3_.add(new ItemStack(p_149666_1_, 1, 0));
-        p_149666_3_.add(new ItemStack(p_149666_1_, 1, 1));
-        p_149666_3_.add(new ItemStack(p_149666_1_, 1, 2));
-    }
-
-    public void registerBlockIcons(IIconRegister p_149651_1_) {
-        this.field_150158_M = new IIcon[field_150156_b.length];
-
-        for (int var2 = 0; var2 < this.field_150158_M.length; ++var2) {
-            this.field_150158_M[var2] = p_149651_1_.registerIcon(this.getTextureName() + "_" + field_150156_b[var2]);
+            return META_LOOKUP[meta];
         }
 
-        this.field_150159_N = p_149651_1_.registerIcon(this.getTextureName() + "_top");
-        this.field_150160_O = p_149651_1_.registerIcon(this.getTextureName() + "_bottom");
+        public String getName()
+        {
+            return this.name;
+        }
+
+        public String getUnlocalizedName()
+        {
+            return this.unlocalizedName;
+        }
+
+        static {
+            for (BlockSandStone.EnumType blocksandstone$enumtype : values())
+            {
+                META_LOOKUP[blocksandstone$enumtype.getMetadata()] = blocksandstone$enumtype;
+            }
+        }
     }
 }

@@ -6,65 +6,54 @@ import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
 import net.minecraft.world.World;
 
-public class EntityAIBeg extends EntityAIBase {
-    private final EntityWolf theWolf;
+public class EntityAIBeg extends EntityAIBase
+{
+    private EntityWolf theWolf;
     private EntityPlayer thePlayer;
-    private final World worldObject;
-    private final float minPlayerDistance;
-    private int field_75384_e;
+    private World worldObject;
+    private float minPlayerDistance;
+    private int timeoutCounter;
 
-
-    public EntityAIBeg(EntityWolf p_i1617_1_, float p_i1617_2_) {
-        this.theWolf = p_i1617_1_;
-        this.worldObject = p_i1617_1_.worldObj;
-        this.minPlayerDistance = p_i1617_2_;
+    public EntityAIBeg(EntityWolf wolf, float minDistance)
+    {
+        this.theWolf = wolf;
+        this.worldObject = wolf.worldObj;
+        this.minPlayerDistance = minDistance;
         this.setMutexBits(2);
     }
 
-    /**
-     * Returns whether the EntityAIBase should begin execution.
-     */
-    public boolean shouldExecute() {
-        this.thePlayer = this.worldObject.getClosestPlayerToEntity(this.theWolf, this.minPlayerDistance);
-        return this.thePlayer != null && this.hasPlayerGotBoneInHand(this.thePlayer);
+    public boolean shouldExecute()
+    {
+        this.thePlayer = this.worldObject.getClosestPlayerToEntity(this.theWolf, (double)this.minPlayerDistance);
+        return this.thePlayer == null ? false : this.hasPlayerGotBoneInHand(this.thePlayer);
     }
 
-    /**
-     * Returns whether an in-progress EntityAIBase should continue executing
-     */
-    public boolean continueExecuting() {
-        return this.thePlayer.isEntityAlive() && (!(this.theWolf.getDistanceSqToEntity(this.thePlayer) > (double) (this.minPlayerDistance * this.minPlayerDistance)) && this.field_75384_e > 0 && this.hasPlayerGotBoneInHand(this.thePlayer));
+    public boolean continueExecuting()
+    {
+        return !this.thePlayer.isEntityAlive() ? false : (this.theWolf.getDistanceSqToEntity(this.thePlayer) > (double)(this.minPlayerDistance * this.minPlayerDistance) ? false : this.timeoutCounter > 0 && this.hasPlayerGotBoneInHand(this.thePlayer));
     }
 
-    /**
-     * Execute a one shot task or start executing a continuous task
-     */
-    public void startExecuting() {
-        this.theWolf.func_70918_i(true);
-        this.field_75384_e = 40 + this.theWolf.getRNG().nextInt(40);
+    public void startExecuting()
+    {
+        this.theWolf.setBegging(true);
+        this.timeoutCounter = 40 + this.theWolf.getRNG().nextInt(40);
     }
 
-    /**
-     * Resets the task
-     */
-    public void resetTask() {
-        this.theWolf.func_70918_i(false);
+    public void resetTask()
+    {
+        this.theWolf.setBegging(false);
         this.thePlayer = null;
     }
 
-    /**
-     * Updates the task
-     */
-    public void updateTask() {
+    public void updateTask()
+    {
         this.theWolf.getLookHelper().setLookPosition(this.thePlayer.posX, this.thePlayer.posY + (double)this.thePlayer.getEyeHeight(), this.thePlayer.posZ, 10.0F, (float)this.theWolf.getVerticalFaceSpeed());
-        --this.field_75384_e;
+        --this.timeoutCounter;
     }
 
-    /**
-     * Gets if the Player has the Bone in the hand.
-     */
-    private boolean hasPlayerGotBoneInHand(EntityPlayer p_75382_1_) {
-        ItemStack var2 = p_75382_1_.inventory.getCurrentItem();
-        return var2 != null && (!this.theWolf.isTamed() && var2.getItem() == Items.bone || this.theWolf.isBreedingItem(var2));
+    private boolean hasPlayerGotBoneInHand(EntityPlayer player)
+    {
+        ItemStack itemstack = player.inventory.getCurrentItem();
+        return itemstack == null ? false : (!this.theWolf.isTamed() && itemstack.getItem() == Items.bone ? true : this.theWolf.isBreedingItem(itemstack));
     }
 }

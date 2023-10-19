@@ -10,6 +10,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.PositionedSoundRecord;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.client.renderer.WorldRenderer;
+import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.util.ResourceLocation;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
@@ -19,7 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ColorPickerElement extends AbstractModulesGuiElement {
-//    private final Setting setting;
+    //    private final Setting setting;
     private final List<ColorPickerColorElement> colors;
     private boolean expanded = false;
     private boolean IlllIllIlIIIIlIIlIIllIIIl = false;
@@ -45,7 +47,7 @@ public class ColorPickerElement extends AbstractModulesGuiElement {
         this.colorPickerColorElement = new ColorPickerColorElement(scaleFactor, (Integer) setting.getValue(), 1.0f);
         this.colors = new ArrayList<>();
         for (int i = 0; i < 16; ++i) {
-            int color = Minecraft.getMinecraft().fontRenderer.colorCode[i];
+            int color = Minecraft.getMinecraft().fontRendererObj.colorCode[i];
             this.colors.add(new ColorPickerColorElement(scaleFactor, color, 1.0f));
         }
     }
@@ -67,9 +69,9 @@ public class ColorPickerElement extends AbstractModulesGuiElement {
         Gui.drawRect(this.x + 186, this.y + 16, this.x + this.width - 16, this.y + 17, GlobalSettings.darkMode.getBooleanValue() ? CBTheme.darkTextColor6 : CBTheme.lightTextColor6);
         CheatBreaker.getInstance().playBold18px.drawString("#", this.x + 188, (float)(this.y + 4), GlobalSettings.darkMode.getBooleanValue() ? CBTheme.darkTextColor4 : CBTheme.lightTextColor4);
         CheatBreaker.getInstance().playBold18px.drawString(Integer.toHexString(this.setting.getColorValue()), this.x + 194, (float)(this.y + 4), GlobalSettings.darkMode.getBooleanValue() ? CBTheme.darkTextColor4 : CBTheme.lightTextColor4);
-        boolean hovering = (float) mouseX > (float)(this.x + this.width - 40) * this.scale && (float) mouseX < (float)(this.x + this.width - 12) * this.scale && (float)mouseY > (float)(this.y + this.yOffset) * this.scale && (float)mouseY < (float)(this.y + 18 + this.yOffset) * this.scale;
+        boolean hovering = (float) mouseX > (float) (this.x + this.width - 40) * this.scale && (float) mouseX < (float) (this.x + this.width - 12) * this.scale && (float) mouseY > (float) (this.y + this.yOffset) * this.scale && (float) mouseY < (float) (this.y + 18 + this.yOffset) * this.scale;
         String favoriteString = hovering ? "(Favorite)" : "(+)";
-        if (CheatBreaker.getInstance().getGlobalSettings().isFavouriteColor((Integer)this.setting.getValue())) {
+        if (CheatBreaker.getInstance().getGlobalSettings().isFavouriteColor((Integer) this.setting.getValue())) {
             favoriteString = hovering ? "(Un-favorite)" : "(-)";
         }
         CheatBreaker.getInstance().playBold18px.drawString(favoriteString, this.x + this.width - 16 - CheatBreaker.getInstance().playBold18px.getStringWidth(favoriteString), (float)(this.y + 4), hovering ? GlobalSettings.darkMode.getBooleanValue() ? CBTheme.darkTextColor5 : CBTheme.lightTextColor5 : GlobalSettings.darkMode.getBooleanValue() ? CBTheme.darkTextColor4 : CBTheme.lightTextColor4);
@@ -88,47 +90,46 @@ public class ColorPickerElement extends AbstractModulesGuiElement {
                 this.addRecentColor();
             }
             Gui.drawRect(this.x + 55, this.y + 24, this.x + 177, this.y + 120, GlobalSettings.darkMode.getBooleanValue() ? CBTheme.darkTextColor5 : CBTheme.lightTextColor5);
-
-            Tessellator tessellator = Tessellator.instance;
+            Tessellator tessellator = Tessellator.getInstance();
             GL11.glDisable(3553);
-            tessellator.startDrawingQuads();
+            WorldRenderer worldrenderer = tessellator.getWorldRenderer();
+            worldrenderer.begin(7, DefaultVertexFormats.POSITION);
             GL11.glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-            tessellator.addVertex(this.pickerX, this.pickerY2, 0.0);
-            tessellator.addVertex(this.pickerX2, this.pickerY2, 0.0);
-            tessellator.addVertex(this.pickerX2, this.pickerY, 0.0);
-            tessellator.addVertex(this.pickerX, this.pickerY, 0.0);
+            worldrenderer.pos(this.pickerX, this.pickerY2, 0.0);
+            worldrenderer.pos(this.pickerX2, this.pickerY2, 0.0);
+            worldrenderer.pos(this.pickerX2, this.pickerY, 0.0);
+            worldrenderer.pos(this.pickerX, this.pickerY, 0.0);
             tessellator.draw();
             int[] arrn = null;
             int n3 = 0;
-            while ((float)n3 < this.pickerXDiff) {
+            while ((float) n3 < this.pickerXDiff) {
                 int n4 = 0;
-                while ((float)n4 < this.pickerYDiff) {
-                    float f2 = (float)n3 / this.pickerXDiff;
-                    float f3 = 1.0f - (float)n4 / this.pickerYDiff;
-                    int rgb = Color.HSBtoRGB(this.IIIlllIIIllIllIlIIIIIIlII, f2, f3);
-                    int color = new Color(rgb >> 16 & 0xFF, rgb >> 8 & 0xFF, rgb & 0xFF, this.setting.getIntegerValue() >> 24 & 0xFF).getRGB();
-                    boolean bl3 = (float) mouseX >= (this.pickerX + (float)n3) * this.scale && (float) mouseX <= (this.pickerX + (float)n3 + 1.0f) * this.scale;
-                    boolean bl4 = (float)mouseY <= (this.pickerY + (float)n4 + 1.0f + (float)this.yOffset) * this.scale && (float)mouseY > (this.pickerY + (float)n4 + (float)this.yOffset) * this.scale;
+                while ((float) n4 < this.pickerYDiff) {
+                    float f2 = (float) n3 / this.pickerXDiff;
+                    float f3 = 1.0f - (float) n4 / this.pickerYDiff;
+                    int n5 = (int) this.llIlIIIlIIIIlIlllIlIIIIll << 24 | Color.HSBtoRGB(this.IIIlllIIIllIllIlIIIIIIlII, f2, f3);
+                    boolean bl3 = (float) mouseX >= (this.pickerX + (float) n3) * this.scale && (float) mouseX <= (this.pickerX + (float) n3 + 1.0f) * this.scale;
+                    boolean bl4 = (float) mouseY <= (this.pickerY + (float) n4 + 1.0f + (float) this.yOffset) * this.scale && (float) mouseY > (this.pickerY + (float) n4 + (float) this.yOffset) * this.scale;
                     boolean bl5 = bl3 && bl4;
                     boolean bl6 = n3 == 0 && (float) mouseX < this.pickerX * this.scale && bl4;
-                    boolean bl7 = n4 == 0 && (float)mouseY < (this.pickerY + (float)this.yOffset) * this.scale && bl3;
-                    boolean bl8 = (float)n3 == this.pickerXDiff - 1.0f && (float) mouseX > (this.pickerX + this.pickerXDiff) * this.scale && bl4;
-                    boolean bl2 = (float)n4 == this.pickerYDiff - 1.0f && (float)mouseY > (this.pickerY + this.pickerYDiff + (float)this.yOffset) * this.scale && bl3;
+                    boolean bl7 = n4 == 0 && (float) mouseY < (this.pickerY + (float) this.yOffset) * this.scale && bl3;
+                    boolean bl8 = (float) n3 == this.pickerXDiff - 1.0f && (float) mouseX > (this.pickerX + this.pickerXDiff) * this.scale && bl4;
+                    boolean bl2 = (float) n4 == this.pickerYDiff - 1.0f && (float) mouseY > (this.pickerY + this.pickerYDiff + (float) this.yOffset) * this.scale && bl3;
                     if (this.IlllIllIlIIIIlIIlIIllIIIl && (bl5 || bl6 || bl7 || bl8 || bl2)) {
-                        this.setting.setValue(color);
+                        this.setting.setValue(n5);
                         this.setting.color = new int[]{n3, n4};
                     }
                     if (this.setting.color != null) {
                         arrn = this.setting.color;
-                    } else if (color == (Integer)this.setting.getValue()) {
+                    } else if (n5 == (Integer) this.setting.getValue()) {
                         arrn = new int[]{n3, n4};
                     }
-                    tessellator.startDrawingQuads();
-                    GL11.glColor4f((float)(color >> 16 & 0xFF) / (float)255, (float)(color >> 8 & 0xFF) / (float)255, (float)(color & 0xFF) / (float)255, 1.0f);
-                    tessellator.addVertex(this.pickerX + (float)n3, this.pickerY + (float)n4 + 1.0f, 0.0);
-                    tessellator.addVertex(this.pickerX + (float)n3 + 1.0f, this.pickerY + (float)n4 + 1.0f, 0.0);
-                    tessellator.addVertex(this.pickerX + (float)n3 + 1.0f, this.pickerY + (float)n4, 0.0);
-                    tessellator.addVertex(this.pickerX + (float)n3, this.pickerY + (float)n4, 0.0);
+                    worldrenderer.begin(7, DefaultVertexFormats.POSITION);
+                    GL11.glColor4f((float) (n5 >> 16 & 0xFF) / (float) 255, (float) (n5 >> 8 & 0xFF) / (float) 255, (float) (n5 & 0xFF) / (float) 255, 1.0f);
+                    worldrenderer.pos(this.pickerX + (float) n3, this.pickerY + (float) n4 + 1.0f, 0.0).endVertex();
+                    worldrenderer.pos(this.pickerX + (float) n3 + 1.0f, this.pickerY + (float) n4 + 1.0f, 0.0).endVertex();
+                    worldrenderer.pos(this.pickerX + (float) n3 + 1.0f, this.pickerY + (float) n4, 0.0).endVertex();
+                    worldrenderer.pos(this.pickerX + (float) n3, this.pickerY + (float) n4, 0.0).endVertex();
                     tessellator.draw();
                     ++n4;
                 }
@@ -137,28 +138,28 @@ public class ColorPickerElement extends AbstractModulesGuiElement {
             if (arrn != null) {
                 GL11.glPushMatrix();
                 GL11.glColor4f(0.0f, 0.0f, 0.0f, 3.0f * 0.25f);
-                RenderUtil.drawCircle(this.pickerX + (float)arrn[0] + 1.2205882f * 0.913494f, this.pickerY + (float)arrn[1] + 0.097222224f * 11.468572f, 4);
+                RenderUtil.drawCircle(this.pickerX + (float) arrn[0] + 1.2205882f * 0.913494f, this.pickerY + (float) arrn[1] + 0.097222224f * 11.468572f, 4);
                 GL11.glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-                RenderUtil.drawCircle(this.pickerX + (float)arrn[0] + 0.24193548f * 4.608667f, this.pickerY + (float)arrn[1] + 0.23157895f * 4.8147726f, 2.7D);
+                RenderUtil.drawCircle(this.pickerX + (float) arrn[0] + 0.24193548f * 4.608667f, this.pickerY + (float) arrn[1] + 0.23157895f * 4.8147726f, 2.7D);
                 GL11.glPopMatrix();
             }
             Gui.drawRect(this.pickerX - (float)51, this.pickerY + 1.0f, this.pickerX - 43.0F, this.pickerY + (float)9, -16777216);
             Gui.drawRect(this.pickerX - (float)50, this.pickerY + 2.0f, this.pickerX - 44.0F, this.pickerY + (float)8, this.setting.rainbow ? -13369549 : -1);
             CheatBreaker.getInstance().playRegular16px.drawString("CHROMA", this.pickerX - 40.0F, this.pickerY, GlobalSettings.darkMode.getBooleanValue() ? CBTheme.darkTextColor4 : CBTheme.lightTextColor4);
-            if(this.setting.rainbow) {
+            if (this.setting.rainbow) {
                 Gui.drawRect(this.pickerX - (float) 51, this.pickerY + 10.0f, this.pickerX - (float) 43, this.pickerY + (float) 18, -16777216);
                 Gui.drawRect(this.pickerX - (float) 50, this.pickerY + 11.0f, this.pickerX - (float) 44, this.pickerY + (float) 17, this.setting.speed ? -13369549 : -1);
-                CheatBreaker.getInstance().playRegular16px.drawString("SPEED", this.pickerX - (float)40, this.pickerY + 10, GlobalSettings.darkMode.getBooleanValue() ? CBTheme.darkTextColor4 : CBTheme.lightTextColor4);
+                CheatBreaker.getInstance().playRegular16px.drawString("FAST", this.pickerX - (float)40, this.pickerY + 10, GlobalSettings.darkMode.getBooleanValue() ? CBTheme.darkTextColor4 : CBTheme.lightTextColor4);
             }
             this.drawHueSlider(mouseX, mouseY);
             this.drawOpacitySlider(mouseX, mouseY);
-            this.lIIlIIllIIIIIlIllIIIIllII = (int)(this.pickerX + this.pickerXDiff + (float)64);
-            this.lIIlllIIlIlllllllllIIIIIl = (int)this.pickerY;
+            this.lIIlIIllIIIIIlIllIIIIllII = (int) (this.pickerX + this.pickerXDiff + (float) 64);
+            this.lIIlllIIlIlllllllllIIIIIl = (int) this.pickerY;
             this.drawInstantColorSelectionBoxes(CheatBreaker.getInstance().getGlobalSettings().recentColors, this.lIIlIIllIIIIIlIllIIIIllII, this.lIIlllIIlIlllllllllIIIIIl, mouseX, mouseY, (int) partialTicks);
-            this.lIllIllIlIIllIllIlIlIIlIl = (int)(this.pickerX + this.pickerXDiff + (float)94);
-            this.llIlIIIllIIIIlllIlIIIIIlI = (int)this.pickerY;
+            this.lIllIllIlIIllIllIlIlIIlIl = (int) (this.pickerX + this.pickerXDiff + (float) 94);
+            this.llIlIIIllIIIIlllIlIIIIIlI = (int) this.pickerY;
             this.drawInstantColorSelectionBoxes(CheatBreaker.getInstance().getGlobalSettings().favouriteColors, this.lIllIllIlIIllIllIlIlIIlIl, this.llIlIIIllIIIIlllIlIIIIIlI, mouseX, mouseY, (int) partialTicks);
-            this.drawInstantColorSelectionBoxes(this.colors, (int)(this.pickerX + this.pickerXDiff + (float)34), (int)this.pickerY, mouseX, mouseY, (int) partialTicks);
+            this.drawInstantColorSelectionBoxes(this.colors, (int) (this.pickerX + this.pickerXDiff + (float) 34), (int) this.pickerY, mouseX, mouseY, (int) partialTicks);
         }
     }
 
@@ -166,44 +167,41 @@ public class ColorPickerElement extends AbstractModulesGuiElement {
         if (CheatBreaker.getInstance().getGlobalSettings().recentColors.size() >= 16) {
             CheatBreaker.getInstance().getGlobalSettings().recentColors.remove(0);
         }
-        CheatBreaker.getInstance().getGlobalSettings().recentColors.add(new ColorPickerColorElement(this.scale, (Integer)this.setting.getValue(), 1.0f));
-        Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.func_147674_a(new ResourceLocation("gui.button.press"), 1.0f));
+        CheatBreaker.getInstance().getGlobalSettings().recentColors.add(new ColorPickerColorElement(this.scale, (Integer) this.setting.getValue(), 1.0f));
+        Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("gui.button.press"), 1.0f));
     }
 
     private void drawOpacitySlider(int n, int n2) {
         Gui.drawRect(this.pickerX + this.pickerXDiff + (float)18, this.pickerY - 1.0f, this.pickerX + this.pickerXDiff + 28.0F, this.pickerY + 1.0f + this.pickerYDiff, GlobalSettings.darkMode.getBooleanValue() ? CBTheme.darkTextColor5 : CBTheme.lightTextColor5);
-
         this.drawOpacityCheckerboard();
         int n3 = 0;
-        while ((float)n3 < this.pickerYDiff) {
-            int n4 = (Integer)this.setting.getValue();
-            int n5 = new Color(n4 >> 16 & 0xFF, n4 >> 8 & 0xFF, n4 & 0xFF, Math.round(255.0F - (float)n3 / this.pickerYDiff * 255.0F)).getRGB();
-            if (this.llIIlllIIIIlllIllIlIlllIl && (float)n2 >= ((float)this.yOffset + this.pickerY + (float)n3) * this.scale && (float)n2 <= ((float)this.yOffset + this.pickerY + (float)n3 + 1.0f) * this.scale) {
-                this.llIlIIIlIIIIlIlllIlIIIIll = (float)n3 / this.pickerYDiff;
+        while ((float) n3 < this.pickerYDiff) {
+            int n4 = (Integer) this.setting.getValue();
+            int n5 = new Color(n4 >> 16 & 0xFF, n4 >> 8 & 0xFF, n4 & 0xFF, Math.round(255.0F - (float) n3 / this.pickerYDiff * 255.0F)).getRGB();
+            if (this.llIIlllIIIIlllIllIlIlllIl && (float) n2 >= ((float) this.yOffset + this.pickerY + (float) n3) * this.scale && (float) n2 <= ((float) this.yOffset + this.pickerY + (float) n3 + 1.0f) * this.scale) {
+                this.llIlIIIlIIIIlIlllIlIIIIll = (float) n3 / this.pickerYDiff;
                 this.setting.setValue(n5);
             }
             Gui.drawRect(this.pickerX + this.pickerXDiff + (float)19, this.pickerY + (float)n3, this.pickerX + this.pickerXDiff + (float)27, this.pickerY + (float)n3 + 1.0f, n5);
             ++n3;
         }
-        float f = (float)-1 + this.pickerYDiff * this.llIlIIIlIIIIlIlllIlIIIIll;
+        float f = (float) -1 + this.pickerYDiff * this.llIlIIIlIIIIlIlllIlIIIIll;
         Gui.drawRect(this.pickerX + this.pickerXDiff + (float)18, this.pickerY + f, this.pickerX + this.pickerXDiff + (float)28, this.pickerY + f + (float)3, -822083584);
         Gui.drawRect(this.pickerX + this.pickerXDiff + (float)18, this.pickerY + f + 1.0f, this.pickerX + this.pickerXDiff + (float)28, this.pickerY + f + 2.0f, -805306369);
     }
 
     private void drawHueSlider(int x, int y) {
         Gui.drawRect(this.pickerX + this.pickerXDiff + (float)4, this.pickerY - 1.0f, this.pickerX + this.pickerXDiff + (float)14, this.pickerY + 1.0f + this.pickerYDiff, GlobalSettings.darkMode.getBooleanValue() ? CBTheme.darkTextColor5 : CBTheme.lightTextColor5);
-
         int n3 = 0;
-        while ((float)n3 < this.pickerYDiff) {
+        while ((float) n3 < this.pickerYDiff) {
             int n4;
-            if (this.IlIlllIIIIllIllllIllIIlIl && (float)y >= ((float)this.yOffset + this.pickerY + (float)n3) * this.scale && (float)y <= ((float)this.yOffset + this.pickerY + (float)n3 + 1.0f) * this.scale) {
-                n4 = (Integer)this.setting.getValue();
+            if (this.IlIlllIIIIllIllllIllIIlIl && (float) y >= ((float) this.yOffset + this.pickerY + (float) n3) * this.scale && (float) y <= ((float) this.yOffset + this.pickerY + (float) n3 + 1.0f) * this.scale) {
+                n4 = (Integer) this.setting.getValue();
                 float[] arrf = Color.RGBtoHSB(n4 >> 16 & 0xFF, n4 >> 8 & 0xFF, n4 & 0xFF, null);
-                int color = new Color(Color.HSBtoRGB(this.IIIlllIIIllIllIlIIIIIIlII, arrf[1], arrf[2]) >> 16 & 0xFF, Color.HSBtoRGB(this.IIIlllIIIllIllIlIIIIIIlII, arrf[1], arrf[2]) >> 8 & 0xFF, Color.HSBtoRGB(this.IIIlllIIIllIllIlIIIIIIlII, arrf[1], arrf[2]) & 0xFF, n4 >> 24 & 0xFF).getRGB();
-                this.setting.setValue(color);
-                this.IIIlllIIIllIllIlIIIIIIlII = (float)n3 / this.pickerYDiff;
+                this.setting.setValue(Color.HSBtoRGB(this.IIIlllIIIllIllIlIIIIIIlII, arrf[1], arrf[2]));
+                this.IIIlllIIIllIllIlIIIIIIlII = (float) n3 / this.pickerYDiff;
             }
-            n4 = Color.HSBtoRGB((float)n3 / this.pickerYDiff, 1.0f, 1.0f);
+            n4 = Color.HSBtoRGB((float) n3 / this.pickerYDiff, 1.0f, 1.0f);
             Gui.drawRect(this.pickerX + this.pickerXDiff + (float)5, this.pickerY + (float)n3, this.pickerX + this.pickerXDiff + (float)13, this.pickerY + (float)n3 + 1.0f, n4);
             ++n3;
         }
@@ -215,7 +213,7 @@ public class ColorPickerElement extends AbstractModulesGuiElement {
     private void drawOpacityCheckerboard() {
         boolean bl = true;
         int n = 2;
-        while ((float)n < this.pickerYDiff - (float)4) {
+        while ((float) n < this.pickerYDiff - (float) 4) {
             if (!bl) {
                 Gui.drawRect(this.pickerX + this.pickerXDiff + (float)19, this.pickerY + (float)n, this.pickerX + this.pickerXDiff + (float)23, this.pickerY + (float)n + (float)4, -1);
                 Gui.drawRect(this.pickerX + this.pickerXDiff + (float)23, this.pickerY + (float)n + (float)4, this.pickerX + this.pickerXDiff + (float)27, this.pickerY + (float)n + (float)8, -1);
@@ -256,7 +254,7 @@ public class ColorPickerElement extends AbstractModulesGuiElement {
                 colorPickerColorElementObj.yOffset = this.yOffset;
                 colorPickerColorElementObj.setDimensions(var12_12, var13_13, 10, 10);
             }
-            colorPickerColorElementObj.handleDrawElement(n3, n4, (float)n5);
+            colorPickerColorElementObj.handleDrawElement(n3, n4, (float) n5);
             ++n6;
         }
     }
@@ -278,17 +276,16 @@ public class ColorPickerElement extends AbstractModulesGuiElement {
                 colorPickerColorElementObj.setDimensions(n9, n8, 10, 10);
             }
             if (colorPickerColorElementObj.isMouseInside(n3, n4)) {
-                int color = colorPickerColorElementObj.color;
                 if (list == this.colors) {
-                    this.setting.setValue(new Color(color >> 16 & 0xFF, color >> 8 & 0xFF, color & 0xFF, this.setting.getIntegerValue() >> 24 & 0xFF).getRGB());
+                    this.setting.setValue(new Color(colorPickerColorElementObj.color).getRGB());
                 } else {
                     this.setting.setValue(new Color(colorPickerColorElementObj.color, true).getRGB());
                 }
-                Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.func_147674_a(new ResourceLocation("gui.button.press"), 1.0f));
+                Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("gui.button.press"), 1.0f));
                 float[] arrf = Color.RGBtoHSB(colorPickerColorElementObj.color >> 16 & 0xFF, colorPickerColorElementObj.color >> 8 & 0xFF, colorPickerColorElementObj.color & 0xFF, null);
                 this.IIIlllIIIllIllIlIIIIIIlII = arrf[0];
-                n8 = (int)(arrf[1] * this.pickerXDiff);
-                int n10 = (int)(this.pickerYDiff - arrf[2] * this.pickerYDiff);
+                n8 = (int) (arrf[1] * this.pickerXDiff);
+                int n10 = (int) (this.pickerYDiff - arrf[2] * this.pickerYDiff);
                 this.setting.color = new int[]{n8, n10};
             }
             ++n5;
@@ -297,47 +294,47 @@ public class ColorPickerElement extends AbstractModulesGuiElement {
 
     @Override
     public void handleMouseClick(int mouseX, int mouseY, int button) {
-        boolean bl2 = (float) mouseX > (float)(this.x + this.width - 40) * this.scale && (float) mouseX < (float)(this.x + this.width - 12) * this.scale && (float) mouseY > (float)(this.y + this.yOffset) * this.scale && (float) mouseY < (float)(this.y + 18 + this.yOffset) * this.scale;
-        boolean bl = (float) mouseX > (float)this.x * this.scale && (float) mouseX < (float)(this.x + this.width - 40) * this.scale && (float) mouseY > (float)(this.y + this.yOffset) * this.scale && (float) mouseY < (float)(this.y + 18 + this.yOffset) * this.scale;
+        boolean bl2 = (float) mouseX > (float) (this.x + this.width - 40) * this.scale && (float) mouseX < (float) (this.x + this.width - 12) * this.scale && (float) mouseY > (float) (this.y + this.yOffset) * this.scale && (float) mouseY < (float) (this.y + 18 + this.yOffset) * this.scale;
+        boolean bl = (float) mouseX > (float) this.x * this.scale && (float) mouseX < (float) (this.x + this.width - 40) * this.scale && (float) mouseY > (float) (this.y + this.yOffset) * this.scale && (float) mouseY < (float) (this.y + 18 + this.yOffset) * this.scale;
         if (bl) {
-            Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.func_147674_a(new ResourceLocation("gui.button.press"), 1.0f));
-            float[] arrf = Color.RGBtoHSB((Integer)this.setting.getValue() >> 16 & 0xFF, (Integer)this.setting.getValue() >> 8 & 0xFF, (Integer)this.setting.getValue() & 0xFF, null);
+            Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("gui.button.press"), 1.0f));
+            float[] arrf = Color.RGBtoHSB((Integer) this.setting.getValue() >> 16 & 0xFF, (Integer) this.setting.getValue() >> 8 & 0xFF, (Integer) this.setting.getValue() & 0xFF, null);
             this.IIIlllIIIllIllIlIIIIIIlII = arrf[0];
-            int n4 = (int)(arrf[1] * this.pickerXDiff);
-            int n5 = (int)(this.pickerYDiff - arrf[2] * this.pickerYDiff);
+            int n4 = (int) (arrf[1] * this.pickerXDiff);
+            int n5 = (int) (this.pickerYDiff - arrf[2] * this.pickerYDiff);
             this.setting.color = new int[]{n4, n5};
             this.expanded = !this.expanded;
         } else if (bl2) {
-            if (CheatBreaker.getInstance().getGlobalSettings().isFavouriteColor((Integer)this.setting.getValue())) {
-                CheatBreaker.getInstance().getGlobalSettings().removeFavouriteColor((Integer)this.setting.getValue());
+            if (CheatBreaker.getInstance().getGlobalSettings().isFavouriteColor((Integer) this.setting.getValue())) {
+                CheatBreaker.getInstance().getGlobalSettings().removeFavouriteColor((Integer) this.setting.getValue());
             } else {
                 if (CheatBreaker.getInstance().getGlobalSettings().favouriteColors.size() >= 16) {
                     CheatBreaker.getInstance().getGlobalSettings().favouriteColors.remove(0);
                 }
-                CheatBreaker.getInstance().getGlobalSettings().favouriteColors.add(new ColorPickerColorElement(this.scale, (Integer)this.setting.getValue(), 1.0f));
+                CheatBreaker.getInstance().getGlobalSettings().favouriteColors.add(new ColorPickerColorElement(this.scale, (Integer) this.setting.getValue(), 1.0f));
             }
-            Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.func_147674_a(new ResourceLocation("gui.button.press"), 1.0f));
+            Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("gui.button.press"), 1.0f));
         } else if (this.expanded) {
             this.lIIIIlIIllIIlIIlIIIlIIllI(this.colors, 0, 0, mouseX, mouseY);
             this.lIIIIlIIllIIlIIlIIIlIIllI(CheatBreaker.getInstance().getGlobalSettings().recentColors, this.lIIlIIllIIIIIlIllIIIIllII, this.lIIlllIIlIlllllllllIIIIIl, mouseX, mouseY);
             this.lIIIIlIIllIIlIIlIIIlIIllI(CheatBreaker.getInstance().getGlobalSettings().favouriteColors, this.lIllIllIlIIllIllIlIlIIlIl, this.llIlIIIllIIIIlllIlIIIIIlI, mouseX, mouseY);
-            boolean bl4 = (float) mouseX > (this.pickerX - (float)51) * this.scale && (float) mouseY > (this.pickerY + 1.0f + (float)this.yOffset) * this.scale && (float) mouseX < (this.pickerX - (float)43) * this.scale && (float) mouseY < (this.pickerY + (float)9 + (float)this.yOffset) * this.scale;
-            boolean bl5 = (float) mouseX > (this.pickerX - (float)51) * this.scale && (float) mouseY > (this.pickerY + 10.0f + (float)this.yOffset) * this.scale && (float) mouseX < (this.pickerX - (float)43) * this.scale && (float) mouseY < (this.pickerY + (float)19 + (float)this.yOffset) * this.scale;
-            if ((float) mouseX > this.pickerX * this.scale && (float) mouseX < (this.pickerX + this.pickerXDiff) * this.scale && (float) mouseY > (this.pickerY + (float)this.yOffset) * this.scale && (float) mouseY < (this.pickerY + this.pickerYDiff + (float)this.yOffset) * this.scale) {
+            boolean bl4 = (float) mouseX > (this.pickerX - (float) 51) * this.scale && (float) mouseY > (this.pickerY + 1.0f + (float) this.yOffset) * this.scale && (float) mouseX < (this.pickerX - (float) 43) * this.scale && (float) mouseY < (this.pickerY + (float) 9 + (float) this.yOffset) * this.scale;
+            boolean bl5 = (float) mouseX > (this.pickerX - (float) 51) * this.scale && (float) mouseY > (this.pickerY + 10.0f + (float) this.yOffset) * this.scale && (float) mouseX < (this.pickerX - (float) 43) * this.scale && (float) mouseY < (this.pickerY + (float) 19 + (float) this.yOffset) * this.scale;
+            if ((float) mouseX > this.pickerX * this.scale && (float) mouseX < (this.pickerX + this.pickerXDiff) * this.scale && (float) mouseY > (this.pickerY + (float) this.yOffset) * this.scale && (float) mouseY < (this.pickerY + this.pickerYDiff + (float) this.yOffset) * this.scale) {
                 this.IlllIllIlIIIIlIIlIIllIIIl = true;
             }
-            if ((float) mouseX > (this.pickerX + this.pickerXDiff + (float)4) * this.scale && (float) mouseX < (this.pickerX + this.pickerXDiff + (float)14) * this.scale && (float) mouseY > (this.pickerY - 1.0f + (float)this.yOffset) * this.scale && (float) mouseY < (this.pickerY + 1.0f + this.pickerYDiff + (float)this.yOffset) * this.scale) {
+            if ((float) mouseX > (this.pickerX + this.pickerXDiff + (float) 4) * this.scale && (float) mouseX < (this.pickerX + this.pickerXDiff + (float) 14) * this.scale && (float) mouseY > (this.pickerY - 1.0f + (float) this.yOffset) * this.scale && (float) mouseY < (this.pickerY + 1.0f + this.pickerYDiff + (float) this.yOffset) * this.scale) {
                 this.IlIlllIIIIllIllllIllIIlIl = true;
             }
-            if ((float) mouseX > (this.pickerX + this.pickerXDiff + (float)18) * this.scale && (float) mouseX < (this.pickerX + this.pickerXDiff + (float)28) * this.scale && (float) mouseY > (this.pickerY - 1.0f + (float)this.yOffset) * this.scale && (float) mouseY < (this.pickerY + 1.0f + this.pickerYDiff + (float)this.yOffset) * this.scale) {
+            if ((float) mouseX > (this.pickerX + this.pickerXDiff + (float) 18) * this.scale && (float) mouseX < (this.pickerX + this.pickerXDiff + (float) 28) * this.scale && (float) mouseY > (this.pickerY - 1.0f + (float) this.yOffset) * this.scale && (float) mouseY < (this.pickerY + 1.0f + this.pickerYDiff + (float) this.yOffset) * this.scale) {
                 this.llIIlllIIIIlllIllIlIlllIl = true;
             }
             if (bl4) {
-                Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.func_147674_a(new ResourceLocation("gui.button.press"), 1.0f));
+                Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("gui.button.press"), 1.0f));
                 this.setting.rainbow = !this.setting.rainbow;
             }
             if (bl5) {
-                Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.func_147674_a(new ResourceLocation("gui.button.press"), 1.0f));
+                Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("gui.button.press"), 1.0f));
                 this.setting.speed = !this.setting.speed;
             }
         }

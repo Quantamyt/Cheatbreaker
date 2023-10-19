@@ -1,65 +1,69 @@
 package net.minecraft.entity.ai;
 
 import net.minecraft.entity.EntityCreature;
-import net.minecraft.util.MathHelper;
+import net.minecraft.pathfinding.PathNavigateGround;
+import net.minecraft.util.BlockPos;
 import net.minecraft.village.Village;
 import net.minecraft.village.VillageDoorInfo;
 
-public class EntityAIRestrictOpenDoor extends EntityAIBase {
-    private final EntityCreature entityObj;
+public class EntityAIRestrictOpenDoor extends EntityAIBase
+{
+    private EntityCreature entityObj;
     private VillageDoorInfo frontDoor;
 
+    public EntityAIRestrictOpenDoor(EntityCreature creatureIn)
+    {
+        this.entityObj = creatureIn;
 
-    public EntityAIRestrictOpenDoor(EntityCreature p_i1651_1_) {
-        this.entityObj = p_i1651_1_;
+        if (!(creatureIn.getNavigator() instanceof PathNavigateGround))
+        {
+            throw new IllegalArgumentException("Unsupported mob type for RestrictOpenDoorGoal");
+        }
     }
 
-    /**
-     * Returns whether the EntityAIBase should begin execution.
-     */
-    public boolean shouldExecute() {
-        if (this.entityObj.worldObj.isDaytime()) {
+    public boolean shouldExecute()
+    {
+        if (this.entityObj.worldObj.isDaytime())
+        {
             return false;
-        } else {
-            Village var1 = this.entityObj.worldObj.villageCollectionObj.findNearestVillage(MathHelper.floor_double(this.entityObj.posX), MathHelper.floor_double(this.entityObj.posY), MathHelper.floor_double(this.entityObj.posZ), 16);
+        }
+        else
+        {
+            BlockPos blockpos = new BlockPos(this.entityObj);
+            Village village = this.entityObj.worldObj.getVillageCollection().getNearestVillage(blockpos, 16);
 
-            if (var1 == null) {
+            if (village == null)
+            {
                 return false;
-            } else {
-                this.frontDoor = var1.findNearestDoor(MathHelper.floor_double(this.entityObj.posX), MathHelper.floor_double(this.entityObj.posY), MathHelper.floor_double(this.entityObj.posZ));
-                return this.frontDoor != null && (double) this.frontDoor.getInsideDistanceSquare(MathHelper.floor_double(this.entityObj.posX), MathHelper.floor_double(this.entityObj.posY), MathHelper.floor_double(this.entityObj.posZ)) < 2.25D;
+            }
+            else
+            {
+                this.frontDoor = village.getNearestDoor(blockpos);
+                return this.frontDoor == null ? false : (double)this.frontDoor.getDistanceToInsideBlockSq(blockpos) < 2.25D;
             }
         }
     }
 
-    /**
-     * Returns whether an in-progress EntityAIBase should continue executing
-     */
-    public boolean continueExecuting() {
-        return !this.entityObj.worldObj.isDaytime() && !this.frontDoor.isDetachedFromVillageFlag && this.frontDoor.isInside(MathHelper.floor_double(this.entityObj.posX), MathHelper.floor_double(this.entityObj.posZ));
+    public boolean continueExecuting()
+    {
+        return this.entityObj.worldObj.isDaytime() ? false : !this.frontDoor.getIsDetachedFromVillageFlag() && this.frontDoor.func_179850_c(new BlockPos(this.entityObj));
     }
 
-    /**
-     * Execute a one shot task or start executing a continuous task
-     */
-    public void startExecuting() {
-        this.entityObj.getNavigator().setBreakDoors(false);
-        this.entityObj.getNavigator().setEnterDoors(false);
+    public void startExecuting()
+    {
+        ((PathNavigateGround)this.entityObj.getNavigator()).setBreakDoors(false);
+        ((PathNavigateGround)this.entityObj.getNavigator()).setEnterDoors(false);
     }
 
-    /**
-     * Resets the task
-     */
-    public void resetTask() {
-        this.entityObj.getNavigator().setBreakDoors(true);
-        this.entityObj.getNavigator().setEnterDoors(true);
+    public void resetTask()
+    {
+        ((PathNavigateGround)this.entityObj.getNavigator()).setBreakDoors(true);
+        ((PathNavigateGround)this.entityObj.getNavigator()).setEnterDoors(true);
         this.frontDoor = null;
     }
 
-    /**
-     * Updates the task
-     */
-    public void updateTask() {
+    public void updateTask()
+    {
         this.frontDoor.incrementDoorOpeningRestrictionCounter();
     }
 }

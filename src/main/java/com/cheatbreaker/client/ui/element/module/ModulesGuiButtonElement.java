@@ -45,6 +45,11 @@ public class ModulesGuiButtonElement extends AbstractModulesGuiElement {
         this.background = background;
     }
 
+    public ModulesGuiButtonElement(CBFontRenderer font, AbstractScrollableElement scroll, String string, int x, int y, int x2, int y2, int color, float scale, boolean background) {
+        this(font, scroll, string, x, y, x2, y2, color, scale);
+        this.background = background;
+    }
+
     @Override
     public void handleDrawElement(int mouseX, int n2, float partialTicks) {
         float f2;

@@ -1,9 +1,15 @@
 package com.cheatbreaker.client.network.websocket.server;
 
 import com.cheatbreaker.client.network.websocket.WSNetHandler;
-import net.minecraft.network.PacketBuffer;
 import com.cheatbreaker.client.network.websocket.WSPacket;
+import net.minecraft.network.PacketBuffer;
 
+/**
+ * @WSPacket WSPacketForceCrash
+ * @see WSPacket
+ *
+ * This packet crashes the client.
+ */
 public class WSPacketForceCrash extends WSPacket {
     @Override
     public void write(PacketBuffer packetBuffer) {

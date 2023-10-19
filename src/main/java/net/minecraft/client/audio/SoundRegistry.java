@@ -3,24 +3,25 @@ package net.minecraft.client.audio;
 import com.google.common.collect.Maps;
 import java.util.Map;
 import net.minecraft.util.RegistrySimple;
+import net.minecraft.util.ResourceLocation;
 
-public class SoundRegistry extends RegistrySimple {
-    private Map field_148764_a;
+public class SoundRegistry extends RegistrySimple<ResourceLocation, SoundEventAccessorComposite>
+{
+    private Map<ResourceLocation, SoundEventAccessorComposite> soundRegistry;
 
-
-    /**
-     * Creates the Map we will use to map keys to their registered values.
-     */
-    protected Map createUnderlyingMap() {
-        this.field_148764_a = Maps.newHashMap();
-        return this.field_148764_a;
+    protected Map<ResourceLocation, SoundEventAccessorComposite> createUnderlyingMap()
+    {
+        this.soundRegistry = Maps.<ResourceLocation, SoundEventAccessorComposite>newHashMap();
+        return this.soundRegistry;
     }
 
-    public void func_148762_a(SoundEventAccessorComposite p_148762_1_) {
-        this.putObject(p_148762_1_.func_148729_c(), p_148762_1_);
+    public void registerSound(SoundEventAccessorComposite p_148762_1_)
+    {
+        this.putObject(p_148762_1_.getSoundEventLocation(), p_148762_1_);
     }
 
-    public void func_148763_c() {
-        this.field_148764_a.clear();
+    public void clearMap()
+    {
+        this.soundRegistry.clear();
     }
 }

@@ -5,6 +5,7 @@ import com.cheatbreaker.client.CheatBreaker;
 import com.cheatbreaker.client.ui.AbstractGui;
 import com.cheatbreaker.client.ui.fading.ColorFade;
 import com.cheatbreaker.client.ui.mainmenu.GradientTextButton;
+import com.cheatbreaker.client.ui.mainmenu.menus.MainMenu;
 import com.cheatbreaker.client.ui.mainmenu.menus.VanillaMenu;
 import net.minecraft.client.audio.PositionedSoundRecord;
 import net.minecraft.client.gui.GuiScreen;
@@ -29,9 +30,9 @@ public class CompetitiveGameWarningGui extends AbstractGui {
         this.blurGui();
         this.ended = true;
         float f = this.getScaledWidth() / 2.0f;
-        float f2 = this.getScaledHeight() / 2.0f - (float)50;
-        this.continueButton.setElementSize(f - (float)75, f2 + (float)50, (float)150, 12);
-        this.cancelButton.setElementSize(f - (float)75, f2 + (float)64, (float)150, 12);
+        float f2 = this.getScaledHeight() / 2.0f - (float) 50;
+        this.continueButton.setElementSize(f - (float) 75, f2 + (float) 50, (float) 150, 12);
+        this.cancelButton.setElementSize(f - (float) 75, f2 + (float) 64, (float) 150, 12);
         this.cancelButton.buttonColor1();
     }
 
@@ -49,9 +50,9 @@ public class CompetitiveGameWarningGui extends AbstractGui {
         }
         this.renderBlur(this.getScaledWidth(), this.getScaledHeight());
         float centeredX = this.getScaledWidth() / 2.0f;
-        float centeredY = this.getScaledHeight() / 2.0f - (float)50;
+        float centeredY = this.getScaledHeight() / 2.0f - (float) 50;
         CheatBreaker.getInstance().playBold18px.drawCenteredString("WARNING!", centeredX, centeredY, this.warningTextFade.getColor(this.ended).getRGB());
-        CheatBreaker.getInstance().playRegular16px.drawCenteredString("Leaving competitive games may result in penalties.", centeredX, centeredY + (float)15, -1);
+        CheatBreaker.getInstance().playRegular16px.drawCenteredString("Leaving competitive games may result in penalties.", centeredX, centeredY + (float) 15, -1);
         CheatBreaker.getInstance().playRegular16px.drawCenteredString("You may be suspended from competitive games if you continue leaving games!", centeredX, centeredY + 25.0F, -1);
         this.cancelButton.drawElementHover(x, y, true);
         this.continueButton.drawElementHover(x, y, true);
@@ -60,13 +61,13 @@ public class CompetitiveGameWarningGui extends AbstractGui {
     @Override
     protected void mouseClicked(float f, float f2, int n) {
         if (this.cancelButton.isMouseInside(f, f2)) {
-            this.mc.getSoundHandler().playSound(PositionedSoundRecord.func_147674_a(new ResourceLocation("gui.button.press"), 1.0f));
+            this.mc.getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("gui.button.press"), 1.0f));
             this.mc.displayGuiScreen(this.field_146298_h);
         } else if (this.continueButton.isMouseInside(f, f2)) {
-            this.mc.getSoundHandler().playSound(PositionedSoundRecord.func_147674_a(new ResourceLocation("gui.button.press"), 1.0f));
+            this.mc.getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("gui.button.press"), 1.0f));
             this.mc.theWorld.sendQuittingDisconnectingPacket();
             this.mc.loadWorld(null);
-            this.mc.displayGuiScreen(new VanillaMenu());
+            this.mc.displayGuiScreen(new MainMenu());
         }
     }
 

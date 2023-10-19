@@ -67,7 +67,7 @@ public abstract class GuiScrollingList {
         if (Mouse.isButtonDown(0)) {
             if (this.initialMouseClickY == -1.0f) {
                 if (this.hovering) {
-                    int mouseListY = mouseY - this.top + (int)this.scrollDistance - 4;
+                    int mouseListY = mouseY - this.top + (int) this.scrollDistance - 4;
                     int slotIndex = mouseListY / this.slotHeight;
                     if (0 <= slotIndex && slotIndex < listLength && mouseX <= slotRight && 0 <= mouseListY) {
                         this.onClick(slotIndex, slotIndex == this.selectedIndex && System.currentTimeMillis() - this.lastClickTime < 500L);
@@ -80,13 +80,13 @@ public abstract class GuiScrollingList {
                         if (scrollHeight < 1) {
                             scrollHeight = 1;
                         }
-                        if ((top = (int)((float)(viewHeight * viewHeight) / (float)this.getContentHeight())) < 32) {
+                        if ((top = (int) ((float) (viewHeight * viewHeight) / (float) this.getContentHeight())) < 32) {
                             top = 32;
                         }
                         if (top > viewHeight - 8) {
                             top = viewHeight - 8;
                         }
-                        this.scrollFactor /= (float)(viewHeight - top) / (float)scrollHeight;
+                        this.scrollFactor /= (float) (viewHeight - top) / (float) scrollHeight;
                     } else {
                         this.scrollFactor = 1.0f;
                     }
@@ -95,12 +95,12 @@ public abstract class GuiScrollingList {
                     this.initialMouseClickY = -2.0f;
                 }
             } else if (this.initialMouseClickY >= 0.0f) {
-                this.scrollDistance -= ((float)mouseY - this.initialMouseClickY) * this.scrollFactor;
+                this.scrollDistance -= ((float) mouseY - this.initialMouseClickY) * this.scrollFactor;
                 this.initialMouseClickY = mouseY;
             }
         } else {
             if (this.scrollIndex != -1) {
-                this.scrollDistance = (float)((double)this.scrollDistance + this.scrollCache[this.scrollIndex] * (double)this.scrollDirection * 2.0);
+                this.scrollDistance = (float) ((double) this.scrollDistance + this.scrollCache[this.scrollIndex] * (double) this.scrollDirection * 2.0);
                 ++this.scrollIndex;
                 if (this.scrollIndex >= this.scrollCache.length) {
                     this.scrollIndex = -1;
@@ -109,18 +109,17 @@ public abstract class GuiScrollingList {
             this.initialMouseClickY = -1.0f;
         }
         this.applyScrollLimits();
-        int baseY = this.top + 2 - (int)this.scrollDistance;
+        int baseY = this.top + 2 - (int) this.scrollDistance;
         for (int index = 0; index < listLength; ++index) {
             int slotTop = baseY + index * this.slotHeight;
             int slotBuffer = this.slotHeight - 4;
             int slotBottom = slotTop + slotBuffer + 2;
-//            if ((this.top > slotTop + slotBuffer/* - 32*/) || (slotTop/* + 27*/ > this.bottom)) continue;
             GL11.glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
             GlStateManager.color(1.0f, 1.0f, 1.0f, 1.0f);
             GL11.glEnable(3042);
             GL11.glPushMatrix();
             GL11.glEnable(3089);
-            ScaledResolution res = new ScaledResolution(this.mc, this.mc.displayWidth, this.mc.displayHeight);
+            ScaledResolution res = new ScaledResolution(this.mc);
             RenderUtil.startMCScaledScissorBox(this.left, this.top + 1, this.right, this.bottom, res);
             this.drawSlot(index, slotRight, slotTop, slotBuffer, mouseX, mouseY, this.left <= mouseX && mouseX < slotRight && slotTop - 2 <= mouseY && mouseY < slotBottom);
             GL11.glDisable(3089);
@@ -135,7 +134,7 @@ public abstract class GuiScrollingList {
             if (height > viewHeight - 8) {
                 height = viewHeight - 8;
             }
-            if ((top = (int)this.scrollDistance * (viewHeight - height) / extraHeight + this.top) < this.top) {
+            if ((top = (int) this.scrollDistance * (viewHeight - height) / extraHeight + this.top) < this.top) {
                 top = this.top;
             }
             Gui.drawRect(scrollBarLeft, top, scrollBarRight, top + height, -4144960);
@@ -144,8 +143,8 @@ public abstract class GuiScrollingList {
         GL11.glEnable(3553);
         GL11.glEnable(3008);
         Gui.zLevel = 1;
-        Gui.drawGradientRect(this.left, this.top, scrollBarRight, this.top + 5, -16777216, 0);
-        Gui.drawGradientRect(this.left, this.bottom - 5, scrollBarRight, this.bottom, 0, -16777216);
+        this.mc.ingameGUI.drawGradientRect(this.left, this.top, scrollBarRight, this.top + 5, -16777216, 0);
+        this.mc.ingameGUI.drawGradientRect(this.left, this.bottom - 5, scrollBarRight, this.bottom, 0, -16777216);
         Gui.zLevel = -90;
     }
 
@@ -157,7 +156,7 @@ public abstract class GuiScrollingList {
                 this.scrollDirection = scroll;
                 this.scrollIndex = 0;
             } else {
-                this.scrollDistance += (float)(scroll * this.slotHeight / 2);
+                this.scrollDistance += (float) (scroll * this.slotHeight / 2);
             }
         }
     }
@@ -167,7 +166,7 @@ public abstract class GuiScrollingList {
         if (listHeight < 0) {
             listHeight /= 2;
         }
-        if (this.scrollDistance > (float)listHeight) {
+        if (this.scrollDistance > (float) listHeight) {
             this.scrollDistance = listHeight;
         }
         if (this.scrollDistance < 0.0f) {

@@ -6,45 +6,62 @@ import net.minecraft.entity.IEntityLivingData;
 import net.minecraft.entity.SharedMonsterAttributes;
 import net.minecraft.potion.Potion;
 import net.minecraft.potion.PotionEffect;
+import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.EnumDifficulty;
 import net.minecraft.world.World;
 
-public class EntityCaveSpider extends EntitySpider {
-
-
-    public EntityCaveSpider(World p_i1732_1_) {
-        super(p_i1732_1_);
+public class EntityCaveSpider extends EntitySpider
+{
+    public EntityCaveSpider(World worldIn)
+    {
+        super(worldIn);
         this.setSize(0.7F, 0.5F);
     }
 
-    protected void applyEntityAttributes() {
+    protected void applyEntityAttributes()
+    {
         super.applyEntityAttributes();
         this.getEntityAttribute(SharedMonsterAttributes.maxHealth).setBaseValue(12.0D);
     }
 
-    public boolean attackEntityAsMob(Entity p_70652_1_) {
-        if (super.attackEntityAsMob(p_70652_1_)) {
-            if (p_70652_1_ instanceof EntityLivingBase) {
-                byte var2 = 0;
+    public boolean attackEntityAsMob(Entity entityIn)
+    {
+        if (super.attackEntityAsMob(entityIn))
+        {
+            if (entityIn instanceof EntityLivingBase)
+            {
+                int i = 0;
 
-                if (this.worldObj.difficultySetting == EnumDifficulty.NORMAL) {
-                    var2 = 7;
-                } else if (this.worldObj.difficultySetting == EnumDifficulty.HARD) {
-                    var2 = 15;
+                if (this.worldObj.getDifficulty() == EnumDifficulty.NORMAL)
+                {
+                    i = 7;
+                }
+                else if (this.worldObj.getDifficulty() == EnumDifficulty.HARD)
+                {
+                    i = 15;
                 }
 
-                if (var2 > 0) {
-                    ((EntityLivingBase)p_70652_1_).addPotionEffect(new PotionEffect(Potion.poison.id, var2 * 20, 0));
+                if (i > 0)
+                {
+                    ((EntityLivingBase)entityIn).addPotionEffect(new PotionEffect(Potion.poison.id, i * 20, 0));
                 }
             }
 
             return true;
-        } else {
+        }
+        else
+        {
             return false;
         }
     }
 
-    public IEntityLivingData onSpawnWithEgg(IEntityLivingData p_110161_1_) {
-        return p_110161_1_;
+    public IEntityLivingData onInitialSpawn(DifficultyInstance difficulty, IEntityLivingData livingdata)
+    {
+        return livingdata;
+    }
+
+    public float getEyeHeight()
+    {
+        return 0.45F;
     }
 }

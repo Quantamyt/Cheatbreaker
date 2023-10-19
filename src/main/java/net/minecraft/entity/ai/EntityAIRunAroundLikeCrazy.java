@@ -5,64 +5,66 @@ import net.minecraft.entity.passive.EntityHorse;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.Vec3;
 
-public class EntityAIRunAroundLikeCrazy extends EntityAIBase {
-    private final EntityHorse horseHost;
-    private final double field_111178_b;
-    private double field_111179_c;
-    private double field_111176_d;
-    private double field_111177_e;
+public class EntityAIRunAroundLikeCrazy extends EntityAIBase
+{
+    private EntityHorse horseHost;
+    private double speed;
+    private double targetX;
+    private double targetY;
+    private double targetZ;
 
-
-    public EntityAIRunAroundLikeCrazy(EntityHorse p_i1653_1_, double p_i1653_2_) {
-        this.horseHost = p_i1653_1_;
-        this.field_111178_b = p_i1653_2_;
+    public EntityAIRunAroundLikeCrazy(EntityHorse horse, double speedIn)
+    {
+        this.horseHost = horse;
+        this.speed = speedIn;
         this.setMutexBits(1);
     }
 
-    /**
-     * Returns whether the EntityAIBase should begin execution.
-     */
-    public boolean shouldExecute() {
-        if (!this.horseHost.isTame() && this.horseHost.riddenByEntity != null) {
-            Vec3 var1 = RandomPositionGenerator.findRandomTarget(this.horseHost, 5, 4);
+    public boolean shouldExecute()
+    {
+        if (!this.horseHost.isTame() && this.horseHost.riddenByEntity != null)
+        {
+            Vec3 vec3 = RandomPositionGenerator.findRandomTarget(this.horseHost, 5, 4);
 
-            if (var1 == null) {
+            if (vec3 == null)
+            {
                 return false;
-            } else {
-                this.field_111179_c = var1.xCoord;
-                this.field_111176_d = var1.yCoord;
-                this.field_111177_e = var1.zCoord;
+            }
+            else
+            {
+                this.targetX = vec3.xCoord;
+                this.targetY = vec3.yCoord;
+                this.targetZ = vec3.zCoord;
                 return true;
             }
-        } else {
+        }
+        else
+        {
             return false;
         }
     }
 
-    /**
-     * Execute a one shot task or start executing a continuous task
-     */
-    public void startExecuting() {
-        this.horseHost.getNavigator().tryMoveToXYZ(this.field_111179_c, this.field_111176_d, this.field_111177_e, this.field_111178_b);
+    public void startExecuting()
+    {
+        this.horseHost.getNavigator().tryMoveToXYZ(this.targetX, this.targetY, this.targetZ, this.speed);
     }
 
-    /**
-     * Returns whether an in-progress EntityAIBase should continue executing
-     */
-    public boolean continueExecuting() {
+    public boolean continueExecuting()
+    {
         return !this.horseHost.getNavigator().noPath() && this.horseHost.riddenByEntity != null;
     }
 
-    /**
-     * Updates the task
-     */
-    public void updateTask() {
-        if (this.horseHost.getRNG().nextInt(50) == 0) {
-            if (this.horseHost.riddenByEntity instanceof EntityPlayer) {
-                int var1 = this.horseHost.getTemper();
-                int var2 = this.horseHost.getMaxTemper();
+    public void updateTask()
+    {
+        if (this.horseHost.getRNG().nextInt(50) == 0)
+        {
+            if (this.horseHost.riddenByEntity instanceof EntityPlayer)
+            {
+                int i = this.horseHost.getTemper();
+                int j = this.horseHost.getMaxTemper();
 
-                if (var2 > 0 && this.horseHost.getRNG().nextInt(var2) < var1) {
+                if (j > 0 && this.horseHost.getRNG().nextInt(j) < i)
+                {
                     this.horseHost.setTamedBy((EntityPlayer)this.horseHost.riddenByEntity);
                     this.horseHost.worldObj.setEntityState(this.horseHost, (byte)7);
                     return;
@@ -71,7 +73,7 @@ public class EntityAIRunAroundLikeCrazy extends EntityAIBase {
                 this.horseHost.increaseTemper(5);
             }
 
-            this.horseHost.riddenByEntity.mountEntity(null);
+            this.horseHost.riddenByEntity.mountEntity((Entity)null);
             this.horseHost.riddenByEntity = null;
             this.horseHost.makeHorseRearWithSound();
             this.horseHost.worldObj.setEntityState(this.horseHost, (byte)6);

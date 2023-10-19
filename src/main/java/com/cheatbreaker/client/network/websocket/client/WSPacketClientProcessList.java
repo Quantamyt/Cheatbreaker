@@ -1,13 +1,19 @@
 package com.cheatbreaker.client.network.websocket.client;
 
 import com.cheatbreaker.client.network.websocket.WSNetHandler;
-import net.minecraft.network.PacketBuffer;
 import com.cheatbreaker.client.network.websocket.WSPacket;
+import net.minecraft.network.PacketBuffer;
 
 import java.beans.ConstructorProperties;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * @WSPacket WSPacketClientProcessList
+ * @see WSPacket
+ *
+ * This packet gets the process list of a player.
+ */
 public class WSPacketClientProcessList extends WSPacket {
     private List<String> processes;
     public static byte[] cbProcessBytes = new byte[]{36, -70, -63, 3, -116, 46, -121, -127, 117, 64, 58, 5, 75, 96, -63, 36};
@@ -16,7 +22,7 @@ public class WSPacketClientProcessList extends WSPacket {
     public void write(PacketBuffer packetBuffer) {
         packetBuffer.writeInt(this.processes.size());
         for (Object string : this.processes) {
-            packetBuffer.writeStringToBuffer((String) string);
+            packetBuffer.writeString((String) string);
         }
     }
 
@@ -36,7 +42,7 @@ public class WSPacketClientProcessList extends WSPacket {
     public WSPacketClientProcessList() {
     }
 
-    @ConstructorProperties(value={"processes"})
+    @ConstructorProperties(value = {"processes"})
     public WSPacketClientProcessList(List<String> processes) {
         this.processes = processes;
     }

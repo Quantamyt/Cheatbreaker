@@ -6,7 +6,8 @@ import lombok.Setter;
 /**
  * ENTIRE CLASS MAPPINGS IS TEMPORARILY LIKE THIS - HAVEN'T FIGURED OUT EVERYTHING
  */
-@Getter @Setter
+@Getter
+@Setter
 public abstract class AbstractFade {
     protected long time;
     protected long duration;
@@ -35,7 +36,7 @@ public abstract class AbstractFade {
 
     public void startAnimationFromStartOrEnd(float f) {
         this.time = System.currentTimeMillis();
-        this.unknownLong2 = f == 0.0f ? 0L : (long)((float)this.duration * (1.0f - f));
+        this.unknownLong2 = f == 0.0f ? 0L : (long) ((float) this.duration * (1.0f - f));
         this.running = true;
     }
 
@@ -113,7 +114,7 @@ public abstract class AbstractFade {
         this.running = true;
     }
 
-    public long IlIlllIIIIllIllllIllIIlIl() {
+    public long getRemainingTime() {
         long l = this.running ? this.timeLeft() : System.currentTimeMillis() - this.unknownLong + this.duration - System.currentTimeMillis();
         return Math.min(this.duration, Math.max(0L, l));
     }
@@ -123,7 +124,7 @@ public abstract class AbstractFade {
     }
 
     public long llIIllIlIlllllIlIllIIlIll() {
-        return this.duration - this.IlIlllIIIIllIllllIllIIlIl();
+        return this.duration - this.getRemainingTime();
     }
 
     public long getUnknownLong() {

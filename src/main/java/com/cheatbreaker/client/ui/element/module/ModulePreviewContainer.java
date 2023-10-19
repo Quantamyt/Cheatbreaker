@@ -13,18 +13,20 @@ import java.util.List;
 
 public class ModulePreviewContainer extends AbstractScrollableElement {
     private final List<ModulePreviewElement> moduleList = new ArrayList<>();
-
 //    private final ModulesGuiButtonElement compactModeButton;
 
     public ModulePreviewContainer(float scale, int n, int n2, int n3, int n4) {
         super(scale, n, n2, n3, n4);
         for (AbstractModule mods : CheatBreaker.getInstance().getModuleManager().playerMods) {
-            if (mods == CheatBreaker.getInstance().getModuleManager().notificationsMod) continue;
+            if (mods == CheatBreaker.getInstance().getModuleManager().notificationsMod
+                    || mods == CheatBreaker.getInstance().getModuleManager().miniMapMod
+//                    || mods == CheatBreaker.getInstance().getModuleManager().playerListMod
+            ) continue;
             ModulePreviewElement modulePreviewElement = new ModulePreviewElement(this, mods, scale);
             this.moduleList.add(modulePreviewElement);
         }
 
-        CBFontRenderer boldFont = CheatBreaker.getInstance().playBold18px;
+//        CBFontRenderer boldFont = CheatBreaker.getInstance().playBold18px;
 //        this.compactModeButton = new ModulesGuiButtonElement(boldFont, null, "compact-64.png", this.x + 4, this.y + this.height - 20, this.x + this.width - 4, this.y + this.height - 6, -12418828, scale);
     }
 
@@ -54,7 +56,7 @@ public class ModulePreviewContainer extends AbstractScrollableElement {
             module.yOffset = this.scrollAmount;
             module.setDimensions(this.x + 4 + n3 * 120, this.y + 4 + n4 * multiplier + yIncreease, 116, compact ? 16 : 108);
             module.handleDrawElement(mouseX, mouseY, partialTicks);
-            addon = 112;
+            addon = (compact ? 20 : 112);
             if (++n3 != 3) continue;
             ++n4;
             n3 = addon = 0;

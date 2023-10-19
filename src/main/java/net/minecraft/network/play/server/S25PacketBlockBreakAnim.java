@@ -1,76 +1,59 @@
 package net.minecraft.network.play.server;
 
 import java.io.IOException;
-import net.minecraft.network.INetHandler;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayClient;
+import net.minecraft.util.BlockPos;
 
-public class S25PacketBlockBreakAnim extends Packet {
-    private int field_148852_a;
-    private int field_148850_b;
-    private int field_148851_c;
-    private int field_148848_d;
-    private int field_148849_e;
-    
+public class S25PacketBlockBreakAnim implements Packet<INetHandlerPlayClient>
+{
+    private int breakerId;
+    private BlockPos position;
+    private int progress;
 
-    public S25PacketBlockBreakAnim() {}
-
-    public S25PacketBlockBreakAnim(int p_i45174_1_, int p_i45174_2_, int p_i45174_3_, int p_i45174_4_, int p_i45174_5_) {
-        this.field_148852_a = p_i45174_1_;
-        this.field_148850_b = p_i45174_2_;
-        this.field_148851_c = p_i45174_3_;
-        this.field_148848_d = p_i45174_4_;
-        this.field_148849_e = p_i45174_5_;
+    public S25PacketBlockBreakAnim()
+    {
     }
 
-    /**
-     * Reads the raw packet data from the data stream.
-     */
-    public void readPacketData(PacketBuffer p_148837_1_) throws IOException {
-        this.field_148852_a = p_148837_1_.readVarIntFromBuffer();
-        this.field_148850_b = p_148837_1_.readInt();
-        this.field_148851_c = p_148837_1_.readInt();
-        this.field_148848_d = p_148837_1_.readInt();
-        this.field_148849_e = p_148837_1_.readUnsignedByte();
+    public S25PacketBlockBreakAnim(int breakerId, BlockPos pos, int progress)
+    {
+        this.breakerId = breakerId;
+        this.position = pos;
+        this.progress = progress;
     }
 
-    /**
-     * Writes the raw packet data to the data stream.
-     */
-    public void writePacketData(PacketBuffer p_148840_1_) throws IOException {
-        p_148840_1_.writeVarIntToBuffer(this.field_148852_a);
-        p_148840_1_.writeInt(this.field_148850_b);
-        p_148840_1_.writeInt(this.field_148851_c);
-        p_148840_1_.writeInt(this.field_148848_d);
-        p_148840_1_.writeByte(this.field_148849_e);
+    public void readPacketData(PacketBuffer buf) throws IOException
+    {
+        this.breakerId = buf.readVarIntFromBuffer();
+        this.position = buf.readBlockPos();
+        this.progress = buf.readUnsignedByte();
     }
 
-    public void processPacket(INetHandlerPlayClient p_148833_1_) {
-        p_148833_1_.handleBlockBreakAnim(this);
+    public void writePacketData(PacketBuffer buf) throws IOException
+    {
+        buf.writeVarIntToBuffer(this.breakerId);
+        buf.writeBlockPos(this.position);
+        buf.writeByte(this.progress);
     }
 
-    public int func_148845_c() {
-        return this.field_148852_a;
+    public void processPacket(INetHandlerPlayClient handler)
+    {
+        handler.handleBlockBreakAnim(this);
     }
 
-    public int func_148844_d() {
-        return this.field_148850_b;
+    public int getBreakerId()
+    {
+        return this.breakerId;
     }
 
-    public int func_148843_e() {
-        return this.field_148851_c;
+    public BlockPos getPosition()
+    {
+        return this.position;
     }
 
-    public int func_148842_f() {
-        return this.field_148848_d;
-    }
-
-    public int func_148846_g() {
-        return this.field_148849_e;
-    }
-
-    public void processPacket(INetHandler p_148833_1_) {
-        this.processPacket((INetHandlerPlayClient)p_148833_1_);
+    public int getProgress()
+    {
+        return this.progress;
     }
 }

@@ -2,11 +2,13 @@
     "targets": [
         "swap"
     ],
-    "passes": [ {
+    "passes": [
+        {
             "name": "notch",
             "intarget": "minecraft:main",
             "outtarget": "swap",
-            "auxtargets": [ {
+            "auxtargets": [
+                {
                     "name": "DitherSampler",
                     "id": "dither",
                     "width": 4,
@@ -14,7 +16,8 @@
                     "bilinear": false
                 }
             ]
-        }, {
+        },
+        {
             "name": "blit",
             "intarget": "swap",
             "outtarget": "minecraft:main"

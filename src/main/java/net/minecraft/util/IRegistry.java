@@ -1,10 +1,8 @@
 package net.minecraft.util;
 
-public interface IRegistry {
-    Object getObject(Object p_82594_1_);
+public interface IRegistry<K, V> extends Iterable<V>
+{
+    V getObject(K name);
 
-    /**
-     * Register an object on this registry.
-     */
-    void putObject(Object p_82595_1_, Object p_82595_2_);
+    void putObject(K key, V value);
 }

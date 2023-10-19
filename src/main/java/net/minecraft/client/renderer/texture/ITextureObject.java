@@ -2,10 +2,15 @@ package net.minecraft.client.renderer.texture;
 
 import java.io.IOException;
 import net.minecraft.client.resources.IResourceManager;
-import shadersmod.client.MultiTexID;
+import net.optifine.shaders.MultiTexID;
 
-public interface ITextureObject {
-    void loadTexture(IResourceManager p_110551_1_) throws IOException;
+public interface ITextureObject
+{
+    void setBlurMipmap(boolean p_174936_1_, boolean p_174936_2_);
+
+    void restoreLastBlurMipmap();
+
+    void loadTexture(IResourceManager resourceManager) throws IOException;
 
     int getGlTextureId();
 

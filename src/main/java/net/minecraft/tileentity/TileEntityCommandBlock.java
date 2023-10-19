@@ -1,60 +1,88 @@
 package net.minecraft.tileentity;
 
 import io.netty.buffer.ByteBuf;
+import net.minecraft.command.CommandResultStats;
 import net.minecraft.command.server.CommandBlockLogic;
+import net.minecraft.entity.Entity;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.Packet;
 import net.minecraft.network.play.server.S35PacketUpdateTileEntity;
-import net.minecraft.util.ChunkCoordinates;
+import net.minecraft.util.BlockPos;
+import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
 
-public class TileEntityCommandBlock extends TileEntity {
-    private final CommandBlockLogic field_145994_a = new CommandBlockLogic() {
-
-        public ChunkCoordinates getPlayerCoordinates() {
-            return new ChunkCoordinates(TileEntityCommandBlock.this.field_145851_c, TileEntityCommandBlock.this.field_145848_d, TileEntityCommandBlock.this.field_145849_e);
+public class TileEntityCommandBlock extends TileEntity
+{
+    private final CommandBlockLogic commandBlockLogic = new CommandBlockLogic()
+    {
+        public BlockPos getPosition()
+        {
+            return TileEntityCommandBlock.this.pos;
         }
-        public World getEntityWorld() {
-            return TileEntityCommandBlock.this.getWorldObj();
+        public Vec3 getPositionVector()
+        {
+            return new Vec3((double)TileEntityCommandBlock.this.pos.getX() + 0.5D, (double)TileEntityCommandBlock.this.pos.getY() + 0.5D, (double)TileEntityCommandBlock.this.pos.getZ() + 0.5D);
         }
-        public void func_145752_a(String p_145752_1_) {
-            super.func_145752_a(p_145752_1_);
-            TileEntityCommandBlock.this.onInventoryChanged();
+        public World getEntityWorld()
+        {
+            return TileEntityCommandBlock.this.getWorld();
         }
-        public void func_145756_e() {
-            TileEntityCommandBlock.this.getWorldObj().func_147471_g(TileEntityCommandBlock.this.field_145851_c, TileEntityCommandBlock.this.field_145848_d, TileEntityCommandBlock.this.field_145849_e);
+        public void setCommand(String command)
+        {
+            super.setCommand(command);
+            TileEntityCommandBlock.this.markDirty();
         }
-        public int func_145751_f() {
+        public void updateCommand()
+        {
+            TileEntityCommandBlock.this.getWorld().markBlockForUpdate(TileEntityCommandBlock.this.pos);
+        }
+        public int func_145751_f()
+        {
             return 0;
         }
-        public void func_145757_a(ByteBuf p_145757_1_) {
-            p_145757_1_.writeInt(TileEntityCommandBlock.this.field_145851_c);
-            p_145757_1_.writeInt(TileEntityCommandBlock.this.field_145848_d);
-            p_145757_1_.writeInt(TileEntityCommandBlock.this.field_145849_e);
+        public void func_145757_a(ByteBuf p_145757_1_)
+        {
+            p_145757_1_.writeInt(TileEntityCommandBlock.this.pos.getX());
+            p_145757_1_.writeInt(TileEntityCommandBlock.this.pos.getY());
+            p_145757_1_.writeInt(TileEntityCommandBlock.this.pos.getZ());
+        }
+        public Entity getCommandSenderEntity()
+        {
+            return null;
         }
     };
 
-
-    public void writeToNBT(NBTTagCompound p_145841_1_) {
-        super.writeToNBT(p_145841_1_);
-        this.field_145994_a.func_145758_a(p_145841_1_);
+    public void writeToNBT(NBTTagCompound compound)
+    {
+        super.writeToNBT(compound);
+        this.commandBlockLogic.writeDataToNBT(compound);
     }
 
-    public void readFromNBT(NBTTagCompound p_145839_1_) {
-        super.readFromNBT(p_145839_1_);
-        this.field_145994_a.func_145759_b(p_145839_1_);
+    public void readFromNBT(NBTTagCompound compound)
+    {
+        super.readFromNBT(compound);
+        this.commandBlockLogic.readDataFromNBT(compound);
     }
 
-    /**
-     * Overriden in a sign to provide the text.
-     */
-    public Packet getDescriptionPacket() {
-        NBTTagCompound var1 = new NBTTagCompound();
-        this.writeToNBT(var1);
-        return new S35PacketUpdateTileEntity(this.field_145851_c, this.field_145848_d, this.field_145849_e, 2, var1);
+    public Packet getDescriptionPacket()
+    {
+        NBTTagCompound nbttagcompound = new NBTTagCompound();
+        this.writeToNBT(nbttagcompound);
+        return new S35PacketUpdateTileEntity(this.pos, 2, nbttagcompound);
     }
 
-    public CommandBlockLogic func_145993_a() {
-        return this.field_145994_a;
+    public boolean func_183000_F()
+    {
+        return true;
+    }
+
+    public CommandBlockLogic getCommandBlockLogic()
+    {
+        return this.commandBlockLogic;
+    }
+
+    public CommandResultStats getCommandResultStats()
+    {
+        return this.commandBlockLogic.getCommandResultStats();
     }
 }

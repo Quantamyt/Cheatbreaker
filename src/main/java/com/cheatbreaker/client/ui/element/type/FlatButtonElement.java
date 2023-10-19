@@ -18,7 +18,7 @@ public class FlatButtonElement extends AbstractElement {
 
     public void drawButton(String string, float f, float f2, boolean bl) {
         Gui.drawRect(this.xPosition, this.yPosition, this.xPosition + this.width, this.yPosition + this.height, bl && this.isMouseInside(f, f2) ? -16747106 : -13158601);
-        CheatBreaker.getInstance().playRegular14px.drawCenteredString(string, this.xPosition + this.width / 2.0f, this.yPosition + this.height / 2.0f - (float)5, -1);
+        CheatBreaker.getInstance().playRegular14px.drawCenteredString(string, this.xPosition + this.width / 2.0f, this.yPosition + this.height / 2.0f - (float) 5, -1);
     }
 
     @Override

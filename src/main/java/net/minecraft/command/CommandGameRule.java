@@ -1,71 +1,102 @@
 package net.minecraft.command;
 
 import java.util.List;
+import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.network.play.server.S19PacketEntityStatus;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.util.BlockPos;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.world.GameRules;
 
-public class CommandGameRule extends CommandBase {
-
-
-    public String getCommandName() {
+public class CommandGameRule extends CommandBase
+{
+    public String getCommandName()
+    {
         return "gamerule";
     }
 
-    /**
-     * Return the required permission level for this command.
-     */
-    public int getRequiredPermissionLevel() {
+    public int getRequiredPermissionLevel()
+    {
         return 2;
     }
 
-    public String getCommandUsage(ICommandSender p_71518_1_) {
+    public String getCommandUsage(ICommandSender sender)
+    {
         return "commands.gamerule.usage";
     }
 
-    public void processCommand(ICommandSender p_71515_1_, String[] p_71515_2_) {
-        String var6;
+    public void processCommand(ICommandSender sender, String[] args) throws CommandException
+    {
+        GameRules gamerules = this.getGameRules();
+        String s = args.length > 0 ? args[0] : "";
+        String s1 = args.length > 1 ? buildString(args, 1) : "";
 
-        if (p_71515_2_.length == 2) {
-            var6 = p_71515_2_[0];
-            String var7 = p_71515_2_[1];
-            GameRules var8 = this.getGameRules();
+        switch (args.length)
+        {
+            case 0:
+                sender.addChatMessage(new ChatComponentText(joinNiceString(gamerules.getRules())));
+                break;
 
-            if (var8.hasRule(var6)) {
-                var8.setOrCreateGameRule(var6, var7);
-                func_152373_a(p_71515_1_, this, "commands.gamerule.success");
-            } else {
-                func_152373_a(p_71515_1_, this, "commands.gamerule.norule", var6);
-            }
-        } else if (p_71515_2_.length == 1) {
-            var6 = p_71515_2_[0];
-            GameRules var4 = this.getGameRules();
+            case 1:
+                if (!gamerules.hasRule(s))
+                {
+                    throw new CommandException("commands.gamerule.norule", new Object[] {s});
+                }
 
-            if (var4.hasRule(var6)) {
-                String var5 = var4.getGameRuleStringValue(var6);
-                p_71515_1_.addChatMessage((new ChatComponentText(var6)).appendText(" = ").appendText(var5));
-            } else {
-                func_152373_a(p_71515_1_, this, "commands.gamerule.norule", var6);
-            }
-        } else if (p_71515_2_.length == 0) {
-            GameRules var3 = this.getGameRules();
-            p_71515_1_.addChatMessage(new ChatComponentText(joinNiceString(var3.getRules())));
-        } else {
-            throw new WrongUsageException("commands.gamerule.usage");
+                String s2 = gamerules.getString(s);
+                sender.addChatMessage((new ChatComponentText(s)).appendText(" = ").appendText(s2));
+                sender.setCommandStat(CommandResultStats.Type.QUERY_RESULT, gamerules.getInt(s));
+                break;
+
+            default:
+                if (gamerules.areSameType(s, GameRules.ValueType.BOOLEAN_VALUE) && !"true".equals(s1) && !"false".equals(s1))
+                {
+                    throw new CommandException("commands.generic.boolean.invalid", new Object[] {s1});
+                }
+
+                gamerules.setOrCreateGameRule(s, s1);
+                func_175773_a(gamerules, s);
+                notifyOperators(sender, this, "commands.gamerule.success", new Object[0]);
         }
     }
 
-    /**
-     * Adds the strings available in this command to the given list of tab completion options.
-     */
-    public List addTabCompletionOptions(ICommandSender p_71516_1_, String[] p_71516_2_) {
-        return p_71516_2_.length == 1 ? getListOfStringsMatchingLastWord(p_71516_2_, this.getGameRules().getRules()) : (p_71516_2_.length == 2 ? getListOfStringsMatchingLastWord(p_71516_2_, "true", "false"): null);
+    public static void func_175773_a(GameRules rules, String p_175773_1_)
+    {
+        if ("reducedDebugInfo".equals(p_175773_1_))
+        {
+            byte b0 = (byte)(rules.getBoolean(p_175773_1_) ? 22 : 23);
+
+            for (EntityPlayerMP entityplayermp : MinecraftServer.getServer().getConfigurationManager().getPlayerList())
+            {
+                entityplayermp.playerNetServerHandler.sendPacket(new S19PacketEntityStatus(entityplayermp, b0));
+            }
+        }
     }
 
-    /**
-     * Return the game rule set this command should be able to manipulate.
-     */
-    private GameRules getGameRules() {
+    public List<String> addTabCompletionOptions(ICommandSender sender, String[] args, BlockPos pos)
+    {
+        if (args.length == 1)
+        {
+            return getListOfStringsMatchingLastWord(args, this.getGameRules().getRules());
+        }
+        else
+        {
+            if (args.length == 2)
+            {
+                GameRules gamerules = this.getGameRules();
+
+                if (gamerules.areSameType(args[0], GameRules.ValueType.BOOLEAN_VALUE))
+                {
+                    return getListOfStringsMatchingLastWord(args, new String[] {"true", "false"});
+                }
+            }
+
+            return null;
+        }
+    }
+
+    private GameRules getGameRules()
+    {
         return MinecraftServer.getServer().worldServerForDimension(0).getGameRules();
     }
 }

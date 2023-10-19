@@ -7,6 +7,7 @@ import com.cheatbreaker.client.module.ModuleManager;
 import com.cheatbreaker.client.module.data.CustomizationLevel;
 import com.cheatbreaker.client.module.data.Setting;
 import com.cheatbreaker.client.module.data.SettingType;
+import com.cheatbreaker.client.module.impl.normal.misc.ModuleAutoText;
 import com.cheatbreaker.client.module.impl.staff.StaffMod;
 import com.cheatbreaker.client.ui.element.AbstractModulesGuiElement;
 import com.cheatbreaker.client.ui.element.AbstractScrollableElement;
@@ -15,17 +16,14 @@ import com.cheatbreaker.client.ui.element.type.custom.*;
 import com.cheatbreaker.client.ui.module.HudLayoutEditorGui;
 import com.cheatbreaker.client.ui.theme.CBTheme;
 import com.cheatbreaker.client.ui.util.RenderUtil;
+import com.cheatbreaker.client.util.lang.WordWrap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.PositionedSoundRecord;
 import net.minecraft.client.gui.Gui;
+import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.ResourceLocation;
-import org.lwjgl.input.Keyboard;
 
-import javax.xml.crypto.dsig.keyinfo.KeyName;
-import javax.xml.soap.Text;
-import java.awt.*;
 import java.util.*;
-import java.util.List;
 
 public class ModuleListElement extends AbstractScrollableElement {
     private final int highlightColor;
@@ -33,13 +31,14 @@ public class ModuleListElement extends AbstractScrollableElement {
     private final boolean isStaffMods;
     private final GlobalSettingsElement globalSettings;
     public AbstractScrollableElement scrollableElement;
-    public boolean resetColor = false;
+    public boolean isCheatBreakerSettings = false;
     public AbstractModule module;
     private final ModulesGuiButtonElement backButton;
     private final ModulesGuiButtonElement resetSettingsButton;
     private ModulesGuiButtonElement resetPositionButton = null;
     private final ModulesGuiButtonElement applyToAllTextButton;
     private ModulesGuiButtonElement addOneButton;
+    private int index = 0;
 
     private final Map<Object, ArrayList<AbstractModulesGuiElement>> moduleElementListMap;
     private final List<AbstractModulesGuiElement> settingElement;
@@ -50,10 +49,10 @@ public class ModuleListElement extends AbstractScrollableElement {
         this.highlightColor = -12418828;
         this.globalSettings = new GlobalSettingsElement(this, this.highlightColor, scaleFactor);
         this.moduleSetting = new ArrayList<>();
-
         for (Object module : modules) {
-            if (((AbstractModule)module).isStaffModule() && !((AbstractModule)module).isStaffModuleEnabled()) continue;
-            this.moduleSetting.add(new ModuleSettingsElement(this, this.highlightColor, (AbstractModule)module, scaleFactor));
+            if (((AbstractModule) module).isStaffModule() && !((AbstractModule) module).isStaffModuleEnabled())
+                continue;
+            this.moduleSetting.add(new ModuleSettingsElement(this, this.highlightColor, (AbstractModule) module, scaleFactor));
             if (((AbstractModule) module).getGuiAnchor() != null) {
                 this.resetPositionButton = new ModulesGuiButtonElement(CheatBreaker.getInstance().ubuntuMedium16px, null, "Reset Position", this.x + 2, this.y + 4, 14, 14, this.highlightColor, scaleFactor);
             }
@@ -63,11 +62,11 @@ public class ModuleListElement extends AbstractScrollableElement {
         this.resetSettingsButton = new ModulesGuiButtonElement(CheatBreaker.getInstance().ubuntuMedium16px, null, "Reset Settings", this.x + 2, this.y + 4, 14, 14, this.highlightColor, scaleFactor);
         this.module = null;
         this.moduleElementListMap = new HashMap<>();
-
         for (Object module : modules) {
-            if (((AbstractModule)module).isStaffModule() && !((AbstractModule)module).isStaffModuleEnabled() || module == CheatBreaker.getInstance().getModuleManager().miniMapMod) continue;
+            if (((AbstractModule) module).isStaffModule() && !((AbstractModule) module).isStaffModuleEnabled() || module == CheatBreaker.getInstance().getModuleManager().miniMapMod)
+                continue;
             ArrayList<AbstractModulesGuiElement> elements = new ArrayList<>();
-            for (Setting setting : ((AbstractModule)module).getSettingsList()) {
+            for (Setting setting : ((AbstractModule) module).getSettingsList()) {
                 switch (setting.getType()) {
                     case BOOLEAN:
                         //if (!setting.getParentValue()) break;
@@ -76,14 +75,15 @@ public class ModuleListElement extends AbstractScrollableElement {
                     case DOUBLE:
                     case INTEGER:
                     case FLOAT:
-                        if (((AbstractModule)module).isStaffModule() && setting == ((StaffMod)module).getKeybindSetting() || ((AbstractModule)module).isStaffModule() && setting == ((AbstractModule)module).scale) break;
-                        if (((AbstractModule)module).guiAnchor == null && !(module == CheatBreaker.getInstance().getModuleManager().crosshairMod) && setting == ((AbstractModule)module).scale) break;
+                        if (((AbstractModule) module).isStaffModule() && setting == ((StaffMod) module).getKeybindSetting() || ((AbstractModule) module).isStaffModule() && setting == ((AbstractModule) module).scale)
+                            break;
+                        if (((AbstractModule) module).guiAnchor == null && !(module == CheatBreaker.getInstance().getModuleManager().crosshairMod) && setting == ((AbstractModule) module).scale)
+                            break;
                         //if (!setting.getParentValue()) break;
                         if (setting.getType().equals(SettingType.INTEGER) && setting.getSettingName().toLowerCase().contains("color")) {
                             elements.add(new ColorPickerElement(setting, scaleFactor));
                             break;
                         }
-
                         if (setting.getType().equals(SettingType.INTEGER) && setting.getSettingName().endsWith("Keybind")) {
                             if (((AbstractModule)module).guiAnchor == null && !(module == CheatBreaker.getInstance().getModuleManager().crosshairMod) && setting == ((AbstractModule)module).tempHideFromHUDKeybind) break;
                             if (((AbstractModule)module).notRenderHUD && !(module == CheatBreaker.getInstance().getModuleManager().crosshairMod) && setting == ((AbstractModule)module).hideFromHUDKeybind) break;
@@ -92,51 +92,46 @@ public class ModuleListElement extends AbstractScrollableElement {
                             CheatBreaker.getInstance().getModuleManager().keybinds.put(setting, elementToAdd);
                             break;
                         }
-
                         elements.add(new NewSliderElement(setting, scaleFactor));
                         break;
                     case ARRAYLIST:
                         elements.add(new ExcludePotionsElement(setting, scaleFactor));
                         break;
                     case STRING_ARRAY:
-                        if (((AbstractModule)module).guiAnchor == null && !(module == CheatBreaker.getInstance().getModuleManager().crosshairMod) && setting == ((AbstractModule)module).guiScale) break;
+                        if (((AbstractModule) module).guiAnchor == null && !(module == CheatBreaker.getInstance().getModuleManager().crosshairMod) && setting == ((AbstractModule) module).guiScale)
+                            break;
                         elements.add(new ChoiceElement(setting, scaleFactor));
                         break;
                     case STRING:
                         if (setting.getSettingName().endsWith("String") || setting.getSettingName().contains("Background)")) {
-                            TextFieldElement elementToAdd = new TextFieldElement(setting, scaleFactor);
-                            elements.add(elementToAdd);
+                            elements.add(new TextFieldElement(setting, scaleFactor));
                             break;
                         }
 
-                        if (setting.getSettingName().startsWith("Hotkey") && (setting.isHasKeycode() || setting.isHasMouseBind())) {
-                            TextFieldElement elementToAdd = new TextFieldElement(setting, scaleFactor);
-                            elements.add(elementToAdd);
+                        if (setting.getSettingName().startsWith("Hot key") && setting.isHasKeycode()) {
+                            elements.add(new TextFieldElement(setting, scaleFactor));
                             break;
                         }
 
                         if (!setting.getSettingName().equalsIgnoreCase("label")) break;
                         elements.add(new LabelElement(setting, scaleFactor));
-                        if (!CheatBreaker.getInstance().getModuleManager().crosshairMod.crosshairPreviewLabel.getValue().equals(setting.getValue())) break;
+                        if (!CheatBreaker.getInstance().getModuleManager().crosshairMod.crosshairPreviewLabel.getValue().equals(setting.getValue()))
+                            break;
                         elements.add(new CrosshairElement(scaleFactor));
                 }
             }
-
 //            if (module == CheatBreaker.getInstance().getModuleManager().potionEffectsMod) {
 //                elements.add(new ExcludePotionsElement(CheatBreaker.getInstance().getModuleManager().potionEffectsMod.getEffects(), "Exclude Specific Effects", scaleFactor));
 //            }
-
-            if (((AbstractModule)module).isStaffModule()) {
-                elements.add(new KeybindElement(((StaffMod)module).getKeybindSetting(), scaleFactor));
-                if (module == CheatBreaker.getInstance().getModuleManager().staffModuleXray) {
-                    elements.add(new XRayOptionsElement(CheatBreaker.getInstance().getModuleManager().staffModuleXray.getBlocks(), "Blocks", scaleFactor));
+            if (((AbstractModule) module).isStaffModule()) {
+                elements.add(new KeybindElement(((StaffMod) module).getKeybindSetting(), scaleFactor));
+                if (module == CheatBreaker.getInstance().getModuleManager().xray) {
+                    elements.add(new XRayOptionsElement(CheatBreaker.getInstance().getModuleManager().xray.getBlocks(), "Blocks", scaleFactor));
                 }
             }
             this.moduleElementListMap.put(module, elements);
         }
-
         this.settingElement = new ArrayList<>();
-
         for (Setting setting : CheatBreaker.getInstance().getGlobalSettings().settingsList) {
             switch (setting.getType()) {
                 case BOOLEAN:
@@ -161,35 +156,32 @@ public class ModuleListElement extends AbstractScrollableElement {
                 case STRING:
                     if (!setting.getSettingName().equalsIgnoreCase("label")) break;
                     this.settingElement.add(new LabelElement(setting, scaleFactor));
+
             }
         }
-
         int n5 = 25;
         for (AbstractModulesGuiElement setting : this.settingElement) {
             n5 += setting.getHeight();
         }
-
         this.applyToAllTextButton = new ModulesGuiButtonElement(CheatBreaker.getInstance().playBold18px, null, "Apply to all text", this.x + n3 - 120, this.y + n5 + 4, 110, 28, -12418828, scaleFactor);
-        this.addOneButton = new ModulesGuiButtonElement(CheatBreaker.getInstance().playBold18px, null, "Add One", this.x + n3 - 120, this.y + n5 + 4, 110, 28, -13916106, scaleFactor);
+        this.addOneButton = new ModulesGuiButtonElement(CheatBreaker.getInstance().playBold18px, null, "Add Another", this.x + n3 - 120, this.y + n5 + 4, 110, 28, -13916106, scaleFactor);
     }
 
     public boolean shouldHide(Setting setting) {
         if (CheatBreaker.getInstance().getGlobalSettings().customizationLevel.getValue().equals("Simple")) {
-            if (setting.getCustomizationLevel() != null) return !setting.getCustomizationLevel().equals(CustomizationLevel.SIMPLE);
+            if (setting.getCustomizationLevel() != null)
+                return !setting.getCustomizationLevel().equals(CustomizationLevel.SIMPLE);
         }
-
         if (CheatBreaker.getInstance().getGlobalSettings().customizationLevel.getValue().equals("Medium")) {
-            if (setting.getCustomizationLevel() != null) return !setting.getCustomizationLevel().equals(CustomizationLevel.SIMPLE) && !setting.getCustomizationLevel().equals(CustomizationLevel.MEDIUM);
+            if (setting.getCustomizationLevel() != null)
+                return !setting.getCustomizationLevel().equals(CustomizationLevel.SIMPLE) && !setting.getCustomizationLevel().equals(CustomizationLevel.MEDIUM);
         }
-
         if (setting.getParent() == null) {
             return false;
         }
-
         if (setting.getParent().getValue() == null) {
             return false;
         }
-
         if (!(setting.getParent().getValue() instanceof Boolean)) {
             return false;
         }
@@ -202,15 +194,26 @@ public class ModuleListElement extends AbstractScrollableElement {
         RenderUtil.drawRoundedRect(this.x, this.y, this.x + this.width, this.y + this.height + 2, 8.0D, GlobalSettings.darkMode.getBooleanValue() ? CBTheme.darkBackgroundColor4 : CBTheme.lightBackgroundColor4);
         this.onScroll(mouseX, mouseY);
         CheatBreaker.getInstance().getModuleManager().setLastSettingScrollPos(this.scrollAmount);
-        if (this.module == null && !this.resetColor) {
-            this.scrollHeight = 72;
+        if (this.module == null && !this.isCheatBreakerSettings) {
+            //System.out.println(CheatBreaker.getInstance().getModuleManager().playerMods.size());
+            int difference = CheatBreaker.getInstance().getModuleManager().playerMods.size() - 39; // 1.8 is 39, 1.7 is 37
+            int addon = 65; // every 5 mods past the 37th, up this by 10.
+
+            for (int i = 0; i < difference; i = i + 5) {
+                if (difference > 10) {
+                    addon = (int) (addon + difference / 1.8); // it starts adding too much past 10, so we'll do this for now. ironic divider btw!
+                } else {
+                    addon = addon + 10;
+                }
+            }
+
+            this.scrollHeight = (int) (CheatBreaker.getInstance().getModuleManager().playerMods.size() * 0.50) + addon;
             if (!this.isStaffMods) {
                 this.globalSettings.setDimensions(this.x + 4, this.y + 4, this.width - 12, 18);
                 this.globalSettings.yOffset = this.scrollAmount;
                 this.globalSettings.handleDrawElement(mouseX, mouseY, partialTicks);
                 this.scrollHeight += globalSettings.getHeight();
             }
-
             for (int i = 0; i < this.moduleSetting.size(); ++i) {
                 ModuleSettingsElement moduleSettingsElement = this.moduleSetting.get(i);
                 moduleSettingsElement.setDimensions(this.x + 4, this.y + (this.isStaffMods ? 4 : 24) + i * 20, this.width - 12, 18);
@@ -218,8 +221,7 @@ public class ModuleListElement extends AbstractScrollableElement {
                 moduleSettingsElement.handleDrawElement(mouseX, mouseY, partialTicks);
                 this.scrollHeight += moduleSettingsElement.getHeight();
             }
-
-        } else if (this.resetColor && !this.isStaffMods) {
+        } else if (this.isCheatBreakerSettings && !this.isStaffMods) {
             Gui.drawRect(this.x + 32, this.y + 4, this.x + 33, this.y + Math.max(this.height, this.scrollHeight) - 4, GlobalSettings.darkMode.getBooleanValue() ? CBTheme.darkDullTextColor : CBTheme.lightDullTextColor);
             this.scrollHeight = 25;
             this.backButton.setDimensions(this.x + 2, this.y + 2, 28, 28);
@@ -249,7 +251,6 @@ public class ModuleListElement extends AbstractScrollableElement {
             this.resetSettingsButton.setDimensions(this.x + this.width - 80, this.y + 7, 70, 10);
             this.resetSettingsButton.yOffset = this.scrollAmount;
             this.resetSettingsButton.handleDrawElement(mouseX, mouseY, partialTicks);
-
             if (this.module.getGuiAnchor() != null) {
                 this.resetPositionButton.setDimensions(this.x + this.width - 150, this.y + 7, 70, 10);
                 this.resetPositionButton.yOffset = this.scrollAmount;
@@ -259,64 +260,63 @@ public class ModuleListElement extends AbstractScrollableElement {
             CheatBreaker.getInstance().getModuleManager().setCurrentModule(this.module.getName());
             CheatBreaker.getInstance().ubuntuMedium16px.drawString((this.module.getName() + " Settings").toUpperCase(), this.x + 38, (float)(this.y + 6), GlobalSettings.darkMode.getBooleanValue() ? CBTheme.darkTextColor4 : CBTheme.lightTextColor4);
             Gui.drawRect(this.x + 38, this.y + 17, this.x + this.width - 12, this.y + 18, GlobalSettings.darkMode.getBooleanValue() ? CBTheme.darkDullTextColor : CBTheme.lightDullTextColor);
-            if (module.getDescription() != null) {
-                CheatBreaker.getInstance().ubuntuMedium16px.drawString(this.module.getDescription(), this.x + 38, (float)(this.y + 19), GlobalSettings.darkMode.getBooleanValue() ? CBTheme.darkTextColor4 : CBTheme.lightTextColor4);
-                if (module.getCreators() != null) {
-                    CheatBreaker.getInstance().ubuntuMedium16px.drawString("Original Creator" + (this.module.getCreators().size() != 1 ? "s: " : ": ") + String.join(", ", this.module.getCreators()), this.x + 38, (float)(this.y + 28), GlobalSettings.darkMode.getBooleanValue() ? CBTheme.darkTextColor4 : CBTheme.lightTextColor4);
-                    Gui.drawRect(this.x + 38, this.y + 39, this.x + this.width - 12, this.y + 40, GlobalSettings.darkMode.getBooleanValue() ? CBTheme.darkDullTextColor : CBTheme.lightDullTextColor);
-                } else {
-                    Gui.drawRect(this.x + 38, this.y + 30, this.x + this.width - 12, this.y + 31, GlobalSettings.darkMode.getBooleanValue() ? CBTheme.darkDullTextColor : CBTheme.lightDullTextColor);
-                }
-            }
-
+            this.index = 0;
+            if (this.module.getDescription() != null) this.stringLines(this.module.getDescription());
+            if (this.module.getCreators() != null) this.stringLines("Original creator" + (this.module.getCreators().size() != 1 ? "s: " : ": ") + String.join(", ", this.module.getCreators()));
+            if (this.module.getAliases() != null) this.stringLines("Also known as: " + String.join(", ", this.module.getAliases()));
+            if (this.index != 0) Gui.drawRect(this.x + 38, this.y + 21 + (index * 9), this.x + this.width - 12, this.y + 22 + (index * 9), GlobalSettings.darkMode.getBooleanValue() ? CBTheme.darkDullTextColor : CBTheme.lightDullTextColor);
             if (this.module == CheatBreaker.getInstance().getModuleManager().miniMapMod) {
                 try {
-                    String keybind = Keyboard.getKeyName(CheatBreaker.getInstance().getModuleManager().miniMapMod.getVoxelMap().getMapOptions().keyBindMenu.getKeyCode());
-                    CheatBreaker.getInstance().ubuntuMedium16px.drawString(("PRESS '" + keybind + "' INGAME FOR ZAN'S MINIMAP OPTIONS.").toUpperCase(), this.x + 38, (float)(this.y + 44), GlobalSettings.darkMode.getBooleanValue() ? CBTheme.darkTextColor2 : CBTheme.lightTextColor2);
+//                    String keybind = Keyboard.getKeyName(CheatBreaker.getInstance().getModuleManager().miniMapMod.getVoxelMap().getMapOptions().keyBindMenu.getKeyCode());
+//                    CheatBreaker.getInstance().ubuntuMedium16px.drawString(("PRESS '" + keybind + "' INGAME FOR ZAN'S MINIMAP OPTIONS.").toUpperCase(), this.x + 38, (float)(this.y + 44), GlobalSettings.darkMode.getBooleanValue() ? CBTheme.darkTextColor2 : CBTheme.lightTextColor2);
                 } catch (Exception exception) {
                     CheatBreaker.getInstance().ubuntuMedium16px.drawString("PRESS 'M' INGAME FOR ZAN'S MINIMAP OPTIONS.", this.x + 38, (float)(this.y + 44), GlobalSettings.darkMode.getBooleanValue() ? CBTheme.darkTextColor2 : CBTheme.lightTextColor2);
                 }
+
                 this.onGuiDraw(mouseX, mouseY);
                 return;
             }
 
-            if (this.module.getSettingsList().isEmpty()) {
-                CheatBreaker.getInstance().ubuntuMedium16px.drawString((this.module.getName().toUpperCase() + " DOES NOT HAVE ANY OPTIONS.").toUpperCase(), this.x + 38, (float)(this.y + (this.module.getDescription() == null ? 22 : this.module.getCreators() == null ? 35 : 44)), GlobalSettings.darkMode.getBooleanValue() ? CBTheme.darkTextColor2 : CBTheme.lightTextColor2);
+            ModuleAutoText autoText = CheatBreaker.getInstance().getModuleManager().autoTextMod;
+            if (this.module == autoText && !Minecraft.getMinecraft().isIntegratedServerRunning() && Minecraft.getMinecraft().getCurrentServerData() != null) {
+                if (Minecraft.getMinecraft().getCurrentServerData().serverIP.contains("hypixel")) {
+                    CheatBreaker.getInstance().ubuntuMedium16px.drawString(EnumChatFormatting.RED + this.module.getName() + " is currently restricted, the allowed commands are:", this.x + 48, (float) (this.y + 26 + (index * 9)), GlobalSettings.darkMode.getBooleanValue() ? CBTheme.darkTextColor2 : CBTheme.lightTextColor2);
+                    CheatBreaker.getInstance().ubuntuMedium16px.drawString(EnumChatFormatting.RED + Arrays.toString(autoText.hypixelCommands).replaceAll("\\[", "").replaceAll("]", ""), this.x + 48, (float) (this.y + 36 + (index * 9)), GlobalSettings.darkMode.getBooleanValue() ? CBTheme.darkTextColor2 : CBTheme.lightTextColor2);
+                    index += 3;
+                }
             }
 
+            if (this.module.getSettingsList().isEmpty()) {
+                CheatBreaker.getInstance().ubuntuMedium16px.drawString((this.module.getName().toUpperCase() + " DOES NOT HAVE ANY OPTIONS.").toUpperCase(), this.x + 38, (float) (this.y + 26 + (index * 9)), GlobalSettings.darkMode.getBooleanValue() ? CBTheme.darkTextColor2 : CBTheme.lightTextColor2);
+            }
             int n4 = 0;
             for (AbstractModulesGuiElement setting : this.moduleElementListMap.get(this.module)) {
                 if (setting.setting != null && setting.shouldHide(setting.setting)) continue;
-                setting.setDimensions(this.x + 38, this.y + (this.module.getDescription() == null ? 22 : this.module.getCreators() == null ? 35 : 44) + n4, this.width - 40, setting.getHeight());
+                setting.setDimensions(this.x + 38, this.y + 26 + (index * 9) + n4, this.width - 40, setting.getHeight());
                 setting.yOffset = this.scrollAmount;
                 setting.handleDrawElement(mouseX, mouseY, partialTicks);
                 n4 += 2 + setting.getHeight();
                 this.scrollHeight += 2 + setting.getHeight();
             }
-
-            if (module.getDescription() != null) {
-                if (module.getCreators() != null) this.scrollHeight += 13;
-            } else {
-                this.scrollHeight -= 13;
-            }
-
-//            if (this.module == CheatBreaker.getInstance().getModuleManager().autoHotKeyText) {
-//                this.addOneButton.yOffset = this.scrollAmount;
-//                this.addOneButton.setDimensions(this.x + this.width - 118, this.y + this.scrollHeight, 100, 20);
-//                this.addOneButton.handleDrawElement(mouseX, mouseY, partialTicks);
-//                this.scrollHeight += 24;
-//            }
-
+            this.scrollHeight += (9 * index) - 9;
         }
+
+        if (this.module == CheatBreaker.getInstance().getModuleManager().autoTextMod) {
+            this.addOneButton.yOffset = this.scrollAmount;
+            this.addOneButton.setDimensions(this.x + this.width - 118, this.y + this.scrollHeight, 100, 20);
+            this.addOneButton.handleDrawElement(mouseX, mouseY, partialTicks);
+            this.scrollHeight += 24;
+        }
+
         this.onGuiDraw(mouseX, mouseY);
     }
 
     @Override
     public void handleMouseClick(int mouseX, int mouseY, int button) {
-        if (this.module == null && !this.resetColor) {
+        if (this.module == null && !this.isCheatBreakerSettings) {
             if (this.globalSettings.isMouseInside(mouseX, mouseY) && !this.isStaffMods) {
-                Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.func_147674_a(new ResourceLocation("gui.button.press"), 1.0f));
-                this.resetColor = true;
+                Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("gui.button.press"), 1.0f));
+                this.isCheatBreakerSettings = true;
                 this.scrollAmount = 0;
                 this.startPosition = 0.0;
                 this.yOffset = 0;
@@ -333,53 +333,48 @@ public class ModuleListElement extends AbstractScrollableElement {
         } else if (!this.backButton.isMouseInside(mouseX, mouseY)) {
             if (this.resetSettingsButton.isMouseInside(mouseX, mouseY)) {
                 ModuleManager moduleManager = CheatBreaker.getInstance().getModuleManager();
-                Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.func_147674_a(new ResourceLocation("gui.button.press"), 1.0f));
+                Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("gui.button.press"), 1.0f));
+
+                /*
+                    Special Auto Text specifications for resetting.
+                */
+                if (this.module == CheatBreaker.getInstance().getModuleManager().autoTextMod) {
+                    // bye bye auto text settings
+                    this.module.getSettingsList().removeIf(setting -> setting.getSettingName().toLowerCase().startsWith("hot key"));
+                    ((ModuleAutoText)this.module).amount = 1;
+                    CheatBreaker.getInstance().getUiManager().sendBackToModList(moduleManager.currentModule);
+                    return;
+                }
 
                 for (int i = 0; i < this.module.getSettingsList().size(); ++i) {
                     try {
                         Setting modSetting = this.module.getSettingsList().get(i);
 
-                        // Reset keybind text and value async
-                        for (Setting setting : moduleManager.keybinds.keySet()) {
-                            if (setting.getSettingName().endsWith("Keybind")) {
-                                for (KeybindElement element : moduleManager.keybinds.values()) {
-                                    setting.setHasMouseBind(false);
-                                    setting.setValue(0);
-                                    element.getButton().optionString = "None";
-                                }
-                            }
-                        }
-
                         if (this.module.getSettingsList().get(i).isHasKeycode() || this.module.getSettingsList().get(i).isHasMouseBind()) {
                             modSetting.setHasMouseBind(false);
                             modSetting.setKeyCode(0);
                         }
-                        
+
                         modSetting.updateSettingValue(this.module.getDefaultSettingsValues().get(i), false);
                     } catch (Exception exception) {
                         exception.printStackTrace();
                     }
                 }
 
-                moduleManager.keystrokesMod.updateKeyElements();
-                HudLayoutEditorGui hudEditor = new HudLayoutEditorGui();
-                Minecraft.getMinecraft().displayGuiScreen(hudEditor);
-                (hudEditor).currentScrollableElement = (hudEditor).modulesElement;
-                ModulePreviewElement.instance.sendBackToModuleList(moduleManager.getModByName(moduleManager.currentModule));
+                CheatBreaker.getInstance().getUiManager().sendBackToModList(moduleManager.currentModule);
             }
 
-            try {
-                if (this.resetPositionButton.isMouseInside(mouseX, mouseY)) {
-                    Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.func_147674_a(new ResourceLocation("gui.button.press"), 1.0f));
-                    this.module.setTranslations(this.module.defaultXTranslation, this.module.defaultYTranslation);
-                    this.module.setAnchor(this.module.getDefaultGuiAnchor());
-                }
-            } catch (NullPointerException ignored) { }
+            if (this.resetPositionButton.isMouseInside(mouseX, mouseY)) {
+                Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("gui.button.press"), 1.0f));
+                this.module.setTranslations(this.module.defaultXTranslation, this.module.defaultYTranslation);
+                this.module.setAnchor(this.module.getDefaultGuiAnchor());
+            }
 
-//            if (this.addOneButton.isMouseInside(mouseX, mouseY) && this.module == CheatBreaker.getInstance().getModuleManager().autoHotKeyText) {
-//                CheatBreaker.getInstance().getModuleManager().autoHotKeyText.addOne();
-//                Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.func_147674_a(new ResourceLocation("gui.button.press"), 1.0f));
-//            }
+            if (this.addOneButton.isMouseInside(mouseX, mouseY) && this.module == CheatBreaker.getInstance().getModuleManager().autoTextMod) {
+                CheatBreaker.getInstance().getModuleManager().autoTextMod.addOne();
+                Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("gui.button.press"), 1.0f));
+                CheatBreaker.getInstance().getUiManager().sendBackToModList(CheatBreaker.getInstance().getModuleManager().currentModule);
+            }
 
             if (this.module != null && this.moduleElementListMap.containsKey(this.module)) {
                 for (AbstractModulesGuiElement abstractModulesGuiElement : this.moduleElementListMap.get(this.module)) {
@@ -388,7 +383,7 @@ public class ModuleListElement extends AbstractScrollableElement {
                     }
                     abstractModulesGuiElement.handleMouseClick(mouseX, mouseY, button);
                 }
-            } else if (this.resetColor) {
+            } else if (this.isCheatBreakerSettings) {
                 if (this.applyToAllTextButton.isMouseInside(mouseX, mouseY)) {
                     for (AbstractModule module : CheatBreaker.getInstance().getModuleManager().playerMods) {
                         for (Setting setting : module.getSettingsList()) {
@@ -396,7 +391,7 @@ public class ModuleListElement extends AbstractScrollableElement {
                                 if (setting.getSettingName().toLowerCase().contains("background")) {
                                     continue;
                                 }
-                                Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.func_147674_a(new ResourceLocation("gui.button.press"), 1.0f));
+                                Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("gui.button.press"), 1.0f));
                                 setting.setValue(CheatBreaker.getInstance().getGlobalSettings().defaultColor.getColorValue());
                             }
                         }
@@ -411,20 +406,20 @@ public class ModuleListElement extends AbstractScrollableElement {
                 }
             }
         } else {
-            Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.func_147674_a(new ResourceLocation("gui.button.press"), 1.0f));
+            Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("gui.button.press"), 1.0f));
             this.module = null;
-            this.resetColor = false;
+            this.isCheatBreakerSettings = false;
             if (this.scrollableElement != null) {
                 HudLayoutEditorGui.instance.currentScrollableElement = this.scrollableElement;
             }
         }
         double d = this.height - 10;
         double d2 = this.scrollHeight;
-        double d3 = d / d2 * (double)100;
-        double d4 = d / (double)100 * d3;
-        double d5 = (double)this.scrollAmount / 100.0 * d3;
-        boolean bl4 = (float)mouseX > (float)(this.x + this.width - 9) * this.scale && (float)mouseX < (float)(this.x + this.width - 3) * this.scale && (double)mouseY > ((double)(this.y + 11) - d5) * (double)this.scale && (double)mouseY < ((double)(this.y + 8) + d4 - d5) * (double)this.scale;
-        boolean bl3 = (float)mouseX > (float)(this.x + this.width - 9) * this.scale && (float)mouseX < (float)(this.x + this.width - 3) * this.scale && (float)mouseY > (float)(this.y + 11) * this.scale && (double)mouseY < ((double)(this.y + 6) + d - (double)3) * (double)this.scale;
+        double d3 = d / d2 * (double) 100;
+        double d4 = d / (double) 100 * d3;
+        double d5 = (double) this.scrollAmount / 100.0 * d3;
+        boolean bl4 = (float) mouseX > (float) (this.x + this.width - 9) * this.scale && (float) mouseX < (float) (this.x + this.width - 3) * this.scale && (double) mouseY > ((double) (this.y + 11) - d5) * (double) this.scale && (double) mouseY < ((double) (this.y + 8) + d4 - d5) * (double) this.scale;
+        boolean bl3 = (float) mouseX > (float) (this.x + this.width - 9) * this.scale && (float) mouseX < (float) (this.x + this.width - 3) * this.scale && (float) mouseY > (float) (this.y + 11) * this.scale && (double) mouseY < ((double) (this.y + 6) + d - (double) 3) * (double) this.scale;
         if (button == 0 && bl3 || bl4) {
             this.hovering = true;
         }
@@ -435,9 +430,16 @@ public class ModuleListElement extends AbstractScrollableElement {
         return !module.getSettingsList().isEmpty() || module.getName().contains("Zans");
     }
 
+    private void stringLines(String string) {
+        for (String line : WordWrap.from(string).maxWidth(86).insertHyphens(false).wrap().split("\n")) {
+            CheatBreaker.getInstance().ubuntuMedium16px.drawString(line, this.x + 38, (float) (this.y + 19) + (this.index * 9), GlobalSettings.darkMode.getBooleanValue() ? CBTheme.darkDullTextColor2 : CBTheme.lightDullTextColor2);
+            this.index++;
+        }
+    }
+
     @Override
     public void handleModuleMouseClick(AbstractModule module) {
-        Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.func_147674_a(new ResourceLocation("gui.button.press"), 1.0f));
+        Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("gui.button.press"), 1.0f));
         this.scrollAmount = 0;
         this.startPosition = 0.0;
         this.yOffset = 0;

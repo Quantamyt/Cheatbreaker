@@ -2,64 +2,80 @@ package net.minecraft.util;
 
 import org.apache.commons.lang3.Validate;
 
-public class ResourceLocation {
-    private final String resourceDomain;
-    private final String resourcePath;
+public class ResourceLocation
+{
+    protected final String resourceDomain;
+    protected final String resourcePath;
 
-
-    public ResourceLocation(String p_i1292_1_, String p_i1292_2_) {
-        Validate.notNull(p_i1292_2_);
-
-        if (p_i1292_1_ != null && p_i1292_1_.length() != 0) {
-            this.resourceDomain = p_i1292_1_;
-        } else {
-            this.resourceDomain = "minecraft";
-        }
-
-        this.resourcePath = p_i1292_2_;
+    protected ResourceLocation(int p_i45928_1_, String... resourceName)
+    {
+        this.resourceDomain = org.apache.commons.lang3.StringUtils.isEmpty(resourceName[0]) ? "minecraft" : resourceName[0].toLowerCase();
+        this.resourcePath = resourceName[1];
+        Validate.notNull(this.resourcePath);
     }
 
-    public ResourceLocation(String p_i1293_1_) {
-        String var2 = "minecraft";
-        String var3 = p_i1293_1_;
-        int var4 = p_i1293_1_.indexOf(58);
+    public ResourceLocation(String resourceName)
+    {
+        this(0, splitObjectName(resourceName));
+    }
 
-        if (var4 >= 0) {
-            var3 = p_i1293_1_.substring(var4 + 1);
+    public ResourceLocation(String resourceDomainIn, String resourcePathIn)
+    {
+        this(0, new String[] {resourceDomainIn, resourcePathIn});
+    }
 
-            if (var4 > 1) {
-                var2 = p_i1293_1_.substring(0, var4);
+    protected static String[] splitObjectName(String toSplit)
+    {
+        String[] astring = new String[] {null, toSplit};
+        int i = toSplit.indexOf(58);
+
+        if (i >= 0)
+        {
+            astring[1] = toSplit.substring(i + 1, toSplit.length());
+
+            if (i > 1)
+            {
+                astring[0] = toSplit.substring(0, i);
             }
         }
 
-        this.resourceDomain = var2.toLowerCase();
-        this.resourcePath = var3;
+        return astring;
     }
 
-    public String getResourcePath() {
+    public String getResourcePath()
+    {
         return this.resourcePath;
     }
 
-    public String getResourceDomain() {
+    public String getResourceDomain()
+    {
         return this.resourceDomain;
     }
 
-    public String toString() {
-        return this.resourceDomain + ":" + this.resourcePath;
+    public String toString()
+    {
+        return this.resourceDomain + ':' + this.resourcePath;
     }
 
-    public boolean equals(Object p_equals_1_) {
-        if (this == p_equals_1_) {
+    public boolean equals(Object p_equals_1_)
+    {
+        if (this == p_equals_1_)
+        {
             return true;
-        } else if (!(p_equals_1_ instanceof ResourceLocation)) {
+        }
+        else if (!(p_equals_1_ instanceof ResourceLocation))
+        {
             return false;
-        } else {
-            ResourceLocation var2 = (ResourceLocation)p_equals_1_;
-            return this.resourceDomain.equals(var2.resourceDomain) && this.resourcePath.equals(var2.resourcePath);
+        }
+        else
+        {
+            ResourceLocation resourcelocation = (ResourceLocation)p_equals_1_;
+            return this.resourceDomain.equals(resourcelocation.resourceDomain) && this.resourcePath.equals(resourcelocation.resourcePath);
         }
     }
 
-    public int hashCode() {
+    public int hashCode()
+    {
         return 31 * this.resourceDomain.hashCode() + this.resourcePath.hashCode();
     }
 }

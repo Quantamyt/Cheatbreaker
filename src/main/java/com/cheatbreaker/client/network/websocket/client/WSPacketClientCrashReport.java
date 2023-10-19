@@ -5,6 +5,12 @@ import com.cheatbreaker.client.network.websocket.WSPacket;
 import lombok.AllArgsConstructor;
 import net.minecraft.network.PacketBuffer;
 
+/**
+ * @WSPacket WSPacketClientCrashReport
+ * @see WSPacket
+ *
+ * This packet sends a crash report to the server, it also can take in one.
+ */
 @AllArgsConstructor
 public class WSPacketClientCrashReport extends WSPacket {
     private String crashId;
@@ -15,11 +21,11 @@ public class WSPacketClientCrashReport extends WSPacket {
 
     @Override
     public void write(PacketBuffer buf) {
-        buf.writeStringToBuffer(this.crashId);
-        buf.writeStringToBuffer(this.version);
-        buf.writeStringToBuffer(this.osInfo);
-        buf.writeStringToBuffer(this.memoryInfo);
-        buf.writeStringToBuffer(this.stackTrace);
+        buf.writeString(this.crashId);
+        buf.writeString(this.version);
+        buf.writeString(this.osInfo);
+        buf.writeString(this.memoryInfo);
+        buf.writeString(this.stackTrace);
     }
 
     @Override

@@ -98,12 +98,13 @@ public class GuiResourcePacksSelected extends GuiResourcePacksList {
         for (File file : Objects.requireNonNull(this.mc.getResourcePackRepository().getDirResourcepacks().listFiles())) {
             if (PackUtils.isResourcePack(file)) {
                 Optional<ResourcePackRepository.Entry> newEntry;
-                if (!file.getName().equals(entry.getResourcePackName()) || !(newEntry = PackUtils.createEntry(file)).isPresent() || !newEntry.get().equals(entry)) continue;
+                if (!file.getName().equals(entry.getResourcePackName()) || !(newEntry = PackUtils.createEntry(file)).isPresent() || !newEntry.get().equals(entry))
+                    continue;
                 if (this.parentScreen.isSearching()) {
-                    ((GuiResourcePacksList)this).parentScreen.addSearchedPack(entry);
+                    ((GuiResourcePacksList) this).parentScreen.addSearchedPack(entry);
                     continue;
                 }
-                ((GuiResourcePacksList)this).parentScreen.addAvailableEntry(entry);
+                ((GuiResourcePacksList) this).parentScreen.addAvailableEntry(entry);
                 continue;
             }
             if (!PackUtils.isResourcePackDirectory(file)) continue;
@@ -115,7 +116,8 @@ public class GuiResourcePacksSelected extends GuiResourcePacksList {
         for (File file : Objects.requireNonNull(directory.listFiles())) {
             if (PackUtils.isResourcePack(file)) {
                 Optional<ResourcePackRepository.Entry> newEntry;
-                if (!file.getName().equals(entry.getResourcePackName()) || !(newEntry = PackUtils.createEntry(file)).isPresent() || !newEntry.get().equals(entry)) continue;
+                if (!file.getName().equals(entry.getResourcePackName()) || !(newEntry = PackUtils.createEntry(file)).isPresent() || !newEntry.get().equals(entry))
+                    continue;
                 for (ResourcePacksFolder packFolder : this.parentScreen.getPackFolders()) {
                     this.refreshEntry(packFolder, directory, entry);
                 }
@@ -130,7 +132,7 @@ public class GuiResourcePacksSelected extends GuiResourcePacksList {
         if (packFolder.getName().equals(directory.getName())) {
             if (this.parentScreen.isSearching()) {
                 if (packFolder.getEntries().contains(entry)) {
-                    ((GuiResourcePacksList)this).parentScreen.addSearchedPack(entry);
+                    ((GuiResourcePacksList) this).parentScreen.addSearchedPack(entry);
                 }
             } else {
                 if (!packFolder.getEntries().contains(entry)) {

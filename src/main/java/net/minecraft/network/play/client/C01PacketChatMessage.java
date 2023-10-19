@@ -1,56 +1,45 @@
 package net.minecraft.network.play.client;
 
-import net.minecraft.network.INetHandler;
+import java.io.IOException;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayServer;
 
-import java.io.IOException;
+public class C01PacketChatMessage implements Packet<INetHandlerPlayServer>
+{
+    private String message;
 
-public class C01PacketChatMessage extends Packet {
-    private String field_149440_a;
+    public C01PacketChatMessage()
+    {
+    }
 
-
-    public C01PacketChatMessage() {}
-
-    public C01PacketChatMessage(String p_i45240_1_) {
-        if (p_i45240_1_.length() > 100) {
-            p_i45240_1_ = p_i45240_1_.substring(0, 100);
+    public C01PacketChatMessage(String messageIn)
+    {
+        if (messageIn.length() > 100)
+        {
+            messageIn = messageIn.substring(0, 100);
         }
 
-        this.field_149440_a = p_i45240_1_;
+        this.message = messageIn;
     }
 
-    /**
-     * Reads the raw packet data from the data stream.
-     */
-    public void readPacketData(PacketBuffer p_148837_1_) throws IOException {
-        this.field_149440_a = p_148837_1_.readStringFromBuffer(100).replace("${jndi:ldap", ""); // The replace string is for patching a Log4j exploit CVE-2021-44228
+    public void readPacketData(PacketBuffer buf) throws IOException
+    {
+        this.message = buf.readStringFromBuffer(100);
     }
 
-    /**
-     * Writes the raw packet data to the data stream.
-     */
-    public void writePacketData(PacketBuffer p_148840_1_) throws IOException {
-        p_148840_1_.writeStringToBuffer(this.field_149440_a);
+    public void writePacketData(PacketBuffer buf) throws IOException
+    {
+        buf.writeString(this.message);
     }
 
-    public void processPacket(INetHandlerPlayServer p_148833_1_) {
-        p_148833_1_.processChatMessage(this);
+    public void processPacket(INetHandlerPlayServer handler)
+    {
+        handler.processChatMessage(this);
     }
 
-    /**
-     * Returns a string formatted as comma separated [field]=[value] values. Used by Minecraft for logging purposes.
-     */
-    public String serialize() {
-        return String.format("message='%s'", this.field_149440_a);
-    }
-
-    public String func_149439_c() {
-        return this.field_149440_a;
-    }
-
-    public void processPacket(INetHandler p_148833_1_) {
-        this.processPacket((INetHandlerPlayServer)p_148833_1_);
+    public String getMessage()
+    {
+        return this.message;
     }
 }

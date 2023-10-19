@@ -1,68 +1,87 @@
 package net.minecraft.entity.ai;
 
-import java.util.ArrayList;
-import java.util.Iterator;
+import com.google.common.collect.Lists;
 import java.util.List;
 import net.minecraft.entity.EntityCreature;
 import net.minecraft.pathfinding.PathEntity;
+import net.minecraft.pathfinding.PathNavigateGround;
+import net.minecraft.util.BlockPos;
 import net.minecraft.util.MathHelper;
 import net.minecraft.util.Vec3;
 import net.minecraft.village.Village;
 import net.minecraft.village.VillageDoorInfo;
 
-public class EntityAIMoveThroughVillage extends EntityAIBase {
-    private final EntityCreature theEntity;
-    private final double movementSpeed;
-
-    /** The PathNavigate of our entity. */
+public class EntityAIMoveThroughVillage extends EntityAIBase
+{
+    private EntityCreature theEntity;
+    private double movementSpeed;
     private PathEntity entityPathNavigate;
     private VillageDoorInfo doorInfo;
-    private final boolean isNocturnal;
-    private final List doorList = new ArrayList();
+    private boolean isNocturnal;
+    private List<VillageDoorInfo> doorList = Lists.<VillageDoorInfo>newArrayList();
 
-
-    public EntityAIMoveThroughVillage(EntityCreature p_i1638_1_, double p_i1638_2_, boolean p_i1638_4_) {
-        this.theEntity = p_i1638_1_;
-        this.movementSpeed = p_i1638_2_;
-        this.isNocturnal = p_i1638_4_;
+    public EntityAIMoveThroughVillage(EntityCreature theEntityIn, double movementSpeedIn, boolean isNocturnalIn)
+    {
+        this.theEntity = theEntityIn;
+        this.movementSpeed = movementSpeedIn;
+        this.isNocturnal = isNocturnalIn;
         this.setMutexBits(1);
+
+        if (!(theEntityIn.getNavigator() instanceof PathNavigateGround))
+        {
+            throw new IllegalArgumentException("Unsupported mob for MoveThroughVillageGoal");
+        }
     }
 
-    /**
-     * Returns whether the EntityAIBase should begin execution.
-     */
-    public boolean shouldExecute() {
-        this.func_75414_f();
+    public boolean shouldExecute()
+    {
+        this.resizeDoorList();
 
-        if (this.isNocturnal && this.theEntity.worldObj.isDaytime()) {
+        if (this.isNocturnal && this.theEntity.worldObj.isDaytime())
+        {
             return false;
-        } else {
-            Village var1 = this.theEntity.worldObj.villageCollectionObj.findNearestVillage(MathHelper.floor_double(this.theEntity.posX), MathHelper.floor_double(this.theEntity.posY), MathHelper.floor_double(this.theEntity.posZ), 0);
+        }
+        else
+        {
+            Village village = this.theEntity.worldObj.getVillageCollection().getNearestVillage(new BlockPos(this.theEntity), 0);
 
-            if (var1 == null) {
+            if (village == null)
+            {
                 return false;
-            } else {
-                this.doorInfo = this.func_75412_a(var1);
+            }
+            else
+            {
+                this.doorInfo = this.findNearestDoor(village);
 
-                if (this.doorInfo == null) {
+                if (this.doorInfo == null)
+                {
                     return false;
-                } else {
-                    boolean var2 = this.theEntity.getNavigator().getCanBreakDoors();
-                    this.theEntity.getNavigator().setBreakDoors(false);
-                    this.entityPathNavigate = this.theEntity.getNavigator().getPathToXYZ(this.doorInfo.posX, this.doorInfo.posY, this.doorInfo.posZ);
-                    this.theEntity.getNavigator().setBreakDoors(var2);
+                }
+                else
+                {
+                    PathNavigateGround pathnavigateground = (PathNavigateGround)this.theEntity.getNavigator();
+                    boolean flag = pathnavigateground.getEnterDoors();
+                    pathnavigateground.setBreakDoors(false);
+                    this.entityPathNavigate = pathnavigateground.getPathToPos(this.doorInfo.getDoorBlockPos());
+                    pathnavigateground.setBreakDoors(flag);
 
-                    if (this.entityPathNavigate != null) {
+                    if (this.entityPathNavigate != null)
+                    {
                         return true;
-                    } else {
-                        Vec3 var3 = RandomPositionGenerator.findRandomTargetBlockTowards(this.theEntity, 10, 7, Vec3.createVectorHelper(this.doorInfo.posX, this.doorInfo.posY, this.doorInfo.posZ));
+                    }
+                    else
+                    {
+                        Vec3 vec3 = RandomPositionGenerator.findRandomTargetBlockTowards(this.theEntity, 10, 7, new Vec3((double)this.doorInfo.getDoorBlockPos().getX(), (double)this.doorInfo.getDoorBlockPos().getY(), (double)this.doorInfo.getDoorBlockPos().getZ()));
 
-                        if (var3 == null) {
+                        if (vec3 == null)
+                        {
                             return false;
-                        } else {
-                            this.theEntity.getNavigator().setBreakDoors(false);
-                            this.entityPathNavigate = this.theEntity.getNavigator().getPathToXYZ(var3.xCoord, var3.yCoord, var3.zCoord);
-                            this.theEntity.getNavigator().setBreakDoors(var2);
+                        }
+                        else
+                        {
+                            pathnavigateground.setBreakDoors(false);
+                            this.entityPathNavigate = this.theEntity.getNavigator().getPathToXYZ(vec3.xCoord, vec3.yCoord, vec3.zCoord);
+                            pathnavigateground.setBreakDoors(flag);
                             return this.entityPathNavigate != null;
                         }
                     }
@@ -71,71 +90,68 @@ public class EntityAIMoveThroughVillage extends EntityAIBase {
         }
     }
 
-    /**
-     * Returns whether an in-progress EntityAIBase should continue executing
-     */
-    public boolean continueExecuting() {
-        if (this.theEntity.getNavigator().noPath()) {
+    public boolean continueExecuting()
+    {
+        if (this.theEntity.getNavigator().noPath())
+        {
             return false;
-        } else {
-            float var1 = this.theEntity.width + 4.0F;
-            return this.theEntity.getDistanceSq(this.doorInfo.posX, this.doorInfo.posY, this.doorInfo.posZ) > (double)(var1 * var1);
+        }
+        else
+        {
+            float f = this.theEntity.width + 4.0F;
+            return this.theEntity.getDistanceSq(this.doorInfo.getDoorBlockPos()) > (double)(f * f);
         }
     }
 
-    /**
-     * Execute a one shot task or start executing a continuous task
-     */
-    public void startExecuting() {
+    public void startExecuting()
+    {
         this.theEntity.getNavigator().setPath(this.entityPathNavigate, this.movementSpeed);
     }
 
-    /**
-     * Resets the task
-     */
-    public void resetTask() {
-        if (this.theEntity.getNavigator().noPath() || this.theEntity.getDistanceSq(this.doorInfo.posX, this.doorInfo.posY, this.doorInfo.posZ) < 16.0D) {
+    public void resetTask()
+    {
+        if (this.theEntity.getNavigator().noPath() || this.theEntity.getDistanceSq(this.doorInfo.getDoorBlockPos()) < 16.0D)
+        {
             this.doorList.add(this.doorInfo);
         }
     }
 
-    private VillageDoorInfo func_75412_a(Village p_75412_1_) {
-        VillageDoorInfo var2 = null;
-        int var3 = Integer.MAX_VALUE;
-        List var4 = p_75412_1_.getVillageDoorInfoList();
-        Iterator var5 = var4.iterator();
+    private VillageDoorInfo findNearestDoor(Village villageIn)
+    {
+        VillageDoorInfo villagedoorinfo = null;
+        int i = Integer.MAX_VALUE;
 
-        while (var5.hasNext()) {
-            VillageDoorInfo var6 = (VillageDoorInfo)var5.next();
-            int var7 = var6.getDistanceSquared(MathHelper.floor_double(this.theEntity.posX), MathHelper.floor_double(this.theEntity.posY), MathHelper.floor_double(this.theEntity.posZ));
+        for (VillageDoorInfo villagedoorinfo1 : villageIn.getVillageDoorInfoList())
+        {
+            int j = villagedoorinfo1.getDistanceSquared(MathHelper.floor_double(this.theEntity.posX), MathHelper.floor_double(this.theEntity.posY), MathHelper.floor_double(this.theEntity.posZ));
 
-            if (var7 < var3 && !this.func_75413_a(var6)) {
-                var2 = var6;
-                var3 = var7;
+            if (j < i && !this.doesDoorListContain(villagedoorinfo1))
+            {
+                villagedoorinfo = villagedoorinfo1;
+                i = j;
             }
         }
 
-        return var2;
+        return villagedoorinfo;
     }
 
-    private boolean func_75413_a(VillageDoorInfo p_75413_1_) {
-        Iterator var2 = this.doorList.iterator();
-        VillageDoorInfo var3;
-
-        do {
-            if (!var2.hasNext()) {
-                return false;
+    private boolean doesDoorListContain(VillageDoorInfo doorInfoIn)
+    {
+        for (VillageDoorInfo villagedoorinfo : this.doorList)
+        {
+            if (doorInfoIn.getDoorBlockPos().equals(villagedoorinfo.getDoorBlockPos()))
+            {
+                return true;
             }
-
-            var3 = (VillageDoorInfo)var2.next();
         }
-        while (p_75413_1_.posX != var3.posX || p_75413_1_.posY != var3.posY || p_75413_1_.posZ != var3.posZ);
 
-        return true;
+        return false;
     }
 
-    private void func_75414_f() {
-        if (this.doorList.size() > 15) {
+    private void resizeDoorList()
+    {
+        if (this.doorList.size() > 15)
+        {
             this.doorList.remove(0);
         }
     }

@@ -19,7 +19,7 @@ import javax.management.Notification;
 import java.util.Set;
 
 public class KeybindElement extends AbstractModulesGuiElement {
-//    private final Setting setting;
+    //    private final Setting setting;
     @Getter private final ModulesGuiButtonElement button;
     private boolean using = false;
 
@@ -27,7 +27,7 @@ public class KeybindElement extends AbstractModulesGuiElement {
         super(scale);
         this.setting = setting;
         this.height = 15;
-        this.button = new ModulesGuiButtonElement(CheatBreaker.getInstance().playBold18px, null, setting.isHasMouseBind() ? "Button " + (setting.getIntegerValue() + 1) : Keyboard.getKeyName(setting.getIntegerValue()), this.x + this.width - 100, this.y, 96, 18, -9442858, scale);
+        this.button = new ModulesGuiButtonElement(CheatBreaker.getInstance().playBold18px, null, setting.isHasMouseBind() ? "Button " + (setting.getIntegerValue() + 1) : Keyboard.getKeyName(setting.getIntegerValue()), this.x + this.width - 100, this.y, 96, 18, -9442858, scale, false);
     }
 
     @Override
@@ -35,7 +35,7 @@ public class KeybindElement extends AbstractModulesGuiElement {
         CheatBreaker.getInstance().ubuntuMedium16px.drawString(this.setting.getSettingName().toUpperCase(), this.x + 10, (float)(this.y + 4), GlobalSettings.darkMode.getBooleanValue() ? CBTheme.darkTextColor2 : CBTheme.lightTextColor2);
 
         if (this.using && Keyboard.getEventKeyState()) {
-            Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.func_147674_a(new ResourceLocation("gui.button.press"), 1.0f));
+            Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("gui.button.press"), 1.0f));
 
             if (Keyboard.getKeyName(Keyboard.getEventKey()).equalsIgnoreCase("Back") || CheatBreaker.getInstance().getModuleManager().isBoundToAnother(this.setting, Keyboard.getEventKey())) {
                 this.setting.setValue(0);
@@ -75,7 +75,7 @@ public class KeybindElement extends AbstractModulesGuiElement {
     @Override
     public void handleMouseClick(int mouseX, int mouseY, int button) {
         if (this.button.isMouseInside(mouseX, mouseY)) {
-            Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.func_147674_a(new ResourceLocation("gui.button.press"), 1.0f));
+            Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("gui.button.press"), 1.0f));
             this.using = true;
             this.button.optionString = "<PRESS ANY KEY>";
         }

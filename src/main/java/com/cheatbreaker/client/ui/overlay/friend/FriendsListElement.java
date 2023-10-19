@@ -7,14 +7,13 @@ import com.cheatbreaker.client.ui.element.type.ScrollableElement;
 import com.cheatbreaker.client.ui.overlay.OverlayGui;
 import com.cheatbreaker.client.ui.util.RenderUtil;
 import com.google.common.collect.ImmutableList;
+import net.minecraft.util.EnumChatFormatting;
+import org.lwjgl.opengl.GL11;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
-
-
-import net.minecraft.util.EnumChatFormatting;
-import org.lwjgl.opengl.GL11;
 
 public class FriendsListElement extends ElementListElement<FriendElement> {
     private final InputFieldElement filterElement;
@@ -34,8 +33,8 @@ public class FriendsListElement extends ElementListElement<FriendElement> {
     @Override
     public void setElementSize(float var1, float var2, float var3, float var4) {
         super.setElementSize(var1, var2, var3, var4);
-        this.filterElement.setElementSize(0.0F, var2, var3, (float)13);
-        this.scrollableElement.setElementSize(var1 + var3 - (float)4, var2, (float)4, var4);
+        this.filterElement.setElementSize(0.0F, var2, var3, (float) 13);
+        this.scrollableElement.setElementSize(var1 + var3 - (float) 4, var2, (float) 4, var4);
         this.elements.sort((var0, var1x) -> {
             String var22 = EnumChatFormatting.getTextWithoutFormattingCodes(var0.getFriend().getName());
             String var32 = EnumChatFormatting.getTextWithoutFormattingCodes(var1x.getFriend().getName());
@@ -55,7 +54,7 @@ public class FriendsListElement extends ElementListElement<FriendElement> {
             }
         }
 
-        this.scrollableElement.setScrollAmount((float)(14 + this.elements.size() * 22));
+        this.scrollableElement.setScrollAmount((float) (14 + this.elements.size() * 22));
     }
 
     private boolean isFilterMatch(FriendElement var1) {
@@ -70,29 +69,29 @@ public class FriendsListElement extends ElementListElement<FriendElement> {
 
         float var10002;
         float var10003;
-        if (!CheatBreaker.getInstance().getWSNetHandler().isOpen()) {
+        if (!CheatBreaker.getInstance().getWsNetHandler().isOpen()) {
             var10002 = this.xPosition + this.width / 2.0F;
-            var10003 = this.yPosition + (float)10;
+            var10003 = this.yPosition + (float) 10;
             CheatBreaker.getInstance().playBold18px.drawCenteredString("Connection lost", var10002, var10003, -1);
             var10002 = this.xPosition + this.width / 2.0F;
-            var10003 = this.yPosition + (float)22;
+            var10003 = this.yPosition + (float) 22;
             CheatBreaker.getInstance().playRegular14px.drawCenteredString("Please try again later.", var10002, var10003, -1);
         } else {
             GL11.glPushMatrix();
             GL11.glEnable(3089);
             OverlayGui var4 = OverlayGui.getInstance();
             this.scrollableElement.drawScrollable(var1, var2, var3);
-            RenderUtil.startScissorBox((int)this.xPosition, (int)this.yPosition, (int)(this.xPosition + this.width), (int)(this.yPosition + this.height), (float)((int)((float)var4.getScaledResolution().getScaleFactor() * var4.getScaleFactor())), (int)var4.getScaledHeight());
-            ImmutableList var5 = ImmutableList.copyOf((Collection)this.elements);
+            RenderUtil.startScissorBox((int) this.xPosition, (int) this.yPosition, (int) (this.xPosition + this.width), (int) (this.yPosition + this.height), (float) ((int) ((float) var4.getScaledResolution().getScaleFactor() * var4.getScaleFactor())), (int) var4.getScaledHeight());
+            ImmutableList var5 = ImmutableList.copyOf((Collection) this.elements);
             Iterator var6 = var5.iterator();
 
-            while(true) {
+            while (true) {
                 FriendElement var7;
                 do {
                     if (!var6.hasNext()) {
                         if (var5.isEmpty()) {
                             var10002 = this.xPosition + this.width / 2.0F;
-                            var10003 = this.yPosition + (float)30;
+                            var10003 = this.yPosition + (float) 30;
                             CheatBreaker.getInstance().playBold18px.drawCenteredString("No friends", var10002, var10003, -1);
                         }
 
@@ -103,8 +102,8 @@ public class FriendsListElement extends ElementListElement<FriendElement> {
                         return;
                     }
 
-                    var7 = (FriendElement)var6.next();
-                } while(!this.isFilterMatch(var7));
+                    var7 = (FriendElement) var6.next();
+                } while (!this.isFilterMatch(var7));
 
                 var7.drawElementHover(var1, var2 - this.scrollableElement.getPosition(), var3 && !this.scrollableElement.isMouseInside(var1, var2));
             }
@@ -145,8 +144,8 @@ public class FriendsListElement extends ElementListElement<FriendElement> {
             boolean var5 = false;
             Iterator var6 = this.elements.iterator();
 
-            while(var6.hasNext()) {
-                FriendElement var7 = (FriendElement)var6.next();
+            while (var6.hasNext()) {
+                FriendElement var7 = (FriendElement) var6.next();
                 if (this.isFilterMatch(var7)) {
                     if (var5) {
                         break;
@@ -169,8 +168,8 @@ public class FriendsListElement extends ElementListElement<FriendElement> {
             boolean var5 = false;
             Iterator var6 = this.elements.iterator();
 
-            while(var6.hasNext()) {
-                FriendElement var7 = (FriendElement)var6.next();
+            while (var6.hasNext()) {
+                FriendElement var7 = (FriendElement) var6.next();
                 if (this.isFilterMatch(var7)) {
                     if (var5) {
                         break;

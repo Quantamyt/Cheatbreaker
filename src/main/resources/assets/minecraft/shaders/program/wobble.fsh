@@ -11,7 +11,8 @@ uniform float Time;
 uniform vec2 Frequency;
 uniform vec2 WobbleAmount;
 
-vec3 hue(float h) {
+vec3 hue(float h)
+{
     float r = abs(h * 6.0 - 3.0) - 1.0;
     float g = 2 - abs(h * 6.0 - 2.0);
     float b = 2 - abs(h * 6.0 - 4.0);
@@ -28,7 +29,8 @@ vec3 RGBtoHSV(vec3 rgb) {
     float min = min(rgb.r, min(rgb.g, rgb.b));
     float c = hsv.z - min;
 
-    if (c != 0) {
+    if (c != 0)
+    {
         hsv.y = c / hsv.z;
         vec3 delta = (hsv.z - rgb) / c;
         delta.rgb -= delta.brg;
@@ -52,5 +54,5 @@ void main() {
     vec4 rgb = texture2D(DiffuseSampler, texCoord + offset);
     vec3 hsv = RGBtoHSV(rgb.rgb);
     hsv.x = fract(hsv.x + Time);
-    gl_FragColor = vec4(HSVtoRGB(hsv), rgb.a);
+    gl_FragColor = vec4(HSVtoRGB(hsv), 1.0);
 }

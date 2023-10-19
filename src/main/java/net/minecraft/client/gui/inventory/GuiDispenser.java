@@ -1,34 +1,37 @@
 package net.minecraft.client.gui.inventory;
 
-import net.minecraft.client.gui.Gui;
-import net.minecraft.client.resources.I18n;
+import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.inventory.ContainerDispenser;
-import net.minecraft.tileentity.TileEntityDispenser;
+import net.minecraft.inventory.IInventory;
 import net.minecraft.util.ResourceLocation;
-import org.lwjgl.opengl.GL11;
 
-public class GuiDispenser extends GuiContainer {
-    private static final ResourceLocation field_147088_v = new ResourceLocation("textures/gui/container/dispenser.png");
-    public TileEntityDispenser field_147089_u;
+public class GuiDispenser extends GuiContainer
+{
+    private static final ResourceLocation dispenserGuiTextures = new ResourceLocation("textures/gui/container/dispenser.png");
+    private final InventoryPlayer playerInventory;
+    public IInventory dispenserInventory;
 
-
-    public GuiDispenser(InventoryPlayer p_i46384_1_, TileEntityDispenser p_i46384_2_) {
-        super(new ContainerDispenser(p_i46384_1_, p_i46384_2_));
-        this.field_147089_u = p_i46384_2_;
+    public GuiDispenser(InventoryPlayer playerInv, IInventory dispenserInv)
+    {
+        super(new ContainerDispenser(playerInv, dispenserInv));
+        this.playerInventory = playerInv;
+        this.dispenserInventory = dispenserInv;
     }
 
-    protected void func_146979_b(int p_146979_1_, int p_146979_2_) {
-        String var3 = this.field_147089_u.isInventoryNameLocalized() ? this.field_147089_u.getInventoryName() : I18n.format(this.field_147089_u.getInventoryName());
-        this.fontRendererObj.drawString(var3, this.field_146999_f / 2 - this.fontRendererObj.getStringWidth(var3) / 2, 6, 4210752);
-        this.fontRendererObj.drawString(I18n.format("container.inventory"), 8, this.field_147000_g - 96 + 2, 4210752);
+    protected void drawGuiContainerForegroundLayer(int mouseX, int mouseY)
+    {
+        String s = this.dispenserInventory.getDisplayName().getUnformattedText();
+        this.fontRendererObj.drawString(s, this.xSize / 2 - this.fontRendererObj.getStringWidth(s) / 2, 6, 4210752);
+        this.fontRendererObj.drawString(this.playerInventory.getDisplayName().getUnformattedText(), 8, this.ySize - 96 + 2, 4210752);
     }
 
-    protected void func_146976_a(float p_146976_1_, int p_146976_2_, int p_146976_3_) {
-        GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
-        this.mc.getTextureManager().bindTexture(field_147088_v);
-        int var4 = (this.width - this.field_146999_f) / 2;
-        int var5 = (this.height - this.field_147000_g) / 2;
-        drawTexturedModalRect(var4, var5, 0, 0, this.field_146999_f, this.field_147000_g);
+    protected void drawGuiContainerBackgroundLayer(float partialTicks, int mouseX, int mouseY)
+    {
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+        this.mc.getTextureManager().bindTexture(dispenserGuiTextures);
+        int i = (this.width - this.xSize) / 2;
+        int j = (this.height - this.ySize) / 2;
+        this.drawTexturedModalRect(i, j, 0, 0, this.xSize, this.ySize);
     }
 }

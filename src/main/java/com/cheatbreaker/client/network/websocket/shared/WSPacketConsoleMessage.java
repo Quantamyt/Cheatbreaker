@@ -2,23 +2,24 @@ package com.cheatbreaker.client.network.websocket.shared;
 
 import com.cheatbreaker.client.network.websocket.WSNetHandler;
 import com.cheatbreaker.client.network.websocket.WSPacket;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import net.minecraft.network.PacketBuffer;
 
-@Getter
+/**
+ * @WSPacket WSPacketConsoleMessage
+ * @see WSPacket
+ *
+ * This packet is used for new console messages.
+ */
+@Getter @AllArgsConstructor @NoArgsConstructor
 public class WSPacketConsoleMessage extends WSPacket {
     private String message;
 
-    public WSPacketConsoleMessage() {
-    }
-
-    public WSPacketConsoleMessage(String string) {
-        this.message = string;
-    }
-
     @Override
     public void write(PacketBuffer packetBuffer) {
-        packetBuffer.writeStringToBuffer(this.message);
+        packetBuffer.writeString(this.message);
     }
 
     @Override

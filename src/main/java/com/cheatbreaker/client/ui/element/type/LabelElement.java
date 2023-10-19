@@ -2,10 +2,10 @@ package com.cheatbreaker.client.ui.element.type;
 
 import com.cheatbreaker.client.CheatBreaker;
 import com.cheatbreaker.client.config.GlobalSettings;
+import com.cheatbreaker.client.module.data.Setting;
 import com.cheatbreaker.client.ui.element.AbstractModulesGuiElement;
 import com.cheatbreaker.client.ui.theme.CBTheme;
 import net.minecraft.client.gui.Gui;
-import com.cheatbreaker.client.module.data.Setting;
 
 public class LabelElement extends AbstractModulesGuiElement {
 

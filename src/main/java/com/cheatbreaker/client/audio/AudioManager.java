@@ -12,6 +12,9 @@ import javax.sound.sampled.TargetDataLine;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Manages anything related to the CheatBreaker Client's audio.
+ */
 @Getter
 public class AudioManager {
 
@@ -23,7 +26,7 @@ public class AudioManager {
 
     public void playSoundVol(String name, float volume) {
         if (!(Boolean) CheatBreaker.getInstance().getGlobalSettings().muteCBSounds.getValue())
-            Minecraft.getMinecraft().getSoundHandler().field_147694_f.playSound(name, volume);
+            Minecraft.getMinecraft().getSoundHandler().sndManager.playSound(name, volume);
     }
 
     /**

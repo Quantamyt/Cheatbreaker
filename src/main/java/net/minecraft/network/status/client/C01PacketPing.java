@@ -1,52 +1,40 @@
 package net.minecraft.network.status.client;
 
 import java.io.IOException;
-import net.minecraft.network.INetHandler;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.status.INetHandlerStatusServer;
 
-public class C01PacketPing extends Packet {
-    private long field_149290_a;
+public class C01PacketPing implements Packet<INetHandlerStatusServer>
+{
+    private long clientTime;
 
-
-    public C01PacketPing() {}
-
-    public C01PacketPing(long p_i45276_1_) {
-        this.field_149290_a = p_i45276_1_;
+    public C01PacketPing()
+    {
     }
 
-    /**
-     * Reads the raw packet data from the data stream.
-     */
-    public void readPacketData(PacketBuffer p_148837_1_) throws IOException {
-        this.field_149290_a = p_148837_1_.readLong();
+    public C01PacketPing(long ping)
+    {
+        this.clientTime = ping;
     }
 
-    /**
-     * Writes the raw packet data to the data stream.
-     */
-    public void writePacketData(PacketBuffer p_148840_1_) throws IOException {
-        p_148840_1_.writeLong(this.field_149290_a);
+    public void readPacketData(PacketBuffer buf) throws IOException
+    {
+        this.clientTime = buf.readLong();
     }
 
-    public void processPacket(INetHandlerStatusServer p_148833_1_) {
-        p_148833_1_.processPing(this);
+    public void writePacketData(PacketBuffer buf) throws IOException
+    {
+        buf.writeLong(this.clientTime);
     }
 
-    /**
-     * If true, the network manager will process the packet immediately when received, otherwise it will queue it for
-     * processing. Currently true for: Disconnect, LoginSuccess, KeepAlive, ServerQuery/Info, Ping/Pong
-     */
-    public boolean hasPriority() {
-        return true;
+    public void processPacket(INetHandlerStatusServer handler)
+    {
+        handler.processPing(this);
     }
 
-    public long func_149289_c() {
-        return this.field_149290_a;
-    }
-
-    public void processPacket(INetHandler p_148833_1_) {
-        this.processPacket((INetHandlerStatusServer)p_148833_1_);
+    public long getClientTime()
+    {
+        return this.clientTime;
     }
 }

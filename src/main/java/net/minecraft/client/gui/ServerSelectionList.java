@@ -3,97 +3,83 @@ package net.minecraft.client.gui;
 import com.cheatbreaker.client.CheatBreaker;
 import com.cheatbreaker.client.util.render.serverlist.ServerListEntryPinned;
 import com.google.common.collect.Lists;
+
+import java.util.List;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ServerData;
 import net.minecraft.client.multiplayer.ServerList;
 import net.minecraft.client.network.LanServerDetector;
 
-import java.util.Iterator;
-import java.util.List;
-
 public class ServerSelectionList extends GuiListExtended {
-    private final GuiMultiplayer field_148200_k;
-    private final List field_148198_l = Lists.newArrayList();
-    private final List field_148199_m = Lists.newArrayList();
-    private final GuiListExtended.IGuiListEntry field_148196_n = new ServerListEntryLanScan();
-    private int field_148197_o = -1;
+    private final GuiMultiplayer owner;
+    private final List serverListInternet = Lists.<ServerListEntryNormal>newArrayList();
+    private final List<ServerListEntryLanDetected> serverListLan = Lists.<ServerListEntryLanDetected>newArrayList();
+    private final GuiListExtended.IGuiListEntry lanScanEntry = new ServerListEntryLanScan();
+    private int selectedSlotIndex = -1;
 
-    public int lIIIIlIIllIIlIIlIIIlIIllI(ServerListEntryNormal serverListEntryNormal) {
-        if (this.field_148198_l.contains(serverListEntryNormal)) {
-            return this.field_148198_l.indexOf(serverListEntryNormal);
-        }
-        if (this.field_148199_m.contains(serverListEntryNormal)) {
-            return this.field_148199_m.indexOf(serverListEntryNormal);
-        }
-        return 0;
+    public ServerSelectionList(GuiMultiplayer ownerIn, Minecraft mcIn, int widthIn, int heightIn, int topIn, int bottomIn, int slotHeightIn) {
+        super(mcIn, widthIn, heightIn, topIn, bottomIn, slotHeightIn);
+        this.owner = ownerIn;
     }
 
-    public ServerSelectionList(GuiMultiplayer p_i45049_1_, Minecraft p_i45049_2_, int p_i45049_3_, int p_i45049_4_, int p_i45049_5_, int p_i45049_6_, int p_i45049_7_) {
-        super(p_i45049_2_, p_i45049_3_, p_i45049_4_, p_i45049_5_, p_i45049_6_, p_i45049_7_);
-        this.field_148200_k = p_i45049_1_;
-    }
-
-    public GuiListExtended.IGuiListEntry func_148180_b(int p_148180_1_) {
-        if (p_148180_1_ < this.field_148198_l.size()) {
-            return (GuiListExtended.IGuiListEntry)this.field_148198_l.get(p_148180_1_);
+    public GuiListExtended.IGuiListEntry getListEntry(int index) {
+        if (index < this.serverListInternet.size()) {
+            return (GuiListExtended.IGuiListEntry) this.serverListInternet.get(index);
         } else {
-            p_148180_1_ -= this.field_148198_l.size();
+            index = index - this.serverListInternet.size();
 
-            if (p_148180_1_ == 0) {
-                return this.field_148196_n;
+            if (index == 0) {
+                return this.lanScanEntry;
             } else {
-                --p_148180_1_;
-                return (GuiListExtended.IGuiListEntry)this.field_148199_m.get(p_148180_1_);
+                --index;
+                return this.serverListLan.get(index);
             }
         }
     }
 
     protected int getSize() {
-        return this.field_148198_l.size() + 1 + this.field_148199_m.size();
+        return this.serverListInternet.size() + 1 + this.serverListLan.size();
     }
 
-    public void func_148192_c(int p_148192_1_) {
-        this.field_148197_o = p_148192_1_;
+    public void setSelectedSlotIndex(int selectedSlotIndexIn) {
+        this.selectedSlotIndex = selectedSlotIndexIn;
     }
 
-    protected boolean isSelected(int p_148131_1_) {
-        return p_148131_1_ == this.field_148197_o;
+    protected boolean isSelected(int slotIndex) {
+        return slotIndex == this.selectedSlotIndex;
     }
 
     public int func_148193_k() {
-        return this.field_148197_o;
+        return this.selectedSlotIndex;
     }
 
     public void func_148195_a(ServerList p_148195_1_) {
-        this.field_148198_l.clear();
+        this.serverListInternet.clear();
+
         for (int i = 0; i < p_148195_1_.countServers(); ++i) {
             ServerData serverData = p_148195_1_.getServerData(i);
             if (serverData.dontSave) {
-                this.field_148198_l.add(new ServerListEntryPinned(this.field_148200_k, serverData));
-                continue;
-            } else if (!CheatBreaker.getInstance().getGlobalSettings().getPinnedServers().stream().anyMatch((var1x) -> {
-                return var1x[1].equalsIgnoreCase(serverData.serverIP);
-            })) {
-                this.field_148198_l.add(new ServerListEntryNormal(this.field_148200_k, serverData));
+                this.serverListInternet.add(new ServerListEntryPinned(this.owner, serverData));
+            } else if (!CheatBreaker.getInstance().getGlobalSettings().getPinnedServers().stream().anyMatch((var1x) -> var1x[1].equalsIgnoreCase(serverData.serverIP))) {
+                this.serverListInternet.add(new ServerListEntryNormal(this.owner, serverData));
             }
         }
     }
 
-    public void func_148194_a(List p_148194_1_) {
-        this.field_148199_m.clear();
-        Iterator var2 = p_148194_1_.iterator();
+    public void func_148194_a(List<LanServerDetector.LanServer> p_148194_1_) {
+        this.serverListLan.clear();
 
-        while (var2.hasNext()) {
-            LanServerDetector.LanServer var3 = (LanServerDetector.LanServer)var2.next();
-            this.field_148199_m.add(new ServerListEntryLanDetected(this.field_148200_k, var3));
+        for (LanServerDetector.LanServer lanserverdetector$lanserver : p_148194_1_) {
+            this.serverListLan.add(new ServerListEntryLanDetected(this.owner, lanserverdetector$lanserver));
         }
     }
 
-    protected int func_148137_d() {
-        return super.func_148137_d() + 30;
+    protected int getScrollBarX() {
+        return super.getScrollBarX() + 30;
     }
 
-    public int func_148139_c() {
-        return super.func_148139_c() + 85;
+    public int getListWidth() {
+        return super.getListWidth() + 85;
     }
 }

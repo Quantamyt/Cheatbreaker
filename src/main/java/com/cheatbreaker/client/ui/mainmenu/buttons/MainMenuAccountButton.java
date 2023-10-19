@@ -38,37 +38,38 @@ public class MainMenuAccountButton extends GuiButton {
         this.displayName = (String)var2.get("displayName");
         this.clientToken = (String)var2.get("clientToken");
         this.lIIIIIllllIIIIlIlIIIIlIlI = var2;
-        this.headIcon = CheatBreaker.getInstance().getHeadIcon(this.displayName, (String)var2.get("uuid"));
+//        this.headIcon = CheatBreaker.getInstance().getHeadIcon(this.displayName, (String)var2.get("uuid"));
+        this.headIcon = CheatBreaker.getInstance().getHeadIcon(this.displayName);
     }
 
     @Override
     public void drawButton(Minecraft var1, int var2, int var3) {
-        if (this.field_146125_m) {
-            FontRenderer var4 = var1.fontRenderer;
+        if (this.visible) {
+            FontRenderer var4 = var1.fontRendererObj;
             GL11.glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-            this.field_146123_n = var2 >= this.field_146128_h && var3 >= this.field_146129_i && var2 < this.field_146128_h + this.field_146120_f && var3 < this.field_146129_i + this.field_146121_g;
-            int var5 = this.getHoverState(this.field_146123_n);
+            this.hovered = var2 >= this.xPosition && var3 >= this.yPosition && var2 < this.xPosition + this.width && var3 < this.yPosition + this.height;
+            int var5 = this.getHoverState(this.hovered);
             if (this.lIIIIlIIllIIlIIlIIIlIIllI) {
-                Gui.drawRect(this.field_146128_h, this.field_146129_i, this.field_146128_h + this.field_146120_f, this.field_146129_i + this.field_146121_g, this.field_146123_n ? -15395563 : -14540254);
+                Gui.drawRect(this.xPosition, this.yPosition, this.xPosition + this.width, this.yPosition + this.height, this.hovered ? -15395563 : -14540254);
             }
             this.mouseDragged(var1, var2, var3);
             int var6 = -1;
             if (!this.enabled) {
                 var6 = -986896;
-            } else if (this.field_146123_n) {
+            } else if (this.hovered) {
                 var6 = -3092272;
             }
             if (this.displayName.length() > 9) {
-                float var10002 = this.field_146128_h + this.field_146120_f / 2 + 12;
-                float var10003 = this.field_146129_i + this.field_146121_g / 2 - (this.lIIIIlIIllIIlIIlIIIlIIllI ? 4 : 3);
+                float var10002 = this.xPosition + this.width / 2 + 12;
+                float var10003 = this.yPosition + this.height / 2 - (this.lIIIIlIIllIIlIIlIIIlIIllI ? 4 : 3);
                 CheatBreaker.getInstance().playRegular14px.drawCenteredString(this.displayName, var10002, var10003, var6);
             } else {
-                float var10002 = this.field_146128_h + this.field_146120_f / 2 + 12;
-                float var10003 = this.field_146129_i + this.field_146121_g / 2 - (this.lIIIIlIIllIIlIIlIIIlIIllI ? 5 : 4);
+                float var10002 = this.xPosition + this.width / 2 + 12;
+                float var10003 = this.yPosition + this.height / 2 - (this.lIIIIlIIllIIlIIlIIIlIIllI ? 5 : 4);
                 CheatBreaker.getInstance().playRegular16px.drawCenteredString(this.displayName, var10002, var10003, var6);
             }
             GL11.glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-            RenderUtil.renderIcon(this.headIcon, 7.0f, (float)(this.field_146128_h + 10), (float)(this.field_146129_i + 5));
+            RenderUtil.renderIcon(this.headIcon, 7.0f, (float)(this.xPosition + 10), (float)(this.yPosition + 5));
         }
     }
 
@@ -79,12 +80,12 @@ public class MainMenuAccountButton extends GuiButton {
         if (((String) this.lIIIIIllllIIIIlIlIIIIlIlI.get("uuid")).equalsIgnoreCase(Minecraft.getMinecraft().getSession().getPlayerID())) {
             return false;
         } else {
-            Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.func_147674_a(new ResourceLocation("gui.button.press"), 1.0F));
-            Iterator var1 = CheatBreaker.getInstance().sessions.iterator();
+            Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("gui.button.press"), 1.0F));
+            Iterator var1 = CheatBreaker.getInstance().getSessionServers().iterator();
 
             while (var1.hasNext()) {
                 Session session = (Session) var1.next();
-                if (session.func_148256_e().getId().toString().replaceAll("-", "").equalsIgnoreCase(((String) this.lIIIIIllllIIIIlIlIIIIlIlI.get("uuid")).replaceAll("-", ""))) {
+                if (session.getProfile().getId().toString().replaceAll("-", "").equalsIgnoreCase(((String) this.lIIIIIllllIIIIlIlIIIIlIlI.get("uuid")).replaceAll("-", ""))) {
                     Minecraft.getMinecraft().setSession(session);
                     return true;
                 }
@@ -175,7 +176,7 @@ public class MainMenuAccountButton extends GuiButton {
                 }
             }
 
-            CheatBreaker.getInstance().sessions.add(var3);
+//            CheatBreaker.getInstance().getSession().add(var3);
             Minecraft.getMinecraft().setSession(var3);
             return true;
         }

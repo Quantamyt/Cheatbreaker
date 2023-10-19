@@ -120,7 +120,7 @@ public final class LunarClientLogoElement extends AbstractElement {
             if (this.runTime.isZeroOrLess()) {
                 return Math.max(this.runTime.getFadeAmount(), 0.15f);
             }
-            if (this.IlIlllIIIIllIllllIllIIlIl() <= this.runLength.getDuration()) {
+            if (this.getRemainingTime() <= this.runLength.getDuration()) {
                 if (!this.runLength.isTimeNotAtZero()) {
                     this.runLength.startAnimation();
                 }

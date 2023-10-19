@@ -1,12 +1,14 @@
 package net.minecraft.client.gui;
 
 import com.cheatbreaker.client.CheatBreaker;
+import com.cheatbreaker.client.ui.mainmenu.menus.MainMenu;
 import com.cheatbreaker.client.ui.mainmenu.menus.VanillaMenu;
 import com.cheatbreaker.client.ui.warning.UnsafeServerWarningGUI;
 import com.cheatbreaker.client.util.render.serverlist.ServerListEntryPinned;
 import com.cheatbreaker.client.util.render.serverlist.UnsafeServerAction;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.GuiConnecting;
 import net.minecraft.client.multiplayer.ServerData;
 import net.minecraft.client.multiplayer.ServerList;
@@ -18,388 +20,363 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.lwjgl.input.Keyboard;
 
+import java.io.IOException;
 import java.util.List;
 
 public class GuiMultiplayer extends GuiScreen implements GuiYesNoCallback {
     private static final Logger logger = LogManager.getLogger();
-    private final OldServerPinger field_146797_f = new OldServerPinger();
-    private final GuiScreen field_146798_g;
-    private ServerSelectionList field_146803_h;
-    private ServerList field_146804_i;
-    private GuiButton field_146810_r;
-    private GuiButton field_146809_s;
-    private GuiButton field_146808_t;
-    private boolean field_146807_u;
-    private boolean field_146806_v;
-    private boolean field_146805_w;
-    private boolean field_146813_x;
-    private String field_146812_y;
-    private ServerData field_146811_z;
-    private LanServerDetector.LanServerList field_146799_A;
-    private LanServerDetector.ThreadLanServerFind field_146800_B;
-    private boolean field_146801_C;
+    private final OldServerPinger oldServerPinger = new OldServerPinger();
+    private GuiScreen parentScreen;
+    private ServerSelectionList serverListSelector;
+    private ServerList savedServerList;
+    private GuiButton btnEditServer;
+    private GuiButton btnSelectServer;
+    private GuiButton btnDeleteServer;
+    private boolean deletingServer;
+    private boolean addingServer;
+    private boolean editingServer;
+    private boolean directConnect;
+    private String hoveringText;
+    private ServerData selectedServer;
+    private LanServerDetector.LanServerList lanServerList;
+    private LanServerDetector.ThreadLanServerFind lanServerDetector;
+    private boolean initialized;
 
-    public void lIIIIlIIllIIlIIlIIIlIIllI(ServerListEntryNormal serverListEntryNormal) {
-        this.func_146791_a(serverListEntryNormal.func_148296_a());
+    public GuiMultiplayer(GuiScreen parentScreen) {
+        this.parentScreen = parentScreen;
     }
 
-    public boolean lIIIIIIIIIlIllIIllIlIIlIl(ServerListEntryNormal serverListEntryNormal) {
-        int n = this.field_146803_h.lIIIIlIIllIIlIIlIIIlIIllI(serverListEntryNormal);
-        GuiListExtended.IGuiListEntry guiListExtendedIGuiListEntry = n < 0 ? null : this.field_146803_h.func_148180_b(n + 1);
-        return n > 0 && guiListExtendedIGuiListEntry instanceof ServerListEntryNormal;
-    }
-
-    public void IlllIIIlIlllIllIlIIlllIlI(ServerListEntryNormal serverListEntryNormal) {
-        int n = this.field_146803_h.lIIIIlIIllIIlIIlIIIlIIllI(serverListEntryNormal);
-        GuiListExtended.IGuiListEntry guiListExtendedIGuiListEntry = n < 0 ? null : this.field_146803_h.func_148180_b(n - 1);
-        if (n > 0 && guiListExtendedIGuiListEntry instanceof ServerListEntryNormal) {
-            this.field_146804_i.swapServers(n, n - 1);
-            this.func_146790_a(this.field_146803_h.func_148193_k() - 1);
-            this.field_146803_h.func_148145_f(-this.field_146803_h.func_148146_j());
-            this.field_146803_h.func_148195_a(this.field_146804_i);
-        }
-    }
-
-    public void IIIIllIlIIIllIlllIlllllIl(ServerListEntryNormal serverListEntryNormal) {
-        int n = this.field_146803_h.lIIIIlIIllIIlIIlIIIlIIllI(serverListEntryNormal);
-        GuiListExtended.IGuiListEntry guiListExtendedIGuiListEntry = n < 0 ? null : this.field_146803_h.func_148180_b(n + 1);
-        if (n > 0 && guiListExtendedIGuiListEntry instanceof ServerListEntryNormal) {
-            this.field_146804_i.swapServers(n, n + 1);
-            this.func_146790_a(this.field_146803_h.func_148193_k() + 1);
-            this.field_146803_h.func_148145_f(-this.field_146803_h.func_148146_j());
-            this.field_146803_h.func_148195_a(this.field_146804_i);
-        }
-    }
-
-    public boolean IIIIllIIllIIIIllIllIIIlIl(ServerListEntryNormal serverListEntryNormal) {
-        try {
-            int n = this.field_146803_h.lIIIIlIIllIIlIIlIIIlIIllI(serverListEntryNormal);
-            GuiListExtended.IGuiListEntry guiListExtendedIGuiListEntry = n < 0 ? null : this.field_146803_h.func_148180_b(n - 1);
-            if (n > 0 && guiListExtendedIGuiListEntry != null && guiListExtendedIGuiListEntry instanceof ServerListEntryNormal) {
-                return true;
-            }
-        } catch (Exception exception) {
-
-        }
-        return false;
-    }
-
-    public GuiMultiplayer(GuiScreen p_i1040_1_) {
-        this.field_146798_g = p_i1040_1_;
-    }
-
-    /**
-     * Adds the buttons (and other controls) to the screen in question.
-     */
     public void initGui() {
         Keyboard.enableRepeatEvents(true);
         this.buttonList.clear();
 
-        if (!this.field_146801_C) {
-            this.field_146801_C = true;
-            this.field_146804_i = new ServerList(this.mc);
-            this.field_146804_i.loadServerList();
-            this.field_146799_A = new LanServerDetector.LanServerList();
+        if (!this.initialized) {
+            this.initialized = true;
+            this.savedServerList = new ServerList(this.mc);
+            this.savedServerList.loadServerList();
+            this.lanServerList = new LanServerDetector.LanServerList();
 
             try {
-                this.field_146800_B = new LanServerDetector.ThreadLanServerFind(this.field_146799_A);
-                this.field_146800_B.start();
-            } catch (Exception var2) {
-                logger.warn("Unable to start LAN server detection: " + var2.getMessage());
+                this.lanServerDetector = new LanServerDetector.ThreadLanServerFind(this.lanServerList);
+                this.lanServerDetector.start();
+            } catch (Exception exception) {
+                logger.warn("Unable to start LAN server detection: " + exception.getMessage());
             }
 
-            this.field_146803_h = new ServerSelectionList(this, this.mc, this.width, this.height, 32, this.height - 64, 36);
-            this.field_146803_h.func_148195_a(this.field_146804_i);
+            this.serverListSelector = new ServerSelectionList(this, this.mc, this.width, this.height, 32, this.height - 64, 36);
+            this.serverListSelector.func_148195_a(this.savedServerList);
         } else {
-            this.field_146803_h.func_148122_a(this.width, this.height, 32, this.height - 64);
+            this.serverListSelector.setDimensions(this.width, this.height, 32, this.height - 64);
         }
 
-        this.func_146794_g();
+        this.createButtons();
     }
 
-    public void func_146794_g() {
-        this.buttonList.add(this.field_146810_r = new GuiButton(7, this.width / 2 - 154, this.height - 28, 70, 20, I18n.format("selectServer.edit")));
-        this.buttonList.add(this.field_146808_t = new GuiButton(2, this.width / 2 - 74, this.height - 28, 70, 20, I18n.format("selectServer.delete")));
-        this.buttonList.add(this.field_146809_s = new GuiButton(1, this.width / 2 - 154, this.height - 52, 100, 20, I18n.format("selectServer.select")));
-        this.buttonList.add(new GuiButton(4, this.width / 2 - 50, this.height - 52, 100, 20, I18n.format("selectServer.direct")));
-        this.buttonList.add(new GuiButton(3, this.width / 2 + 4 + 50, this.height - 52, 100, 20, I18n.format("selectServer.add")));
-        this.buttonList.add(new GuiButton(8, this.width / 2 + 4, this.height - 28, 70, 20, I18n.format("selectServer.refresh")));
-        this.buttonList.add(new GuiButton(0, this.width / 2 + 4 + 76, this.height - 28, 75, 20, I18n.format("gui.cancel")));
-        this.func_146790_a(this.field_146803_h.func_148193_k());
+    public void handleMouseInput() throws IOException {
+        super.handleMouseInput();
+        this.serverListSelector.handleMouseInput();
     }
 
-    /**
-     * Called from the main game loop to update the screen.
-     */
+    public void createButtons() {
+        this.buttonList.add(this.btnEditServer = new GuiButton(7, this.width / 2 - 154, this.height - 28, 70, 20, I18n.format("selectServer.edit", new Object[0])));
+        this.buttonList.add(this.btnDeleteServer = new GuiButton(2, this.width / 2 - 74, this.height - 28, 70, 20, I18n.format("selectServer.delete", new Object[0])));
+        this.buttonList.add(this.btnSelectServer = new GuiButton(1, this.width / 2 - 154, this.height - 52, 100, 20, I18n.format("selectServer.select", new Object[0])));
+        this.buttonList.add(new GuiButton(4, this.width / 2 - 50, this.height - 52, 100, 20, I18n.format("selectServer.direct", new Object[0])));
+        this.buttonList.add(new GuiButton(3, this.width / 2 + 4 + 50, this.height - 52, 100, 20, I18n.format("selectServer.add", new Object[0])));
+        this.buttonList.add(new GuiButton(8, this.width / 2 + 4, this.height - 28, 70, 20, I18n.format("selectServer.refresh", new Object[0])));
+        this.buttonList.add(new GuiButton(0, this.width / 2 + 4 + 76, this.height - 28, 75, 20, I18n.format("gui.cancel", new Object[0])));
+        this.selectServer(this.serverListSelector.func_148193_k());
+    }
+
     public void updateScreen() {
         super.updateScreen();
 
-        if (this.field_146799_A.getWasUpdated()) {
-            List var1 = this.field_146799_A.getLanServers();
-            this.field_146799_A.setWasNotUpdated();
-            this.field_146803_h.func_148194_a(var1);
+        if (this.lanServerList.getWasUpdated()) {
+            List<LanServerDetector.LanServer> list = this.lanServerList.getLanServers();
+            this.lanServerList.setWasNotUpdated();
+            this.serverListSelector.func_148194_a(list);
         }
 
-        this.field_146797_f.func_147223_a();
+        this.oldServerPinger.pingPendingNetworks();
     }
 
-    /**
-     * "Called when the screen is unloaded. Used to disable keyboard repeat events."
-     */
     public void onGuiClosed() {
         Keyboard.enableRepeatEvents(false);
 
-        if (this.field_146800_B != null) {
-            this.field_146800_B.interrupt();
-            this.field_146800_B = null;
+        if (this.lanServerDetector != null) {
+            this.lanServerDetector.interrupt();
+            this.lanServerDetector = null;
         }
 
-        this.field_146797_f.func_147226_b();
+        this.oldServerPinger.clearPendingNetworks();
     }
 
-    protected void actionPerformed(GuiButton p_146284_1_) {
-        if (p_146284_1_.enabled) {
-            GuiListExtended.IGuiListEntry var2 = this.field_146803_h.func_148193_k() < 0 ? null : this.field_146803_h.func_148180_b(this.field_146803_h.func_148193_k());
+    protected void actionPerformed(GuiButton button) throws IOException {
+        if (button.enabled) {
+            GuiListExtended.IGuiListEntry guilistextended$iguilistentry = this.serverListSelector.func_148193_k() < 0 ? null : this.serverListSelector.getListEntry(this.serverListSelector.func_148193_k());
 
-            if (p_146284_1_.id == 2 && var2 instanceof ServerListEntryNormal) {
-                String var9 = ((ServerListEntryNormal)var2).func_148296_a().serverName;
+            if (button.id == 2 && guilistextended$iguilistentry instanceof ServerListEntryNormal) {
+                String s4 = ((ServerListEntryNormal) guilistextended$iguilistentry).getServerData().serverName;
 
-                if (var9 != null) {
-                    this.field_146807_u = true;
-                    String var4 = I18n.format("selectServer.deleteQuestion");
-                    String var5 = "'" + var9 + "' " + I18n.format("selectServer.deleteWarning");
-                    String var6 = I18n.format("selectServer.deleteButton");
-                    String var7 = I18n.format("gui.cancel");
-                    GuiYesNo var8 = new GuiYesNo(this, var4, var5, var6, var7, this.field_146803_h.func_148193_k());
-                    this.mc.displayGuiScreen(var8);
+                if (s4 != null) {
+                    this.deletingServer = true;
+                    String s = I18n.format("selectServer.deleteQuestion", new Object[0]);
+                    String s1 = "\'" + s4 + "\' " + I18n.format("selectServer.deleteWarning", new Object[0]);
+                    String s2 = I18n.format("selectServer.deleteButton", new Object[0]);
+                    String s3 = I18n.format("gui.cancel", new Object[0]);
+                    GuiYesNo guiyesno = new GuiYesNo(this, s, s1, s2, s3, this.serverListSelector.func_148193_k());
+                    this.mc.displayGuiScreen(guiyesno);
                 }
-            } else if (p_146284_1_.id == 1) {
-                this.func_146796_h();
-            } else if (p_146284_1_.id == 4) {
-                this.field_146813_x = true;
-                this.mc.displayGuiScreen(new GuiScreenServerList(this, this.field_146811_z = new ServerData(I18n.format("selectServer.defaultName"), "")));
-            } else if (p_146284_1_.id == 3) {
-                this.field_146806_v = true;
-                this.mc.displayGuiScreen(new GuiScreenAddServer(this, this.field_146811_z = new ServerData(I18n.format("selectServer.defaultName"), "")));
-            } else if (p_146284_1_.id == 7 && var2 instanceof ServerListEntryNormal) {
-                this.field_146805_w = true;
-                ServerData var3 = ((ServerListEntryNormal)var2).func_148296_a();
-                this.field_146811_z = new ServerData(var3.serverName, var3.serverIP);
-                this.field_146811_z.func_152583_a(var3);
-                this.mc.displayGuiScreen(new GuiScreenAddServer(this, this.field_146811_z));
-            } else if (p_146284_1_.id == 0) {
+            } else if (button.id == 1) {
+                this.connectToSelected();
+            } else if (button.id == 4) {
+                this.directConnect = true;
+                this.mc.displayGuiScreen(new GuiScreenServerList(this, this.selectedServer = new ServerData(I18n.format("selectServer.defaultName", new Object[0]), "", false)));
+            } else if (button.id == 3) {
+                this.addingServer = true;
+                this.mc.displayGuiScreen(new GuiScreenAddServer(this, this.selectedServer = new ServerData(I18n.format("selectServer.defaultName", new Object[0]), "", false)));
+            } else if (button.id == 7 && guilistextended$iguilistentry instanceof ServerListEntryNormal) {
+                this.editingServer = true;
+                ServerData serverdata = ((ServerListEntryNormal) guilistextended$iguilistentry).getServerData();
+                this.selectedServer = new ServerData(serverdata.serverName, serverdata.serverIP, false);
+                this.selectedServer.copyFrom(serverdata);
+                this.mc.displayGuiScreen(new GuiScreenAddServer(this, this.selectedServer));
+            } else if (button.id == 0) {
                 if (this.mc.isSingleplayer() || (!this.mc.isIntegratedServerRunning() && this.mc.theWorld != null)) {
-                    this.mc.displayGuiScreen(this.field_146798_g);
+                    this.mc.displayGuiScreen(this.parentScreen);
                 } else {
-                    this.mc.displayGuiScreen(new VanillaMenu());
+                    this.mc.displayGuiScreen(new MainMenu());
                 }
-            } else if (p_146284_1_.id == 8) {
-                this.func_146792_q();
+            } else if (button.id == 8) {
+                this.refreshServerList();
             }
         }
     }
 
-    private void func_146792_q() {
-        this.mc.displayGuiScreen(new GuiMultiplayer(this.field_146798_g));
+    private void refreshServerList() {
+        this.mc.displayGuiScreen(new GuiMultiplayer(this.parentScreen));
     }
 
-    public void confirmClicked(boolean p_73878_1_, int p_73878_2_) {
-        GuiListExtended.IGuiListEntry var3 = this.field_146803_h.func_148193_k() < 0 ? null : this.field_146803_h.func_148180_b(this.field_146803_h.func_148193_k());
+    public void confirmClicked(boolean result, int id) {
+        GuiListExtended.IGuiListEntry guilistextended$iguilistentry = this.serverListSelector.func_148193_k() < 0 ? null : this.serverListSelector.getListEntry(this.serverListSelector.func_148193_k());
 
-        if (this.field_146807_u) {
-            this.field_146807_u = false;
+        if (this.deletingServer) {
+            this.deletingServer = false;
 
-            if (p_73878_1_ && var3 instanceof ServerListEntryNormal) {
-                this.field_146804_i.removeServerData(this.field_146803_h.func_148193_k());
-                this.field_146804_i.saveServerList();
-                this.field_146803_h.func_148192_c(-1);
-                this.field_146803_h.func_148195_a(this.field_146804_i);
+            if (result && guilistextended$iguilistentry instanceof ServerListEntryNormal) {
+                this.savedServerList.removeServerData(this.serverListSelector.func_148193_k());
+                this.savedServerList.saveServerList();
+                this.serverListSelector.setSelectedSlotIndex(-1);
+                this.serverListSelector.func_148195_a(this.savedServerList);
             }
 
             this.mc.displayGuiScreen(this);
-        } else if (this.field_146813_x) {
-            this.field_146813_x = false;
+        } else if (this.directConnect) {
+            this.directConnect = false;
 
-            if (p_73878_1_) {
-                this.func_146791_a(this.field_146811_z);
+            if (result) {
+                this.connectToServer(this.selectedServer);
             } else {
                 this.mc.displayGuiScreen(this);
             }
-        } else if (this.field_146806_v) {
-            this.field_146806_v = false;
+        } else if (this.addingServer) {
+            this.addingServer = false;
 
-            if (p_73878_1_) {
-                this.field_146804_i.addServerData(this.field_146811_z);
-                this.field_146804_i.saveServerList();
-                this.field_146803_h.func_148192_c(-1);
-                this.field_146803_h.func_148195_a(this.field_146804_i);
+            if (result) {
+                this.savedServerList.addServerData(this.selectedServer);
+                this.savedServerList.saveServerList();
+                this.serverListSelector.setSelectedSlotIndex(-1);
+                this.serverListSelector.func_148195_a(this.savedServerList);
             }
 
             this.mc.displayGuiScreen(this);
-        } else if (this.field_146805_w) {
-            this.field_146805_w = false;
+        } else if (this.editingServer) {
+            this.editingServer = false;
 
-            if (p_73878_1_ && (var3 instanceof ServerListEntryNormal || var3 instanceof ServerListEntryPinned)) {
-                ServerData var4 = ((ServerListEntryNormal)var3).func_148296_a();
-                var4.serverName = this.field_146811_z.serverName;
-                var4.serverIP = this.field_146811_z.serverIP;
-                var4.func_152583_a(this.field_146811_z);
-                this.field_146804_i.saveServerList();
-                this.field_146803_h.func_148195_a(this.field_146804_i);
+            if (result && (guilistextended$iguilistentry instanceof ServerListEntryNormal || guilistextended$iguilistentry instanceof ServerListEntryPinned)) {
+                ServerData serverdata = ((ServerListEntryNormal) guilistextended$iguilistentry).getServerData();
+                serverdata.serverName = this.selectedServer.serverName;
+                serverdata.serverIP = this.selectedServer.serverIP;
+                serverdata.copyFrom(this.selectedServer);
+                this.savedServerList.saveServerList();
+                this.serverListSelector.func_148195_a(this.savedServerList);
             }
 
             this.mc.displayGuiScreen(this);
         }
     }
 
-    /**
-     * Fired when a key is typed. This is the equivalent of KeyListener.keyTyped(KeyEvent e).
-     */
-    protected void keyTyped(char p_73869_1_, int p_73869_2_) {
-        int var3 = this.field_146803_h.func_148193_k();
-        GuiListExtended.IGuiListEntry var4 = var3 < 0 ? null : this.field_146803_h.func_148180_b(var3);
+    protected void keyTyped(char typedChar, int keyCode) throws IOException {
+        int i = this.serverListSelector.func_148193_k();
+        GuiListExtended.IGuiListEntry guilistextended$iguilistentry = i < 0 ? null : this.serverListSelector.getListEntry(i);
 
-        if (p_73869_2_ == 63) {
-            this.func_146792_q();
+        if (keyCode == 63) {
+            this.refreshServerList();
         } else {
-            if (var3 >= 0) {
-                if (p_73869_2_ == 200) {
+            if (i >= 0) {
+                if (keyCode == 200) {
                     if (isShiftKeyDown()) {
-                        if (var3 > 0 && var4 instanceof ServerListEntryNormal) {
-                            this.field_146804_i.swapServers(var3, var3 - 1);
-                            this.func_146790_a(this.field_146803_h.func_148193_k() - 1);
-                            this.field_146803_h.func_148145_f(-this.field_146803_h.func_148146_j());
-                            this.field_146803_h.func_148195_a(this.field_146804_i);
+                        if (i > 0 && guilistextended$iguilistentry instanceof ServerListEntryNormal) {
+                            this.savedServerList.swapServers(i, i - 1);
+                            this.selectServer(this.serverListSelector.func_148193_k() - 1);
+                            this.serverListSelector.scrollBy(-this.serverListSelector.getSlotHeight());
+                            this.serverListSelector.func_148195_a(this.savedServerList);
                         }
-                    } else if (var3 > 0) {
-                        this.func_146790_a(this.field_146803_h.func_148193_k() - 1);
-                        this.field_146803_h.func_148145_f(-this.field_146803_h.func_148146_j());
+                    } else if (i > 0) {
+                        this.selectServer(this.serverListSelector.func_148193_k() - 1);
+                        this.serverListSelector.scrollBy(-this.serverListSelector.getSlotHeight());
 
-                        if (this.field_146803_h.func_148180_b(this.field_146803_h.func_148193_k()) instanceof ServerListEntryLanScan) {
-                            if (this.field_146803_h.func_148193_k() > 0) {
-                                this.func_146790_a(this.field_146803_h.getSize() - 1);
-                                this.field_146803_h.func_148145_f(-this.field_146803_h.func_148146_j());
+                        if (this.serverListSelector.getListEntry(this.serverListSelector.func_148193_k()) instanceof ServerListEntryLanScan) {
+                            if (this.serverListSelector.func_148193_k() > 0) {
+                                this.selectServer(this.serverListSelector.getSize() - 1);
+                                this.serverListSelector.scrollBy(-this.serverListSelector.getSlotHeight());
                             } else {
-                                this.func_146790_a(-1);
+                                this.selectServer(-1);
                             }
                         }
                     } else {
-                        this.func_146790_a(-1);
+                        this.selectServer(-1);
                     }
-                } else if (p_73869_2_ == 208) {
+                } else if (keyCode == 208) {
                     if (isShiftKeyDown()) {
-                        if (var3 < this.field_146804_i.countServers() - 1) {
-                            this.field_146804_i.swapServers(var3, var3 + 1);
-                            this.func_146790_a(var3 + 1);
-                            this.field_146803_h.func_148145_f(this.field_146803_h.func_148146_j());
-                            this.field_146803_h.func_148195_a(this.field_146804_i);
+                        if (i < this.savedServerList.countServers() - 1) {
+                            this.savedServerList.swapServers(i, i + 1);
+                            this.selectServer(i + 1);
+                            this.serverListSelector.scrollBy(this.serverListSelector.getSlotHeight());
+                            this.serverListSelector.func_148195_a(this.savedServerList);
                         }
-                    } else if (var3 < this.field_146803_h.getSize()) {
-                        this.func_146790_a(this.field_146803_h.func_148193_k() + 1);
-                        this.field_146803_h.func_148145_f(this.field_146803_h.func_148146_j());
+                    } else if (i < this.serverListSelector.getSize()) {
+                        this.selectServer(this.serverListSelector.func_148193_k() + 1);
+                        this.serverListSelector.scrollBy(this.serverListSelector.getSlotHeight());
 
-                        if (this.field_146803_h.func_148180_b(this.field_146803_h.func_148193_k()) instanceof ServerListEntryLanScan) {
-                            if (this.field_146803_h.func_148193_k() < this.field_146803_h.getSize() - 1) {
-                                this.func_146790_a(this.field_146803_h.getSize() + 1);
-                                this.field_146803_h.func_148145_f(this.field_146803_h.func_148146_j());
+                        if (this.serverListSelector.getListEntry(this.serverListSelector.func_148193_k()) instanceof ServerListEntryLanScan) {
+                            if (this.serverListSelector.func_148193_k() < this.serverListSelector.getSize() - 1) {
+                                this.selectServer(this.serverListSelector.getSize() + 1);
+                                this.serverListSelector.scrollBy(this.serverListSelector.getSlotHeight());
                             } else {
-                                this.func_146790_a(-1);
+                                this.selectServer(-1);
                             }
                         }
                     } else {
-                        this.func_146790_a(-1);
+                        this.selectServer(-1);
                     }
-                } else if (p_73869_2_ != 28 && p_73869_2_ != 156) {
-                    super.keyTyped(p_73869_1_, p_73869_2_);
+                } else if (keyCode != 28 && keyCode != 156) {
+                    super.keyTyped(typedChar, keyCode);
                 } else {
-                    this.actionPerformed(this.buttonList.get(2));
+                    this.actionPerformed((GuiButton) this.buttonList.get(2));
                 }
             } else {
-                super.keyTyped(p_73869_1_, p_73869_2_);
+                super.keyTyped(typedChar, keyCode);
             }
         }
     }
 
-    /**
-     * Draws the screen and all the components in it.
-     */
-    public void drawScreen(int p_73863_1_, int p_73863_2_, float p_73863_3_) {
-        this.field_146812_y = null;
+    public void drawScreen(int mouseX, int mouseY, float partialTicks) {
+        this.hoveringText = null;
         this.drawDefaultBackground();
-        this.field_146803_h.func_148128_a(p_73863_1_, p_73863_2_, p_73863_3_);
+        this.serverListSelector.drawScreen(mouseX, mouseY, partialTicks);
         this.drawCenteredString(this.fontRendererObj, I18n.format("multiplayer.title"), this.width / 2, 20, 16777215);
-        super.drawScreen(p_73863_1_, p_73863_2_, p_73863_3_);
+        super.drawScreen(mouseX, mouseY, partialTicks);
 
-        if (this.field_146812_y != null) {
-            this.func_146283_a(Lists.newArrayList(Splitter.on("\n").split(this.field_146812_y)), p_73863_1_, p_73863_2_);
+        if (this.hoveringText != null) {
+            this.drawHoveringText(Lists.newArrayList(Splitter.on("\n").split(this.hoveringText)), mouseX, mouseY);
         }
     }
 
-    public void func_146796_h() {
-        GuiListExtended.IGuiListEntry var1 = this.field_146803_h.func_148193_k() < 0 ? null : this.field_146803_h.func_148180_b(this.field_146803_h.func_148193_k());
+    public void connectToSelected() {
+        GuiListExtended.IGuiListEntry guilistextended$iguilistentry = this.serverListSelector.func_148193_k() < 0 ? null : this.serverListSelector.getListEntry(this.serverListSelector.func_148193_k());
 
-        if (var1 instanceof ServerListEntryNormal) {
-            this.func_146791_a(((ServerListEntryNormal)var1).func_148296_a());
-        } else if (var1 instanceof ServerListEntryPinned) {
-            this.func_146791_a(((ServerListEntryPinned)var1).getServer());
-        } else if (var1 instanceof ServerListEntryLanDetected) {
-            LanServerDetector.LanServer var2 = ((ServerListEntryLanDetected)var1).func_148289_a();
-            this.func_146791_a(new ServerData(var2.getServerMotd(), var2.getServerIpPort(), true));
+        if (guilistextended$iguilistentry instanceof ServerListEntryNormal) {
+            this.connectToServer(((ServerListEntryNormal) guilistextended$iguilistentry).getServerData());
+        } else if (guilistextended$iguilistentry instanceof ServerListEntryPinned) {
+            this.connectToServer(((ServerListEntryPinned)guilistextended$iguilistentry).getServer());
+        } else if (guilistextended$iguilistentry instanceof ServerListEntryLanDetected) {
+            LanServerDetector.LanServer lanserverdetector$lanserver = ((ServerListEntryLanDetected) guilistextended$iguilistentry).getLanServer();
+            this.connectToServer(new ServerData(lanserverdetector$lanserver.getServerMotd(), lanserverdetector$lanserver.getServerIpPort(), true));
         }
     }
 
-    private void func_146791_a(ServerData data) {
+    private void connectToServer(ServerData server) {
         if (this.mc.currentServerData != null && this.mc.theWorld != null) {
+            Minecraft.getMinecraft().ingameGUI.setDisplayedTitle("");
+            Minecraft.getMinecraft().ingameGUI.setDisplayedSubTitle("");
             this.mc.theWorld.sendQuittingDisconnectingPacket();
-            this.mc.loadWorld((WorldClient)null);
+            this.mc.loadWorld(null);
         }
         for (String[] string : CheatBreaker.getInstance().getGlobalSettings().getUnsafeServers()) {
-            if (!data.serverIP.toLowerCase().startsWith(string[0].toLowerCase()) && !data.serverIP.toLowerCase().matches("([a-zA-Z0-9]+)" + string[0].toLowerCase() + "([a-zA-Z0-9]+)")) continue;
-            this.mc.displayGuiScreen(new UnsafeServerWarningGUI(this, data, string[1], string[2].equals(String.valueOf(UnsafeServerAction.BLOCK))));
+            if (!server.serverIP.toLowerCase().startsWith(string[0].toLowerCase()) && !server.serverIP.toLowerCase().matches("([a-zA-Z0-9]+)" + string[0].toLowerCase() + "([a-zA-Z0-9]+)")) continue;
+            this.mc.displayGuiScreen(new UnsafeServerWarningGUI(this, server, string[1], string[2].equals(String.valueOf(UnsafeServerAction.BLOCK))));
             return;
         }
-        this.mc.displayGuiScreen(new GuiConnecting(this, this.mc, data));
+        this.mc.displayGuiScreen(new GuiConnecting(this, this.mc, server));
     }
 
-    public void func_146790_a(int p_146790_1_) {
-        this.field_146803_h.func_148192_c(p_146790_1_);
-        GuiListExtended.IGuiListEntry var2 = p_146790_1_ < 0 ? null : this.field_146803_h.func_148180_b(p_146790_1_);
-        this.field_146809_s.enabled = false;
-        this.field_146810_r.enabled = false;
-        this.field_146808_t.enabled = false;
+    public void selectServer(int index) {
+        this.serverListSelector.setSelectedSlotIndex(index);
+        GuiListExtended.IGuiListEntry guilistextended$iguilistentry = index < 0 ? null : this.serverListSelector.getListEntry(index);
+        this.btnSelectServer.enabled = false;
+        this.btnEditServer.enabled = false;
+        this.btnDeleteServer.enabled = false;
 
-        if (var2 != null && !(var2 instanceof ServerListEntryLanScan)) {
-            this.field_146809_s.enabled = true;
+        if (guilistextended$iguilistentry != null && !(guilistextended$iguilistentry instanceof ServerListEntryLanScan)) {
+            this.btnSelectServer.enabled = true;
 
-            if (var2 instanceof ServerListEntryNormal) {
-                this.field_146810_r.enabled = true;
-                this.field_146808_t.enabled = true;
+            if (guilistextended$iguilistentry instanceof ServerListEntryNormal) {
+                this.btnEditServer.enabled = true;
+                this.btnDeleteServer.enabled = true;
             }
         }
     }
 
-    public OldServerPinger func_146789_i() {
-        return this.field_146797_f;
+    public OldServerPinger getOldServerPinger() {
+        return this.oldServerPinger;
     }
 
-    public void writeStringToBuffer(String p_146793_1_) {
-        this.field_146812_y = p_146793_1_;
+    public void setHoveringText(String p_146793_1_) {
+        this.hoveringText = p_146793_1_;
     }
 
-    /**
-     * Called when the mouse is clicked.
-     */
-    protected void mouseClicked(int p_73864_1_, int p_73864_2_, int mouseButton) {
-        super.mouseClicked(p_73864_1_, p_73864_2_, mouseButton);
-        this.field_146803_h.func_148179_a(p_73864_1_, p_73864_2_, mouseButton);
+    protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException {
+        super.mouseClicked(mouseX, mouseY, mouseButton);
+        this.serverListSelector.mouseClicked(mouseX, mouseY, mouseButton);
     }
 
-    protected void mouseMovedOrUp(int p_146286_1_, int p_146286_2_, int p_146286_3_) {
-        super.mouseMovedOrUp(p_146286_1_, p_146286_2_, p_146286_3_);
-        this.field_146803_h.func_148181_b(p_146286_1_, p_146286_2_, p_146286_3_);
+    protected void mouseReleased(int mouseX, int mouseY, int state) {
+        super.mouseReleased(mouseX, mouseY, state);
+        this.serverListSelector.mouseReleased(mouseX, mouseY, state);
     }
 
     public ServerList getServerList() {
-        return this.field_146804_i;
+        return this.savedServerList;
+    }
+
+    public boolean func_175392_a(ServerListEntryNormal p_175392_1_, int p_175392_2_) {
+        return p_175392_2_ > 0;
+    }
+
+    public boolean func_175394_b(ServerListEntryNormal p_175394_1_, int p_175394_2_) {
+        return p_175394_2_ < this.savedServerList.countServers() - 1;
+    }
+
+    public void func_175391_a(ServerListEntryNormal p_175391_1_, int p_175391_2_, boolean p_175391_3_) {
+        int i = p_175391_3_ ? 0 : p_175391_2_ - 1;
+        this.savedServerList.swapServers(p_175391_2_, i);
+
+        if (this.serverListSelector.func_148193_k() == p_175391_2_) {
+            this.selectServer(i);
+        }
+
+        this.serverListSelector.func_148195_a(this.savedServerList);
+    }
+
+    public void func_175393_b(ServerListEntryNormal p_175393_1_, int p_175393_2_, boolean p_175393_3_) {
+        int i = p_175393_3_ ? this.savedServerList.countServers() - 1 : p_175393_2_ + 1;
+        this.savedServerList.swapServers(p_175393_2_, i);
+
+        if (this.serverListSelector.func_148193_k() == p_175393_2_) {
+            this.selectServer(i);
+        }
+
+        this.serverListSelector.func_148195_a(this.savedServerList);
     }
 }

@@ -1,39 +1,41 @@
 package net.minecraft.util;
 
-public class RegistryNamespacedDefaultedByKey extends RegistryNamespaced {
-    private final String field_148760_d;
-    private Object field_148761_e;
+import org.apache.commons.lang3.Validate;
 
+public class RegistryNamespacedDefaultedByKey<K, V> extends RegistryNamespaced<K, V>
+{
+    private final K defaultValueKey;
+    private V defaultValue;
 
-    public RegistryNamespacedDefaultedByKey(String p_i45127_1_) {
-        this.field_148760_d = p_i45127_1_;
+    public RegistryNamespacedDefaultedByKey(K defaultValueKeyIn)
+    {
+        this.defaultValueKey = defaultValueKeyIn;
     }
 
-    /**
-     * Adds a new object to this registry, keyed by both the given integer ID and the given string.
-     */
-    public void addObject(int p_148756_1_, String p_148756_2_, Object p_148756_3_) {
-        if (this.field_148760_d.equals(p_148756_2_)) {
-            this.field_148761_e = p_148756_3_;
+    public void register(int id, K key, V value)
+    {
+        if (this.defaultValueKey.equals(key))
+        {
+            this.defaultValue = value;
         }
 
-        super.addObject(p_148756_1_, p_148756_2_, p_148756_3_);
+        super.register(id, key, value);
     }
 
-    public Object getObject(String p_82594_1_) {
-        Object var2 = super.getObject(p_82594_1_);
-        return var2 == null ? this.field_148761_e : var2;
+    public void validateKey()
+    {
+        Validate.notNull(this.defaultValueKey);
     }
 
-    /**
-     * Gets the object identified by the given ID.
-     */
-    public Object getObjectForID(int p_148754_1_) {
-        Object var2 = super.getObjectForID(p_148754_1_);
-        return var2 == null ? this.field_148761_e : var2;
+    public V getObject(K name)
+    {
+        V v = super.getObject(name);
+        return (V)(v == null ? this.defaultValue : v);
     }
 
-    public Object getObject(Object p_82594_1_) {
-        return this.getObject((String)p_82594_1_);
+    public V getObjectById(int id)
+    {
+        V v = super.getObjectById(id);
+        return (V)(v == null ? this.defaultValue : v);
     }
 }

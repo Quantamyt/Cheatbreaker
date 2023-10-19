@@ -1,39 +1,53 @@
 package net.minecraft.client.gui;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.Tessellator;
 
-public abstract class GuiListExtended extends GuiSlot {
-
-
-    public GuiListExtended(Minecraft p_i45010_1_, int p_i45010_2_, int p_i45010_3_, int p_i45010_4_, int p_i45010_5_, int p_i45010_6_) {
-        super(p_i45010_1_, p_i45010_2_, p_i45010_3_, p_i45010_4_, p_i45010_5_, p_i45010_6_);
+public abstract class GuiListExtended extends GuiSlot
+{
+    public GuiListExtended(Minecraft mcIn, int widthIn, int heightIn, int topIn, int bottomIn, int slotHeightIn)
+    {
+        super(mcIn, widthIn, heightIn, topIn, bottomIn, slotHeightIn);
     }
 
-    protected void elementClicked(int p_148144_1_, boolean p_148144_2_, int p_148144_3_, int p_148144_4_) {}
+    protected void elementClicked(int slotIndex, boolean isDoubleClick, int mouseX, int mouseY)
+    {
+    }
 
-    protected boolean isSelected(int p_148131_1_) {
+    protected boolean isSelected(int slotIndex)
+    {
         return false;
     }
 
-    protected void drawBackground() {}
-
-    protected void drawSlot(int p_148126_1_, int p_148126_2_, int p_148126_3_, int p_148126_4_, Tessellator p_148126_5_, int p_148126_6_, int p_148126_7_) {
-        this.func_148180_b(p_148126_1_).func_148279_a(p_148126_1_, p_148126_2_, p_148126_3_, this.func_148139_c(), p_148126_4_, p_148126_5_, p_148126_6_, p_148126_7_, this.func_148124_c(p_148126_6_, p_148126_7_) == p_148126_1_);
+    protected void drawBackground()
+    {
     }
 
-    public boolean func_148179_a(int p_148179_1_, int p_148179_2_, int p_148179_3_) {
-        if (this.func_148141_e(p_148179_2_)) {
-            int var4 = this.func_148124_c(p_148179_1_, p_148179_2_);
+    protected void drawSlot(int entryID, int p_180791_2_, int p_180791_3_, int p_180791_4_, int mouseXIn, int mouseYIn)
+    {
+        this.getListEntry(entryID).drawEntry(entryID, p_180791_2_, p_180791_3_, this.getListWidth(), p_180791_4_, mouseXIn, mouseYIn, this.getSlotIndexFromScreenCoords(mouseXIn, mouseYIn) == entryID);
+    }
 
-            if (var4 >= 0) {
-                int var5 = this.field_148152_e + this.field_148155_a / 2 - this.func_148139_c() / 2 + 2;
-                int var6 = this.field_148153_b + 4 - this.func_148148_g() + var4 * this.field_148149_f + this.field_148160_j;
-                int var7 = p_148179_1_ - var5;
-                int var8 = p_148179_2_ - var6;
+    protected void func_178040_a(int p_178040_1_, int p_178040_2_, int p_178040_3_)
+    {
+        this.getListEntry(p_178040_1_).setSelected(p_178040_1_, p_178040_2_, p_178040_3_);
+    }
 
-                if (this.func_148180_b(var4).func_148278_a(var4, p_148179_1_, p_148179_2_, p_148179_3_, var7, var8)) {
-                    this.func_148143_b(false);
+    public boolean mouseClicked(int mouseX, int mouseY, int mouseEvent)
+    {
+        if (this.isMouseYWithinSlotBounds(mouseY))
+        {
+            int i = this.getSlotIndexFromScreenCoords(mouseX, mouseY);
+
+            if (i >= 0)
+            {
+                int j = this.left + this.width / 2 - this.getListWidth() / 2 + 2;
+                int k = this.top + 4 - this.getAmountScrolled() + i * this.slotHeight + this.headerPadding;
+                int l = mouseX - j;
+                int i1 = mouseY - k;
+
+                if (this.getListEntry(i).mousePressed(i, mouseX, mouseY, mouseEvent, l, i1))
+                {
+                    this.setEnabled(false);
                     return true;
                 }
             }
@@ -42,26 +56,31 @@ public abstract class GuiListExtended extends GuiSlot {
         return false;
     }
 
-    public boolean func_148181_b(int p_148181_1_, int p_148181_2_, int p_148181_3_) {
-        for (int var4 = 0; var4 < this.getSize(); ++var4) {
-            int var5 = this.field_148152_e + this.field_148155_a / 2 - this.func_148139_c() / 2 + 2;
-            int var6 = this.field_148153_b + 4 - this.func_148148_g() + var4 * this.field_148149_f + this.field_148160_j;
-            int var7 = p_148181_1_ - var5;
-            int var8 = p_148181_2_ - var6;
-            this.func_148180_b(var4).func_148277_b(var4, p_148181_1_, p_148181_2_, p_148181_3_, var7, var8);
+    public boolean mouseReleased(int p_148181_1_, int p_148181_2_, int p_148181_3_)
+    {
+        for (int i = 0; i < this.getSize(); ++i)
+        {
+            int j = this.left + this.width / 2 - this.getListWidth() / 2 + 2;
+            int k = this.top + 4 - this.getAmountScrolled() + i * this.slotHeight + this.headerPadding;
+            int l = p_148181_1_ - j;
+            int i1 = p_148181_2_ - k;
+            this.getListEntry(i).mouseReleased(i, p_148181_1_, p_148181_2_, p_148181_3_, l, i1);
         }
 
-        this.func_148143_b(true);
+        this.setEnabled(true);
         return false;
     }
 
-    public abstract GuiListExtended.IGuiListEntry func_148180_b(int p_148180_1_);
+    public abstract GuiListExtended.IGuiListEntry getListEntry(int index);
 
-    public interface IGuiListEntry {
-        void func_148279_a(int p_148279_1_, int p_148279_2_, int p_148279_3_, int p_148279_4_, int p_148279_5_, Tessellator p_148279_6_, int p_148279_7_, int p_148279_8_, boolean p_148279_9_);
+    public interface IGuiListEntry
+    {
+        void setSelected(int p_178011_1_, int p_178011_2_, int p_178011_3_);
 
-        boolean func_148278_a(int p_148278_1_, int p_148278_2_, int p_148278_3_, int p_148278_4_, int p_148278_5_, int p_148278_6_);
+        void drawEntry(int slotIndex, int x, int y, int listWidth, int slotHeight, int mouseX, int mouseY, boolean isSelected);
 
-        void func_148277_b(int p_148277_1_, int p_148277_2_, int p_148277_3_, int p_148277_4_, int p_148277_5_, int p_148277_6_);
+        boolean mousePressed(int slotIndex, int p_148278_2_, int p_148278_3_, int p_148278_4_, int p_148278_5_, int p_148278_6_);
+
+        void mouseReleased(int slotIndex, int x, int y, int mouseEvent, int relativeX, int relativeY);
     }
 }

@@ -1,8 +1,11 @@
 package com.cheatbreaker.client.ui.mainmenu.menus;
 
+import com.cheatbreaker.client.CheatBreaker;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.client.renderer.WorldRenderer;
+import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.util.ResourceLocation;
 import org.apache.commons.io.Charsets;
 import org.apache.logging.log4j.LogManager;
@@ -46,7 +49,7 @@ public class GuiCreditsMenu extends GuiScreen {
     }
 
     private void func_146574_g() {
-        this.mc.displayGuiScreen(this.mc.lastScreen);
+        this.mc.displayGuiScreen(CheatBreaker.getInstance().lastScreen);
     }
 
     /**
@@ -65,7 +68,7 @@ public class GuiCreditsMenu extends GuiScreen {
                 while ((var1 = var4.readLine()) != null) {
                     var1 = var1.replaceAll("PLAYERNAME", this.mc.getSession().getUsername());
                     var1 = var1.replaceAll("\t", "    ");
-                    this.field_146582_i.addAll(this.mc.fontRenderer.listFormattedStringToWidth(var1, var3));
+                    this.field_146582_i.addAll(this.mc.fontRendererObj.listFormattedStringToWidth(var1, var3));
                     this.field_146582_i.add("");
                 }
 
@@ -77,34 +80,33 @@ public class GuiCreditsMenu extends GuiScreen {
     }
 
     private void func_146575_b(int p_146575_1_, int p_146575_2_, float p_146575_3_) {
-        Tessellator var4 = Tessellator.instance;
+        Tessellator tessellator = Tessellator.getInstance();
+        WorldRenderer worldrenderer = tessellator.getWorldRenderer();
         this.mc.getTextureManager().bindTexture(Gui.optionsBackground);
-        var4.startDrawingQuads();
-        var4.setColorRGBA_F(1.0F, 1.0F, 1.0F, 1.0F);
-        int var5 = this.width;
-        float var6 = 0.0F - ((float)this.field_146581_h + p_146575_3_) * 0.5F * this.field_146578_s;
-        float var7 = (float)this.height - ((float)this.field_146581_h + p_146575_3_) * 0.5F * this.field_146578_s;
-        float var8 = 0.015625F;
-        float var9 = ((float)this.field_146581_h + p_146575_3_ - 0.0F) * 0.02F;
-        float var10 = (float)(this.field_146579_r + this.height + this.height + 24) / this.field_146578_s;
-        float var11 = (var10 - 20.0F - ((float)this.field_146581_h + p_146575_3_)) * 0.005F;
+        worldrenderer.begin(7, DefaultVertexFormats.POSITION_TEX_COLOR);
+        int i = this.width;
+        float f = 0.0F - ((float) this.field_146581_h + p_146575_3_) * 0.5F * this.field_146578_s;
+        float f1 = (float) this.height - ((float) this.field_146581_h + p_146575_3_) * 0.5F * this.field_146578_s;
+        float f2 = 0.015625F;
+        float f3 = ((float) this.field_146581_h + p_146575_3_ - 0.0F) * 0.02F;
+        float f4 = (float) (this.field_146579_r + this.height + this.height + 24) / this.field_146578_s;
+        float f5 = (f4 - 20.0F - ((float) this.field_146581_h + p_146575_3_)) * 0.005F;
 
-        if (var11 < var9) {
-            var9 = var11;
+        if (f5 < f3) {
+            f3 = f5;
         }
 
-        if (var9 > 1.0F) {
-            var9 = 1.0F;
+        if (f3 > 1.0F) {
+            f3 = 1.0F;
         }
 
-        var9 *= var9;
-        var9 = var9 * 96.0F / 255.0F;
-        var4.setColorOpaque_F(var9, var9, var9);
-        var4.addVertexWithUV(0.0D, this.height, zLevel, 0.0D, var6 * var8);
-        var4.addVertexWithUV(var5, this.height, zLevel, (float)var5 * var8, var6 * var8);
-        var4.addVertexWithUV(var5, 0.0D, zLevel, (float)var5 * var8, var7 * var8);
-        var4.addVertexWithUV(0.0D, 0.0D, zLevel, 0.0D, var7 * var8);
-        var4.draw();
+        f3 = f3 * f3;
+        f3 = f3 * 96.0F / 255.0F;
+        worldrenderer.pos(0.0D, (double) this.height, (double) this.zLevel).tex(0.0D, (double) (f * f2)).color(f3, f3, f3, 1.0F).endVertex();
+        worldrenderer.pos((double) i, (double) this.height, (double) this.zLevel).tex((double) ((float) i * f2), (double) (f * f2)).color(f3, f3, f3, 1.0F).endVertex();
+        worldrenderer.pos((double) i, 0.0D, (double) this.zLevel).tex((double) ((float) i * f2), (double) (f1 * f2)).color(f3, f3, f3, 1.0F).endVertex();
+        worldrenderer.pos(0.0D, 0.0D, (double) this.zLevel).tex(0.0D, (double) (f1 * f2)).color(f3, f3, f3, 1.0F).endVertex();
+        tessellator.draw();
     }
 
     /**
@@ -112,7 +114,8 @@ public class GuiCreditsMenu extends GuiScreen {
      */
     public void drawScreen(int p_73863_1_, int p_73863_2_, float p_73863_3_) {
         this.func_146575_b(p_73863_1_, p_73863_2_, p_73863_3_);
-        Tessellator var4 = Tessellator.instance;
+        Tessellator tessellator = Tessellator.getInstance();
+        WorldRenderer worldrenderer = tessellator.getWorldRenderer();
         short var5 = 274;
         int var6 = this.width / 2 - var5 / 2;
         int var7 = this.height + 50;
@@ -155,17 +158,15 @@ public class GuiCreditsMenu extends GuiScreen {
         this.mc.getTextureManager().bindTexture(field_146577_g);
         GL11.glEnable(GL11.GL_BLEND);
         GL11.glBlendFunc(GL11.GL_ZERO, GL11.GL_ONE_MINUS_SRC_COLOR);
-        var4.startDrawingQuads();
-        var4.setColorRGBA_F(1.0F, 1.0F, 1.0F, 1.0F);
-        var10 = this.width;
-        int var13 = this.height;
-        var4.addVertexWithUV(0.0D, var13, zLevel, 0.0D, 1.0D);
-        var4.addVertexWithUV(var10, var13, zLevel, 1.0D, 1.0D);
-        var4.addVertexWithUV(var10, 0.0D, zLevel, 1.0D, 0.0D);
-        var4.addVertexWithUV(0.0D, 0.0D, zLevel, 0.0D, 0.0D);
-        var4.draw();
+        int j1 = this.width;
+        int k1 = this.height;
+        worldrenderer.begin(7, DefaultVertexFormats.POSITION_TEX_COLOR);
+        worldrenderer.pos(0.0D, (double)k1, (double)this.zLevel).tex(0.0D, 1.0D).color(1.0F, 1.0F, 1.0F, 1.0F).endVertex();
+        worldrenderer.pos((double)j1, (double)k1, (double)this.zLevel).tex(1.0D, 1.0D).color(1.0F, 1.0F, 1.0F, 1.0F).endVertex();
+        worldrenderer.pos((double)j1, 0.0D, (double)this.zLevel).tex(1.0D, 0.0D).color(1.0F, 1.0F, 1.0F, 1.0F).endVertex();
+        worldrenderer.pos(0.0D, 0.0D, (double)this.zLevel).tex(0.0D, 0.0D).color(1.0F, 1.0F, 1.0F, 1.0F).endVertex();
+        tessellator.draw();
         GL11.glDisable(GL11.GL_BLEND);
         super.drawScreen(p_73863_1_, p_73863_2_, p_73863_3_);
     }
 }
-

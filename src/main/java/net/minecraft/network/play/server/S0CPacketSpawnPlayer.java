@@ -1,153 +1,126 @@
 package net.minecraft.network.play.server;
 
-import com.mojang.authlib.GameProfile;
-import com.mojang.authlib.properties.Property;
 import java.io.IOException;
-import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 import net.minecraft.entity.DataWatcher;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.network.INetHandler;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayClient;
 import net.minecraft.util.MathHelper;
 
-public class S0CPacketSpawnPlayer extends Packet {
-    private int field_148957_a;
-    private GameProfile field_148955_b;
-    private int field_148956_c;
-    private int field_148953_d;
-    private int field_148954_e;
-    private byte field_148951_f;
-    private byte field_148952_g;
-    private int field_148959_h;
-    private DataWatcher field_148960_i;
-    private List field_148958_j;
+public class S0CPacketSpawnPlayer implements Packet<INetHandlerPlayClient>
+{
+    private int entityId;
+    private UUID playerId;
+    private int x;
+    private int y;
+    private int z;
+    private byte yaw;
+    private byte pitch;
+    private int currentItem;
+    private DataWatcher watcher;
+    private List<DataWatcher.WatchableObject> field_148958_j;
 
-
-    public S0CPacketSpawnPlayer() {}
-
-    public S0CPacketSpawnPlayer(EntityPlayer p_i45171_1_) {
-        this.field_148957_a = p_i45171_1_.getEntityId();
-        this.field_148955_b = p_i45171_1_.getGameProfile();
-        this.field_148956_c = MathHelper.floor_double(p_i45171_1_.posX * 32.0D);
-        this.field_148953_d = MathHelper.floor_double(p_i45171_1_.posY * 32.0D);
-        this.field_148954_e = MathHelper.floor_double(p_i45171_1_.posZ * 32.0D);
-        this.field_148951_f = (byte)((int)(p_i45171_1_.rotationYaw * 256.0F / 360.0F));
-        this.field_148952_g = (byte)((int)(p_i45171_1_.rotationPitch * 256.0F / 360.0F));
-        ItemStack var2 = p_i45171_1_.inventory.getCurrentItem();
-        this.field_148959_h = var2 == null ? 0 : Item.getIdFromItem(var2.getItem());
-        this.field_148960_i = p_i45171_1_.getDataWatcher();
+    public S0CPacketSpawnPlayer()
+    {
     }
 
-    /**
-     * Reads the raw packet data from the data stream.
-     */
-    public void readPacketData(PacketBuffer p_148837_1_) throws IOException {
-        this.field_148957_a = p_148837_1_.readVarIntFromBuffer();
-        UUID var2 = UUID.fromString(p_148837_1_.readStringFromBuffer(36));
-        this.field_148955_b = new GameProfile(var2, p_148837_1_.readStringFromBuffer(16));
-        int var3 = p_148837_1_.readVarIntFromBuffer();
-
-        for (int var4 = 0; var4 < var3; ++var4) {
-            String var5 = p_148837_1_.readStringFromBuffer(32767);
-            String var6 = p_148837_1_.readStringFromBuffer(32767);
-            String var7 = p_148837_1_.readStringFromBuffer(32767);
-            this.field_148955_b.getProperties().put(var5, new Property(var5, var6, var7));
-        }
-
-        this.field_148956_c = p_148837_1_.readInt();
-        this.field_148953_d = p_148837_1_.readInt();
-        this.field_148954_e = p_148837_1_.readInt();
-        this.field_148951_f = p_148837_1_.readByte();
-        this.field_148952_g = p_148837_1_.readByte();
-        this.field_148959_h = p_148837_1_.readShort();
-        this.field_148958_j = DataWatcher.readWatchedListFromPacketBuffer(p_148837_1_);
+    public S0CPacketSpawnPlayer(EntityPlayer player)
+    {
+        this.entityId = player.getEntityId();
+        this.playerId = player.getGameProfile().getId();
+        this.x = MathHelper.floor_double(player.posX * 32.0D);
+        this.y = MathHelper.floor_double(player.posY * 32.0D);
+        this.z = MathHelper.floor_double(player.posZ * 32.0D);
+        this.yaw = (byte)((int)(player.rotationYaw * 256.0F / 360.0F));
+        this.pitch = (byte)((int)(player.rotationPitch * 256.0F / 360.0F));
+        ItemStack itemstack = player.inventory.getCurrentItem();
+        this.currentItem = itemstack == null ? 0 : Item.getIdFromItem(itemstack.getItem());
+        this.watcher = player.getDataWatcher();
     }
 
-    /**
-     * Writes the raw packet data to the data stream.
-     */
-    public void writePacketData(PacketBuffer p_148840_1_) throws IOException {
-        p_148840_1_.writeVarIntToBuffer(this.field_148957_a);
-        UUID var2 = this.field_148955_b.getId();
-        p_148840_1_.writeStringToBuffer(var2 == null ? "" : var2.toString());
-        p_148840_1_.writeStringToBuffer(this.field_148955_b.getName());
-        p_148840_1_.writeVarIntToBuffer(this.field_148955_b.getProperties().size());
-        Iterator var3 = this.field_148955_b.getProperties().values().iterator();
-
-        while (var3.hasNext()) {
-            Property var4 = (Property)var3.next();
-            p_148840_1_.writeStringToBuffer(var4.getName());
-            p_148840_1_.writeStringToBuffer(var4.getValue());
-            p_148840_1_.writeStringToBuffer(var4.getSignature());
-        }
-
-        p_148840_1_.writeInt(this.field_148956_c);
-        p_148840_1_.writeInt(this.field_148953_d);
-        p_148840_1_.writeInt(this.field_148954_e);
-        p_148840_1_.writeByte(this.field_148951_f);
-        p_148840_1_.writeByte(this.field_148952_g);
-        p_148840_1_.writeShort(this.field_148959_h);
-        this.field_148960_i.func_151509_a(p_148840_1_);
+    public void readPacketData(PacketBuffer buf) throws IOException
+    {
+        this.entityId = buf.readVarIntFromBuffer();
+        this.playerId = buf.readUuid();
+        this.x = buf.readInt();
+        this.y = buf.readInt();
+        this.z = buf.readInt();
+        this.yaw = buf.readByte();
+        this.pitch = buf.readByte();
+        this.currentItem = buf.readShort();
+        this.field_148958_j = DataWatcher.readWatchedListFromPacketBuffer(buf);
     }
 
-    public void processPacket(INetHandlerPlayClient p_148833_1_) {
-        p_148833_1_.handleSpawnPlayer(this);
+    public void writePacketData(PacketBuffer buf) throws IOException
+    {
+        buf.writeVarIntToBuffer(this.entityId);
+        buf.writeUuid(this.playerId);
+        buf.writeInt(this.x);
+        buf.writeInt(this.y);
+        buf.writeInt(this.z);
+        buf.writeByte(this.yaw);
+        buf.writeByte(this.pitch);
+        buf.writeShort(this.currentItem);
+        this.watcher.writeTo(buf);
     }
 
-    public List func_148944_c() {
-        if (this.field_148958_j == null) {
-            this.field_148958_j = this.field_148960_i.getAllWatched();
+    public void processPacket(INetHandlerPlayClient handler)
+    {
+        handler.handleSpawnPlayer(this);
+    }
+
+    public List<DataWatcher.WatchableObject> func_148944_c()
+    {
+        if (this.field_148958_j == null)
+        {
+            this.field_148958_j = this.watcher.getAllWatched();
         }
 
         return this.field_148958_j;
     }
 
-    /**
-     * Returns a string formatted as comma separated [field]=[value] values. Used by Minecraft for logging purposes.
-     */
-    public String serialize() {
-        return String.format("id=%d, gameProfile='%s', x=%.2f, y=%.2f, z=%.2f, carried=%d", Integer.valueOf(this.field_148957_a), this.field_148955_b, Float.valueOf((float)this.field_148956_c / 32.0F), Float.valueOf((float)this.field_148953_d / 32.0F), Float.valueOf((float)this.field_148954_e / 32.0F), Integer.valueOf(this.field_148959_h));
+    public int getEntityID()
+    {
+        return this.entityId;
     }
 
-    public int func_148943_d() {
-        return this.field_148957_a;
+    public UUID getPlayer()
+    {
+        return this.playerId;
     }
 
-    public GameProfile func_148948_e() {
-        return this.field_148955_b;
+    public int getX()
+    {
+        return this.x;
     }
 
-    public int func_148942_f() {
-        return this.field_148956_c;
+    public int getY()
+    {
+        return this.y;
     }
 
-    public int func_148949_g() {
-        return this.field_148953_d;
+    public int getZ()
+    {
+        return this.z;
     }
 
-    public int func_148946_h() {
-        return this.field_148954_e;
+    public byte getYaw()
+    {
+        return this.yaw;
     }
 
-    public byte func_148941_i() {
-        return this.field_148951_f;
+    public byte getPitch()
+    {
+        return this.pitch;
     }
 
-    public byte func_148945_j() {
-        return this.field_148952_g;
-    }
-
-    public int func_148947_k() {
-        return this.field_148959_h;
-    }
-
-    public void processPacket(INetHandler p_148833_1_) {
-        this.processPacket((INetHandlerPlayClient)p_148833_1_);
+    public int getCurrentItemID()
+    {
+        return this.currentItem;
     }
 }

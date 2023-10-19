@@ -2,46 +2,40 @@ package net.minecraft.entity.ai;
 
 import net.minecraft.entity.EntityLiving;
 
-public class EntityAIOpenDoor extends EntityAIDoorInteract {
-    boolean field_75361_i;
-    int field_75360_j;
+public class EntityAIOpenDoor extends EntityAIDoorInteract
+{
+    boolean closeDoor;
+    int closeDoorTemporisation;
 
-
-    public EntityAIOpenDoor(EntityLiving p_i1644_1_, boolean p_i1644_2_) {
-        super(p_i1644_1_);
-        this.theEntity = p_i1644_1_;
-        this.field_75361_i = p_i1644_2_;
+    public EntityAIOpenDoor(EntityLiving entitylivingIn, boolean shouldClose)
+    {
+        super(entitylivingIn);
+        this.theEntity = entitylivingIn;
+        this.closeDoor = shouldClose;
     }
 
-    /**
-     * Returns whether an in-progress EntityAIBase should continue executing
-     */
-    public boolean continueExecuting() {
-        return this.field_75361_i && this.field_75360_j > 0 && super.continueExecuting();
+    public boolean continueExecuting()
+    {
+        return this.closeDoor && this.closeDoorTemporisation > 0 && super.continueExecuting();
     }
 
-    /**
-     * Execute a one shot task or start executing a continuous task
-     */
-    public void startExecuting() {
-        this.field_75360_j = 20;
-        this.field_151504_e.func_150014_a(this.theEntity.worldObj, this.entityPosX, this.entityPosY, this.entityPosZ, true);
+    public void startExecuting()
+    {
+        this.closeDoorTemporisation = 20;
+        this.doorBlock.toggleDoor(this.theEntity.worldObj, this.doorPosition, true);
     }
 
-    /**
-     * Resets the task
-     */
-    public void resetTask() {
-        if (this.field_75361_i) {
-            this.field_151504_e.func_150014_a(this.theEntity.worldObj, this.entityPosX, this.entityPosY, this.entityPosZ, false);
+    public void resetTask()
+    {
+        if (this.closeDoor)
+        {
+            this.doorBlock.toggleDoor(this.theEntity.worldObj, this.doorPosition, false);
         }
     }
 
-    /**
-     * Updates the task
-     */
-    public void updateTask() {
-        --this.field_75360_j;
+    public void updateTask()
+    {
+        --this.closeDoorTemporisation;
         super.updateTask();
     }
 }

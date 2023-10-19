@@ -4,26 +4,22 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public abstract class NBTBase {
-    public static final String[] NBTTypes = new String[] {"END", "BYTE", "SHORT", "INT", "LONG", "FLOAT", "DOUBLE", "BYTE[]", "STRING", "LIST", "COMPOUND", "INT[]"};
+public abstract class NBTBase
+{
+    public static final String[] NBT_TYPES = new String[] {"END", "BYTE", "SHORT", "INT", "LONG", "FLOAT", "DOUBLE", "BYTE[]", "STRING", "LIST", "COMPOUND", "INT[]"};
 
+    abstract void write(DataOutput output) throws IOException;
 
-    /**
-     * Write the actual data contents of the tag, implemented in NBT extension classes
-     */
-    abstract void write(DataOutput p_74734_1_) throws IOException;
-
-    abstract void func_152446_a(DataInput p_152446_1_, int p_152446_2_, NBTSizeTracker p_152446_3_) throws IOException;
+    abstract void read(DataInput input, int depth, NBTSizeTracker sizeTracker) throws IOException;
 
     public abstract String toString();
 
-    /**
-     * Gets the type byte for the tag.
-     */
     public abstract byte getId();
 
-    protected static NBTBase func_150284_a(byte p_150284_0_) {
-        switch (p_150284_0_) {
+    protected static NBTBase createNewByType(byte id)
+    {
+        switch (id)
+        {
             case 0:
                 return new NBTTagEnd();
 
@@ -65,41 +61,48 @@ public abstract class NBTBase {
         }
     }
 
-    /**
-     * Creates a clone of the tag.
-     */
     public abstract NBTBase copy();
 
-    public boolean equals(Object p_equals_1_) {
-        if (!(p_equals_1_ instanceof NBTBase)) {
+    public boolean hasNoTags()
+    {
+        return false;
+    }
+
+    public boolean equals(Object p_equals_1_)
+    {
+        if (!(p_equals_1_ instanceof NBTBase))
+        {
             return false;
-        } else {
-            NBTBase var2 = (NBTBase)p_equals_1_;
-            return this.getId() == var2.getId();
+        }
+        else
+        {
+            NBTBase nbtbase = (NBTBase)p_equals_1_;
+            return this.getId() == nbtbase.getId();
         }
     }
 
-    public int hashCode() {
+    public int hashCode()
+    {
         return this.getId();
     }
 
-    protected String func_150285_a_() {
+    protected String getString()
+    {
         return this.toString();
     }
 
-    public abstract static class NBTPrimitive extends NBTBase {
+    public abstract static class NBTPrimitive extends NBTBase
+    {
+        public abstract long getLong();
 
+        public abstract int getInt();
 
-        public abstract long func_150291_c();
+        public abstract short getShort();
 
-        public abstract int func_150287_d();
+        public abstract byte getByte();
 
-        public abstract short func_150289_e();
+        public abstract double getDouble();
 
-        public abstract byte func_150290_f();
-
-        public abstract double func_150286_g();
-
-        public abstract float func_150288_h();
+        public abstract float getFloat();
     }
 }

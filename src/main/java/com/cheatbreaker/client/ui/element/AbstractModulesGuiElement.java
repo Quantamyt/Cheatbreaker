@@ -6,6 +6,7 @@ import com.cheatbreaker.client.module.data.Setting;
 import com.cheatbreaker.client.ui.module.HudLayoutEditorGui;
 import net.minecraft.client.Minecraft;
 
+
 public abstract class AbstractModulesGuiElement {
     public float scale;
     public int yOffset = 0;
@@ -45,7 +46,7 @@ public abstract class AbstractModulesGuiElement {
     }
 
     public boolean isMouseInside(int mouseX, int mouseY) {
-        return (float)mouseX > (float)this.x * this.scale && (float)mouseX < (float)(this.x + this.width) * this.scale && (float)mouseY > (float)(this.y + this.yOffset) * this.scale && (float)mouseY < (float)(this.y + this.height + this.yOffset) * this.scale && Minecraft.getMinecraft().currentScreen instanceof HudLayoutEditorGui;
+        return (float) mouseX > (float) this.x * this.scale && (float) mouseX < (float) (this.x + this.width) * this.scale && (float) mouseY > (float) (this.y + this.yOffset) * this.scale && (float) mouseY < (float) (this.y + this.height + this.yOffset) * this.scale && Minecraft.getMinecraft().currentScreen instanceof HudLayoutEditorGui;
     }
 
     public void onScroll(int n) {

@@ -1,7 +1,7 @@
 package com.cheatbreaker.client.ui.module;
 
-import com.cheatbreaker.client.module.data.ScreenLocation;
 import com.cheatbreaker.client.module.AbstractModule;
+import com.cheatbreaker.client.module.data.ScreenLocation;
 
 public class ModuleDataHolder {
     public AbstractModule module;
@@ -21,8 +21,8 @@ public class ModuleDataHolder {
         this.module = module;
         this.xTranslation = module.getXTranslation();
         this.yTranslation = module.getYTranslation();
-        this.width = module.width * (Float) module.masterScale();
-        this.height = module.height * (Float) module.masterScale();
+        this.width = module.width * module.masterScale();
+        this.height = module.height * module.masterScale();
         this.mouseX = mouseX;
         this.mouseY = mouseY;
         this.screenLocation = screenLocation;

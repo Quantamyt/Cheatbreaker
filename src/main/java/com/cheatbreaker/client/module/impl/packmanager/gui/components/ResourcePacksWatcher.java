@@ -2,11 +2,11 @@ package com.cheatbreaker.client.module.impl.packmanager.gui.components;
 
 import com.cheatbreaker.client.CheatBreaker;
 import com.cheatbreaker.client.module.impl.packmanager.utils.PackUtils;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.Iterator;
 
 public class ResourcePacksWatcher {
     private WatchService watchService;
@@ -14,7 +14,7 @@ public class ResourcePacksWatcher {
     public ResourcePacksWatcher(Path root) {
         try {
             this.watchService = FileSystems.getDefault().newWatchService();
-            Files.walkFileTree(root, (FileVisitor<? super Path>)new SimpleFileVisitor<Path>(){
+            Files.walkFileTree(root, new SimpleFileVisitor<Path>() {
 
                 @Override
                 public FileVisitResult preVisitDirectory(Path path, BasicFileAttributes attributes) throws IOException {
@@ -39,7 +39,7 @@ public class ResourcePacksWatcher {
         boolean eventOccurred = false;
         if (this.watchService != null && (watchKey = this.watchService.poll()) != null) {
             for (WatchEvent<?> event : watchKey.pollEvents()) {
-                File file = ((Path)watchKey.watchable()).resolve(event.context().toString()).toFile();
+                File file = ((Path) watchKey.watchable()).resolve(event.context().toString()).toFile();
                 if (!PackUtils.isResourcePack(file) && !PackUtils.isResourcePackDirectory(file)) continue;
                 eventOccurred = true;
                 break;

@@ -7,45 +7,50 @@ import net.minecraft.command.CommandException;
 import net.minecraft.command.ICommandSender;
 import net.minecraft.command.WrongUsageException;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.util.BlockPos;
 
-public class CommandDeOp extends CommandBase {
-
-
-    public String getCommandName() {
+public class CommandDeOp extends CommandBase
+{
+    public String getCommandName()
+    {
         return "deop";
     }
 
-    /**
-     * Return the required permission level for this command.
-     */
-    public int getRequiredPermissionLevel() {
+    public int getRequiredPermissionLevel()
+    {
         return 3;
     }
 
-    public String getCommandUsage(ICommandSender p_71518_1_) {
+    public String getCommandUsage(ICommandSender sender)
+    {
         return "commands.deop.usage";
     }
 
-    public void processCommand(ICommandSender p_71515_1_, String[] p_71515_2_) {
-        if (p_71515_2_.length == 1 && p_71515_2_[0].length() > 0) {
-            MinecraftServer var3 = MinecraftServer.getServer();
-            GameProfile var4 = var3.getConfigurationManager().func_152603_m().func_152700_a(p_71515_2_[0]);
+    public void processCommand(ICommandSender sender, String[] args) throws CommandException
+    {
+        if (args.length == 1 && args[0].length() > 0)
+        {
+            MinecraftServer minecraftserver = MinecraftServer.getServer();
+            GameProfile gameprofile = minecraftserver.getConfigurationManager().getOppedPlayers().getGameProfileFromName(args[0]);
 
-            if (var4 == null) {
-                throw new CommandException("commands.deop.failed", p_71515_2_[0]);
-            } else {
-                var3.getConfigurationManager().func_152610_b(var4);
-                func_152373_a(p_71515_1_, this, "commands.deop.success", p_71515_2_[0]);
+            if (gameprofile == null)
+            {
+                throw new CommandException("commands.deop.failed", new Object[] {args[0]});
             }
-        } else {
-            throw new WrongUsageException("commands.deop.usage");
+            else
+            {
+                minecraftserver.getConfigurationManager().removeOp(gameprofile);
+                notifyOperators(sender, this, "commands.deop.success", new Object[] {args[0]});
+            }
+        }
+        else
+        {
+            throw new WrongUsageException("commands.deop.usage", new Object[0]);
         }
     }
 
-    /**
-     * Adds the strings available in this command to the given list of tab completion options.
-     */
-    public List addTabCompletionOptions(ICommandSender p_71516_1_, String[] p_71516_2_) {
-        return p_71516_2_.length == 1 ? getListOfStringsMatchingLastWord(p_71516_2_, MinecraftServer.getServer().getConfigurationManager().func_152606_n()) : null;
+    public List<String> addTabCompletionOptions(ICommandSender sender, String[] args, BlockPos pos)
+    {
+        return args.length == 1 ? getListOfStringsMatchingLastWord(args, MinecraftServer.getServer().getConfigurationManager().getOppedPlayerNames()) : null;
     }
 }

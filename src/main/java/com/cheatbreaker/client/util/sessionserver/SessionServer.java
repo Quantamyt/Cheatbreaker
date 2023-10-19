@@ -1,31 +1,22 @@
 package com.cheatbreaker.client.util.sessionserver;
 
+import lombok.Getter;
+import lombok.Setter;
+
+/**
+ * Used to define what a Session Server is for CheatBreaker.
+ */
+@Getter
 public class SessionServer {
     private final String name;
     private final String url;
-    private StatusColor status = StatusColor.UNKNOWN;
+    @Setter private StatusColor status = StatusColor.UNKNOWN;
 
     public SessionServer(String name, String url) {
         this.name = name;
         this.url = url;
     }
 
-    public StatusColor getStatus() {
-        return this.status;
-    }
-
-    public void setStatus(StatusColor sessionServerStatusColor) {
-        this.status = sessionServerStatusColor;
-    }
-
-    public String getName() {
-        return this.name;
-    }
-
-    public String getURL() {
-        return this.url;
-    }
-    
     public enum StatusColor {
         UP("green"),
         DOWN("red"),
@@ -37,7 +28,7 @@ public class SessionServer {
         public String getIdentifier() {
             return this.color;
         }
-        
+
         StatusColor(final String color) {
             this.color = color;
         }

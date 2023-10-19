@@ -5,10 +5,14 @@ import lombok.Getter;
 import net.minecraft.client.Minecraft;
 
 public abstract class AbstractElement {
-    @Getter protected float xPosition;
-    @Getter protected float yPosition;
-    @Getter protected float width;
-    @Getter protected float height;
+    @Getter
+    protected float xPosition;
+    @Getter
+    protected float yPosition;
+    @Getter
+    protected float width;
+    @Getter
+    protected float height;
     protected final Minecraft mc = Minecraft.getMinecraft();
     protected final CheatBreaker cb = CheatBreaker.getInstance();
 

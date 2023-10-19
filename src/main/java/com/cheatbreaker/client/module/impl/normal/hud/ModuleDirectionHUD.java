@@ -1,7 +1,7 @@
 package com.cheatbreaker.client.module.impl.normal.hud;
 
 
-import com.cheatbreaker.client.event.impl.GuiDrawEvent;
+import com.cheatbreaker.client.event.impl.render.GuiDrawEvent;
 import com.cheatbreaker.client.module.AbstractModule;
 import com.cheatbreaker.client.module.data.CustomizationLevel;
 import com.cheatbreaker.client.module.data.Setting;
@@ -9,14 +9,11 @@ import com.cheatbreaker.client.ui.module.GuiAnchor;
 import com.cheatbreaker.client.ui.module.HudLayoutEditorGui;
 import com.cheatbreaker.client.ui.util.HudUtil;
 import net.minecraft.client.gui.Gui;
+import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.util.MathHelper;
 import net.minecraft.util.ResourceLocation;
 import org.lwjgl.opengl.GL11;
 
-/**
- * Displays your cardinal direction.
- * @see AbstractModule
- */
 public class ModuleDirectionHUD extends AbstractModule {
     private final Setting markerColor;
     private final Setting directionColor;
@@ -25,8 +22,8 @@ public class ModuleDirectionHUD extends AbstractModule {
     private final Setting borderColor;
     private final Setting showWhileTyping;
     private final Setting background;
-    private Setting border;
-    private Setting borderThickness;
+    private final Setting border;
+    private final Setting borderThickness;
     private final Setting highlightNorth;
     private final ResourceLocation texture = new ResourceLocation("textures/gui/compass.png");
 
@@ -55,7 +52,7 @@ public class ModuleDirectionHUD extends AbstractModule {
             return;
         }
         GL11.glPushMatrix();
-        GL11.glEnable(GL11.GL_BLEND);
+        GlStateManager.enableBlend();
         this.scaleAndTranslate(event.getScaledResolution());
         this.setDimensions(66, 12);
         if (!this.mc.ingameGUI.getChatGUI().getChatOpen() || (Boolean) this.showWhileTyping.getValue()) {
@@ -63,21 +60,21 @@ public class ModuleDirectionHUD extends AbstractModule {
             this.drawCompass();
             GL11.glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
         }
-        GL11.glDisable(GL11.GL_BLEND);
+        GlStateManager.disableBlend();
         GL11.glPopMatrix();
     }
 
     private void drawCompass() {
-        int n = MathHelper.floor_double((double)(this.mc.thePlayer.rotationYaw * (float)256 / (float)360) + 0.3450704167414649 * 1.4489796161651611) & 0xFF;
+        int n = MathHelper.floor_double((double) (this.mc.thePlayer.rotationYaw * (float) 256 / (float) 360) + 0.3450704167414649 * 1.4489796161651611) & 0xFF;
         int n2 = 0;
         int n3 = 0;
-        if ((Integer)this.directionColor.getValue() != 4095) {
+        if ((Integer) this.directionColor.getValue() != 4095) {
             int directionColor = this.directionColor.getColorValue();
             int backgroundColor = this.backgroundColor.getColorValue();
             int highlightColor = this.highlightColor.getColorValue();
             this.mc.getTextureManager().bindTexture(this.texture);
             if ((Boolean) this.background.getValue()) {
-                GL11.glColor4f((float)(backgroundColor >> 16 & 0xFF) / (float)255, (float)(backgroundColor >> 8 & 0xFF) / (float)255, (float)(backgroundColor & 0xFF) / (float)255, (float)(backgroundColor >> 24 & 255) / (float)255);
+                GL11.glColor4f((float) (backgroundColor >> 16 & 0xFF) / (float) 255, (float) (backgroundColor >> 8 & 0xFF) / (float) 255, (float) (backgroundColor & 0xFF) / (float) 255, (float) (backgroundColor >> 24 & 255) / (float) 255);
                 if (n < 128) {
                     HudUtil.drawTexturedModalRect(n3, n2, n, 0, 66, 12, -100);
                 } else {
@@ -85,14 +82,14 @@ public class ModuleDirectionHUD extends AbstractModule {
                 }
             }
 
-            GL11.glColor4f((float)(directionColor >> 16 & 0xFF) / (float)255, (float)(directionColor >> 8 & 0xFF) / (float)255, (float)(directionColor & 0xFF) / (float)255, (float)(directionColor >> 24 & 255) / (float)255);
+            GL11.glColor4f((float) (directionColor >> 16 & 0xFF) / (float) 255, (float) (directionColor >> 8 & 0xFF) / (float) 255, (float) (directionColor & 0xFF) / (float) 255, (float) (directionColor >> 24 & 255) / (float) 255);
             if (n < 128) {
                 HudUtil.drawTexturedModalRect(n3, n2, n, 24, 66, 12, -100);
             } else {
                 HudUtil.drawTexturedModalRect(n3, n2, n - 128, 36, 66, 12, -100);
             }
             if ((Boolean) this.highlightNorth.getValue()) {
-                GL11.glColor4f((float)(highlightColor >> 16 & 255) / (float)255, (float)(highlightColor >> 8 & 255) / (float)255, (float)(highlightColor & 255) / (float)255, (float)(highlightColor >> 24 & 255) / (float)255);
+                GL11.glColor4f((float) (highlightColor >> 16 & 255) / (float) 255, (float) (highlightColor >> 8 & 255) / (float) 255, (float) (highlightColor & 255) / (float) 255, (float) (highlightColor >> 24 & 255) / (float) 255);
                 if (n < 128) {
                     HudUtil.drawTexturedModalRect(n3, n2, n, 72, 66, 12, -100);
                 } else {
@@ -107,8 +104,8 @@ public class ModuleDirectionHUD extends AbstractModule {
                 HudUtil.drawTexturedModalRect(n3, n2, n - 128, 12, 66, 12, -100);
             }
         }
-        this.mc.fontRenderer.drawString("|", n3 + 32, n2 + 1, this.markerColor.getColorValue());
-        this.mc.fontRenderer.drawString("|§r", n3 + 32, n2 + 5, this.markerColor.getColorValue());
+        this.mc.fontRendererObj.drawString("|", n3 + 32, n2 + 1, this.markerColor.getColorValue());
+        this.mc.fontRendererObj.drawString("|§r", n3 + 32, n2 + 5, this.markerColor.getColorValue());
         if ((Boolean) this.border.getValue()) {
             float borderThickness = (Float) this.borderThickness.getValue();
             Gui.drawOutline(-borderThickness, -borderThickness, 66 + borderThickness, 12 + borderThickness, borderThickness, this.borderColor.getColorValue());

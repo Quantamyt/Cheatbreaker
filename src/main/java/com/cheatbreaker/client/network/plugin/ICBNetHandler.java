@@ -1,10 +1,12 @@
 package com.cheatbreaker.client.network.plugin;
 
-import com.cheatbreaker.client.network.plugin.shared.PacketAddWaypoint;
-import com.cheatbreaker.client.network.plugin.shared.PacketRemoveWaypoint;
+import com.cheatbreaker.client.network.plugin.shared.CBPacketAddWaypoint;
+import com.cheatbreaker.client.network.plugin.shared.CBPacketRemoveWaypoint;
 
 public interface ICBNetHandler {
-    void handleAddWaypoint(PacketAddWaypoint var1);
 
-    void handleRemoveWaypoint(PacketRemoveWaypoint var1);
+    void handleAddWaypoint(CBPacketAddWaypoint var1);
+
+    void handleRemoveWaypoint(CBPacketRemoveWaypoint var1);
+
 }

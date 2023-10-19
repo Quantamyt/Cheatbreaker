@@ -1,19 +1,13 @@
 package com.cheatbreaker.client.audio;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+
+/**
+ * Defines the Microphone Object used for CheatBreaker Voice Chat.
+ */
+@Getter @AllArgsConstructor
 public class Microphone {
     private final String description;
     private final String name;
-
-    public Microphone(String description, String name) {
-        this.description = description;
-        this.name = name;
-    }
-
-    public String getDescription() {
-        return this.description;
-    }
-
-    public String getName() {
-        return this.name;
-    }
 }

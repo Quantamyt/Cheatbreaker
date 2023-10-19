@@ -1,360 +1,379 @@
 package net.minecraft.client.gui;
 
-import com.cheatbreaker.client.util.font.*;
 import com.ibm.icu.text.ArabicShaping;
 import com.ibm.icu.text.ArabicShapingException;
 import com.ibm.icu.text.Bidi;
-import me.tellinq.testing.font.*;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.client.renderer.WorldRenderer;
 import net.minecraft.client.renderer.texture.TextureManager;
+import net.minecraft.client.renderer.texture.TextureUtil;
+import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.client.resources.IResourceManager;
 import net.minecraft.client.resources.IResourceManagerReloadListener;
 import net.minecraft.client.settings.GameSettings;
 import net.minecraft.src.Config;
-import net.minecraft.src.CustomColorizer;
-import net.minecraft.src.FontUtils;
 import net.minecraft.util.ResourceLocation;
+import net.optifine.CustomColors;
+import net.optifine.render.GlBlendState;
+import net.optifine.util.FontUtils;
+import org.apache.commons.io.IOUtils;
 import org.lwjgl.opengl.GL11;
 
-import javax.imageio.ImageIO;
-import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
-import java.util.List;
 
-public class FontRenderer implements IResourceManagerReloadListener {
+public class FontRenderer implements IResourceManagerReloadListener
+{
     private static final ResourceLocation[] unicodePageLocations = new ResourceLocation[256];
-
-    /** Array of width of all the characters in default.png */
-    private final float[] charWidth = new float[256];
-
-    /** the height in pixels of default text */
+    private final int[] charWidth = new int[256];
     public int FONT_HEIGHT = 9;
     public Random fontRandom = new Random();
-
-    /**
-     * Array of the start/end column (in upper/lower nibble) for every glyph in the /font directory.
-     */
-    private final byte[] glyphWidth = new byte[65536];
-
-    /**
-     * Array of RGB triplets defining the 16 standard chat colors followed by 16 darker version of the same colors for
-     * drop shadows.
-     */
+    private byte[] glyphWidth = new byte[65536];
     public int[] colorCode = new int[32];
     private ResourceLocation locationFontTexture;
-
-    /** The RenderEngine used to load and setup glyph textures. */
     private final TextureManager renderEngine;
-
-    /** Current X coordinate at which to draw the next character. */
     private float posX;
-
-    /** Current Y coordinate at which to draw the next character. */
     private float posY;
-
-    /**
-     * If true, strings should be rendered with Unicode fonts instead of the default.png font
-     */
     private boolean unicodeFlag;
-
-    /**
-     * If true, the Unicode Bidirectional Algorithm should be run before rendering any string.
-     */
     private boolean bidiFlag;
-
-    /** Used to specify new red value for the current color. */
     private float red;
-
-    /** Used to specify new blue value for the current color. */
     private float blue;
-
-    /** Used to specify new green value for the current color. */
     private float green;
-
-    /** Used to speify new alpha value for the current color. */
     private float alpha;
-
-    /** Text color of the currently rendering string. */
     private int textColor;
-
-    /** Set if the "k" style (random) is active in currently rendering string */
     private boolean randomStyle;
-
-    /** Set if the "l" style (bold) is active in currently rendering string */
     private boolean boldStyle;
-
-    /** Set if the "o" style (italic) is active in currently rendering string */
     private boolean italicStyle;
-
-    /**
-     * Set if the "n" style (underlined) is active in currently rendering string
-     */
     private boolean underlineStyle;
-
-    /**
-     * Set if the "m" style (strikethrough) is active in currently rendering string
-     */
     private boolean strikethroughStyle;
-
     public GameSettings gameSettings;
     public ResourceLocation locationFontTextureBase;
-    public boolean enabled = true;
     public float offsetBold = 1.0F;
-    private ResourceLocation resourceLocation;
-    private int var3;
-    private int IllIlIlIllllIlIIllllIIlll;
-    private boolean[] IllIIlIIlllllIllIIIlllIII;
-    private final TestClassTwo lIlIlIllIIIIIIIIllllIIllI = new TestClassTwo();
-    private List<TestClassOne> IlllIIlllIIIIllIIllllIlIl;
-    private long IllllIllllIlIIIlIIIllllll;
+    private float[] charWidthFloat = new float[256];
+    private boolean blend = false;
+    private GlBlendState oldBlendState = new GlBlendState();
 
-
-    public FontRenderer(GameSettings var1, ResourceLocation var2, TextureManager var3, boolean var4) {
-        this.gameSettings = var1;
-        this.locationFontTextureBase = var2;
-        this.locationFontTexture = var2;
-        this.renderEngine = var3;
-        this.unicodeFlag = var4;
+    public FontRenderer(GameSettings gameSettingsIn, ResourceLocation location, TextureManager textureManagerIn, boolean unicode)
+    {
+        this.gameSettings = gameSettingsIn;
+        this.locationFontTextureBase = location;
+        this.locationFontTexture = location;
+        this.renderEngine = textureManagerIn;
+        this.unicodeFlag = unicode;
         this.locationFontTexture = FontUtils.getHdFontLocation(this.locationFontTextureBase);
-        for (int var5 = 0; var5 < 32; ++var5) {
+        this.bindTexture(this.locationFontTexture);
+
+        for (int i = 0; i < 32; ++i)
+        {
             Minecraft.getMinecraft().cbLoadingScreen.addPhase();
-            int var6 = (var5 >> 3 & 1) * 85;
-            int var7 = (var5 >> 2 & 1) * 170 + var6;
-            int var8 = (var5 >> 1 & 1) * 170 + var6;
-            int var9 = (var5 >> 0 & 1) * 170 + var6;
-            if (var5 == 6) {
-                var7 += 85;
+            int j = (i >> 3 & 1) * 85;
+            int k = (i >> 2 & 1) * 170 + j;
+            int l = (i >> 1 & 1) * 170 + j;
+            int i1 = (i >> 0 & 1) * 170 + j;
+
+            if (i == 6)
+            {
+                k += 85;
             }
-            if (var1.anaglyph) {
-                int var10 = (var7 * 30 + var8 * 59 + var9 * 11) / 100;
-                int var11 = (var7 * 30 + var8 * 70) / 100;
-                int var12 = (var7 * 30 + var9 * 70) / 100;
-                var7 = var10;
-                var8 = var11;
-                var9 = var12;
+
+            if (gameSettingsIn.anaglyph)
+            {
+                int j1 = (k * 30 + l * 59 + i1 * 11) / 100;
+                int k1 = (k * 30 + l * 70) / 100;
+                int l1 = (k * 30 + i1 * 70) / 100;
+                k = j1;
+                l = k1;
+                i1 = l1;
             }
-            if (var5 >= 16) {
-                var7 /= 4;
-                var8 /= 4;
-                var9 /= 4;
+
+            if (i >= 16)
+            {
+                k /= 4;
+                l /= 4;
+                i1 /= 4;
             }
-            this.colorCode[var5] = (var7 & 0xFF) << 16 | (var8 & 0xFF) << 8 | var9 & 0xFF;
+
+            this.colorCode[i] = (k & 255) << 16 | (l & 255) << 8 | i1 & 255;
         }
+
         this.readGlyphSizes();
     }
 
-    @Override
-    public void onResourceManagerReload(IResourceManager var1) {
-        this.lIlIlIllIIIIIIIIllllIIllI.clear();
+    public void onResourceManagerReload(IResourceManager resourceManager)
+    {
         this.locationFontTexture = FontUtils.getHdFontLocation(this.locationFontTextureBase);
-        for (int var2 = 0; var2 < unicodePageLocations.length; ++var2) {
-            FontRenderer.unicodePageLocations[var2] = null;
+
+        for (int i = 0; i < unicodePageLocations.length; ++i)
+        {
+            unicodePageLocations[i] = null;
         }
+
         this.readFontTexture();
         this.readGlyphSizes();
     }
 
-    private void readFontTexture() {
-        BufferedImage var1;
-        try {
-            var1 = ImageIO.read(this.getResourceInputStream(this.locationFontTexture));
-        } catch (IOException var22) {
-            throw new RuntimeException(var22);
+    private void readFontTexture()
+    {
+        BufferedImage bufferedimage;
+
+        try
+        {
+            bufferedimage = TextureUtil.readBufferedImage(this.getResourceInputStream(this.locationFontTexture));
         }
-        Properties var2 = FontUtils.readFontProperties(this.locationFontTexture);
-        int var3 = var1.getWidth();
-        int var4 = var1.getHeight();
-        int var5 = var3 / 16;
-        int var6 = var4 / 16;
-        float var7 = (float)var3 / 128.0f;
-        float var8 = Config.limit(var7, 1.0f, 2.0f);
-        this.offsetBold = 1.0f / var8;
-        float var9 = FontUtils.readFloat(var2, "offsetBold", -1.0f);
-        if (var9 >= 0.0f) {
-            this.offsetBold = var9;
+        catch (IOException ioexception1)
+        {
+            throw new RuntimeException(ioexception1);
         }
-        int[] var10 = new int[var3 * var4];
-        var1.getRGB(0, 0, var3, var4, var10, 0, var3);
-        for (int var11 = 0; var11 < 256; ++var11) {
-            int var15;
-            int var12 = var11 % 16;
-            int var13 = var11 / 16;
-            boolean var14 = false;
-            for (var15 = var5 - 1; var15 >= 0; --var15) {
-                int var16 = var12 * var5 + var15;
-                boolean var17 = true;
-                for (int var18 = 0; var18 < var6 && var17; ++var18) {
-                    int var19 = (var13 * var6 + var18) * var3;
-                    int var20 = var10[var16 + var19];
-                    int var21 = var20 >> 24 & 0xFF;
-                    if (var21 <= 16) continue;
-                    var17 = false;
+
+        Properties properties = FontUtils.readFontProperties(this.locationFontTexture);
+        this.blend = FontUtils.readBoolean(properties, "blend", false);
+        int i = bufferedimage.getWidth();
+        int j = bufferedimage.getHeight();
+        int k = i / 16;
+        int l = j / 16;
+        float f = (float)i / 128.0F;
+        float f1 = Config.limit(f, 1.0F, 2.0F);
+        this.offsetBold = 1.0F / f1;
+        float f2 = FontUtils.readFloat(properties, "offsetBold", -1.0F);
+
+        if (f2 >= 0.0F)
+        {
+            this.offsetBold = f2;
+        }
+
+        int[] aint = new int[i * j];
+        bufferedimage.getRGB(0, 0, i, j, aint, 0, i);
+
+        for (int i1 = 0; i1 < 256; ++i1)
+        {
+            int j1 = i1 % 16;
+            int k1 = i1 / 16;
+            int l1 = 0;
+
+            for (l1 = k - 1; l1 >= 0; --l1)
+            {
+                int i2 = j1 * k + l1;
+                boolean flag = true;
+
+                for (int j2 = 0; j2 < l && flag; ++j2)
+                {
+                    int k2 = (k1 * l + j2) * i;
+                    int l2 = aint[i2 + k2];
+                    int i3 = l2 >> 24 & 255;
+
+                    if (i3 > 16)
+                    {
+                        flag = false;
+                    }
                 }
-                if (!var17) break;
+
+                if (!flag)
+                {
+                    break;
+                }
             }
-            if (var11 == 65) {
-                // empty if block
+
+            if (i1 == 65)
+            {
+                i1 = i1;
             }
-            if (var11 == 32) {
-                var15 = var5 <= 8 ? (int)(2.0f * var7) : (int)(1.5f * var7);
+
+            if (i1 == 32)
+            {
+                if (k <= 8)
+                {
+                    l1 = (int)(2.0F * f);
+                }
+                else
+                {
+                    l1 = (int)(1.5F * f);
+                }
             }
-            this.charWidth[var11] = (float)(var15 + 1) / var7 + 1.0f;
+
+            this.charWidthFloat[i1] = (float)(l1 + 1) / f + 1.0F;
         }
-        FontUtils.readCustomCharWidths(var2, this.charWidth);
+
+        FontUtils.readCustomCharWidths(properties, this.charWidthFloat);
+
+        for (int j3 = 0; j3 < this.charWidth.length; ++j3)
+        {
+            this.charWidth[j3] = Math.round(this.charWidthFloat[j3]);
+        }
     }
 
-    private void readGlyphSizes() {
-        try {
-            InputStream var1 = this.getResourceInputStream(new ResourceLocation("font/glyph_sizes.bin"));
-            var1.read(this.glyphWidth);
-        } catch (IOException var2) {
-            throw new RuntimeException(var2);
+    private void readGlyphSizes()
+    {
+        InputStream inputstream = null;
+
+        try
+        {
+            inputstream = this.getResourceInputStream(new ResourceLocation("font/glyph_sizes.bin"));
+            inputstream.read(this.glyphWidth);
+        }
+        catch (IOException ioexception)
+        {
+            throw new RuntimeException(ioexception);
+        }
+        finally
+        {
+            IOUtils.closeQuietly(inputstream);
         }
     }
 
-    private float renderCharAtPos(int var1, char var2, boolean var3) {
-        if (var2 == ' ') {
-            this.IllIIIIIIIlIlIllllIIllIII();
-            return !this.unicodeFlag ? this.charWidth[var2] : 4.0f;
+    private float renderChar(char ch, boolean italic)
+    {
+        if (ch != 32 && ch != 160)
+        {
+            int i = "\u00c0\u00c1\u00c2\u00c8\u00ca\u00cb\u00cd\u00d3\u00d4\u00d5\u00da\u00df\u00e3\u00f5\u011f\u0130\u0131\u0152\u0153\u015e\u015f\u0174\u0175\u017e\u0207\u0000\u0000\u0000\u0000\u0000\u0000\u0000 !\"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~\u0000\u00c7\u00fc\u00e9\u00e2\u00e4\u00e0\u00e5\u00e7\u00ea\u00eb\u00e8\u00ef\u00ee\u00ec\u00c4\u00c5\u00c9\u00e6\u00c6\u00f4\u00f6\u00f2\u00fb\u00f9\u00ff\u00d6\u00dc\u00f8\u00a3\u00d8\u00d7\u0192\u00e1\u00ed\u00f3\u00fa\u00f1\u00d1\u00aa\u00ba\u00bf\u00ae\u00ac\u00bd\u00bc\u00a1\u00ab\u00bb\u2591\u2592\u2593\u2502\u2524\u2561\u2562\u2556\u2555\u2563\u2551\u2557\u255d\u255c\u255b\u2510\u2514\u2534\u252c\u251c\u2500\u253c\u255e\u255f\u255a\u2554\u2569\u2566\u2560\u2550\u256c\u2567\u2568\u2564\u2565\u2559\u2558\u2552\u2553\u256b\u256a\u2518\u250c\u2588\u2584\u258c\u2590\u2580\u03b1\u03b2\u0393\u03c0\u03a3\u03c3\u03bc\u03c4\u03a6\u0398\u03a9\u03b4\u221e\u2205\u2208\u2229\u2261\u00b1\u2265\u2264\u2320\u2321\u00f7\u2248\u00b0\u2219\u00b7\u221a\u207f\u00b2\u25a0\u0000".indexOf(ch);
+            return i != -1 && !this.unicodeFlag ? this.renderDefaultChar(i, italic) : this.renderUnicodeChar(ch, italic);
         }
-        int i = "\u00c0\u00c1\u00c2\u00c8\u00ca\u00cb\u00cd\u00d3\u00d4\u00d5\u00da\u00df\u00e3\u00f5\u011f\u0130\u0131\u0152\u0153\u015e\u015f\u0174\u0175\u017e\u0207\u0000\u0000\u0000\u0000\u0000\u0000\u0000 !\"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~\u0000\u00c7\u00fc\u00e9\u00e2\u00e4\u00e0\u00e5\u00e7\u00ea\u00eb\u00e8\u00ef\u00ee\u00ec\u00c4\u00c5\u00c9\u00e6\u00c6\u00f4\u00f6\u00f2\u00fb\u00f9\u00ff\u00d6\u00dc\u00f8\u00a3\u00d8\u00d7\u0192\u00e1\u00ed\u00f3\u00fa\u00f1\u00d1\u00aa\u00ba\u00bf\u00ae\u00ac\u00bd\u00bc\u00a1\u00ab\u00bb\u2591\u2592\u2593\u2502\u2524\u2561\u2562\u2556\u2555\u2563\u2551\u2557\u255d\u255c\u255b\u2510\u2514\u2534\u252c\u251c\u2500\u253c\u255e\u255f\u255a\u2554\u2569\u2566\u2560\u2550\u256c\u2567\u2568\u2564\u2565\u2559\u2558\u2552\u2553\u256b\u256a\u2518\u250c\u2588\u2584\u258c\u2590\u2580\u03b1\u03b2\u0393\u03c0\u03a3\u03c3\u03bc\u03c4\u03a6\u0398\u03a9\u03b4\u221e\u2205\u2208\u2229\u2261\u00b1\u2265\u2264\u2320\u2321\u00f7\u2248\u00b0\u2219\u00b7\u221a\u207f\u00b2\u25a0\u0000".indexOf(var2);
-        return i != -1 && !this.unicodeFlag ? this.renderDefaultChar(var1, var3) : this.renderUnicodeChar(var2, var3);
+        else
+        {
+            return !this.unicodeFlag ? this.charWidthFloat[ch] : 4.0F;
+        }
     }
 
-    private float renderDefaultChar(int var1, boolean var2) {
-        if (this.resourceLocation == null && !this.IllIIlIIlllllIllIIIlllIII[this.var3]) {
-            this.resourceLocation = this.locationFontTexture;
-            if (!Tessellator.instance.isDrawing) {
-                int var3 = GL11.glGenLists(1);
-                this.IlllIIlllIIIIllIIllllIlIl.add(new TestClassOne(var3, this.resourceLocation));
-                GL11.glNewList(var3, 4864);
-                Tessellator.instance.startDrawingQuads();
-            }
-        }
-        if (this.resourceLocation == this.locationFontTexture) {
-            float var7 = var1 % 16 * 8;
-            float var4 = var1 / 16 * 8;
-            float var5 = var2 ? 1.0f : 0.0f;
-            float var6 = 7.99f;
-            this.lIIIIllIIlIlIllIIIlIllIlI();
-            Tessellator.instance.setTextureUV(var7 / 128.0f, var4 / 128.0f);
-            Tessellator.instance.addVertex(this.posX + var5, this.posY, 0.0);
-            Tessellator.instance.setTextureUV(var7 / 128.0f, (var4 + 7.99f) / 128.0f);
-            Tessellator.instance.addVertex(this.posX - var5, this.posY + 7.99f, 0.0);
-            Tessellator.instance.setTextureUV((var7 + var6 - 1.0f) / 128.0f, (var4 + 7.99f) / 128.0f);
-            Tessellator.instance.addVertex(this.posX + var6 - 1.0f - var5, this.posY + 7.99f, 0.0);
-            Tessellator.instance.setTextureUV((var7 + var6 - 1.0f) / 128.0f, var4 / 128.0f);
-            Tessellator.instance.addVertex(this.posX + var6 - 1.0f + var5, this.posY, 0.0);
-            this.IllIIIIIIIlIlIllllIIllIII();
-        }
-        return this.charWidth[var1];
+    private float renderDefaultChar(int ch, boolean italic)
+    {
+        int i = ch % 16 * 8;
+        int j = ch / 16 * 8;
+        int k = italic ? 1 : 0;
+        this.bindTexture(this.locationFontTexture);
+        float f = this.charWidthFloat[ch];
+        float f1 = 7.99F;
+        GL11.glBegin(GL11.GL_TRIANGLE_STRIP);
+        GL11.glTexCoord2f((float)i / 128.0F, (float)j / 128.0F);
+        GL11.glVertex3f(this.posX + (float)k, this.posY, 0.0F);
+        GL11.glTexCoord2f((float)i / 128.0F, ((float)j + 7.99F) / 128.0F);
+        GL11.glVertex3f(this.posX - (float)k, this.posY + 7.99F, 0.0F);
+        GL11.glTexCoord2f(((float)i + f1 - 1.0F) / 128.0F, (float)j / 128.0F);
+        GL11.glVertex3f(this.posX + f1 - 1.0F + (float)k, this.posY, 0.0F);
+        GL11.glTexCoord2f(((float)i + f1 - 1.0F) / 128.0F, ((float)j + 7.99F) / 128.0F);
+        GL11.glVertex3f(this.posX + f1 - 1.0F - (float)k, this.posY + 7.99F, 0.0F);
+        GL11.glEnd();
+        return f;
     }
 
-    private ResourceLocation getUnicodePageLocation(int var1) {
-        if (unicodePageLocations[var1] == null) {
-            FontRenderer.unicodePageLocations[var1] = new ResourceLocation(String.format("textures/font/unicode_page_%02x.png", var1));
-            FontRenderer.unicodePageLocations[var1] = FontUtils.getHdFontLocation(unicodePageLocations[var1]);
+    private ResourceLocation getUnicodePageLocation(int page)
+    {
+        if (unicodePageLocations[page] == null)
+        {
+            unicodePageLocations[page] = new ResourceLocation(String.format("textures/font/unicode_page_%02x.png", new Object[] {Integer.valueOf(page)}));
+            unicodePageLocations[page] = FontUtils.getHdFontLocation(unicodePageLocations[page]);
         }
-        return unicodePageLocations[var1];
+
+        return unicodePageLocations[page];
     }
 
-    private float renderUnicodeChar(char var1, boolean var2) {
-        if (this.glyphWidth[var1] == 0) {
-            this.IllIIIIIIIlIlIllllIIllIII();
-            return 0.0f;
-        }
-        ResourceLocation var3 = this.getUnicodePageLocation(var1 / 256);
-        int var4 = this.glyphWidth[var1] >>> 4;
-        int var5 = this.glyphWidth[var1] & 0xF;
-        float var6 = var4 &= 0xF;
-        float var7 = var5 + 1;
-        if (this.resourceLocation == null && !this.IllIIlIIlllllIllIIIlllIII[this.var3]) {
-            this.resourceLocation = var3;
-            if (!Tessellator.instance.isDrawing) {
-                int var8 = GL11.glGenLists(1);
-                this.IlllIIlllIIIIllIIllllIlIl.add(new TestClassOne(var8, this.resourceLocation));
-                GL11.glNewList(var8, 4864);
-                Tessellator.instance.startDrawingQuads();
-            }
-        }
-        if (this.resourceLocation == var3) {
-            float var12 = (float)(var1 % 16 * 16) + var6;
-            float var9 = (var1 & 0xFF) / 16 * 16;
-            float var10 = var7 - var6 - 0.02f;
-            float var11 = var2 ? 1.0f : 0.0f;
-            this.lIIIIllIIlIlIllIIIlIllIlI();
-            Tessellator.instance.setTextureUV(var12 / 256.0f, var9 / 256.0f);
-            Tessellator.instance.addVertex(this.posX + var11, this.posY, 0.0);
-            Tessellator.instance.setTextureUV(var12 / 256.0f, (var9 + 15.98f) / 256.0f);
-            Tessellator.instance.addVertex(this.posX - var11, this.posY + 7.99f, 0.0);
-            Tessellator.instance.setTextureUV((var12 + var10) / 256.0f, (var9 + 15.98f) / 256.0f);
-            Tessellator.instance.addVertex(this.posX + var10 / 2.0f - var11, this.posY + 7.99f, 0.0);
-            Tessellator.instance.setTextureUV((var12 + var10) / 256.0f, var9 / 256.0f);
-            Tessellator.instance.addVertex(this.posX + var10 / 2.0f + var11, this.posY, 0.0);
-            this.IllIIIIIIIlIlIllllIIllIII();
-        }
-        return (var7 - var6) / 2.0f + 1.0f;
+    private void loadGlyphTexture(int page)
+    {
+        this.bindTexture(this.getUnicodePageLocation(page));
     }
 
-    public int drawStringWithShadow(String var1, float var2, float var3, int var4) {
-        return this.drawString(var1, var2, var3, var4, true);
+    private float renderUnicodeChar(char ch, boolean italic)
+    {
+        if (this.glyphWidth[ch] == 0)
+        {
+            return 0.0F;
+        }
+        else
+        {
+            int i = ch / 256;
+            this.loadGlyphTexture(i);
+            int j = this.glyphWidth[ch] >>> 4;
+            int k = this.glyphWidth[ch] & 15;
+            float f = (float)j;
+            float f1 = (float)(k + 1);
+            float f2 = (float)(ch % 16 * 16) + f;
+            float f3 = (float)((ch & 255) / 16 * 16);
+            float f4 = f1 - f - 0.02F;
+            float f5 = italic ? 1.0F : 0.0F;
+            GL11.glBegin(GL11.GL_TRIANGLE_STRIP);
+            GL11.glTexCoord2f(f2 / 256.0F, f3 / 256.0F);
+            GL11.glVertex3f(this.posX + f5, this.posY, 0.0F);
+            GL11.glTexCoord2f(f2 / 256.0F, (f3 + 15.98F) / 256.0F);
+            GL11.glVertex3f(this.posX - f5, this.posY + 7.99F, 0.0F);
+            GL11.glTexCoord2f((f2 + f4) / 256.0F, f3 / 256.0F);
+            GL11.glVertex3f(this.posX + f4 / 2.0F + f5, this.posY, 0.0F);
+            GL11.glTexCoord2f((f2 + f4) / 256.0F, (f3 + 15.98F) / 256.0F);
+            GL11.glVertex3f(this.posX + f4 / 2.0F - f5, this.posY + 7.99F, 0.0F);
+            GL11.glEnd();
+            return (f1 - f) / 2.0F + 1.0F;
+        }
+    }
+
+    public int drawStringWithShadow(String text, float x, float y, int color)
+    {
+        return this.drawString(text, x, y, color, true);
     }
 
     public int drawCenteredStringWithShadow(String var1, int var2, int var3, int var4) {
         int var5 = this.getStringWidth(var1);
-        return this.drawString(var1, var2 - var5 / 2, var3, var4, true);
+        return this.drawString(var1, var2 - var5 / 2F, var3, var4, true);
     }
 
     public int drawCenteredStringWithShadow(String var1, float var2, float var3, int var4) {
         int var5 = this.getStringWidth(var1);
-        return this.drawString(var1, var2 - (float)(var5 / 2), var3, var4, false);
+        return this.drawString(var1, var2 - (var5 / 2F), var3, var4, false);
     }
 
-    public int drawString(String var1, int var2, int var3, int var4) {
-        return !this.enabled ? 0 : this.drawString(var1, var2, var3, var4, false);
+    public int drawString(String text, int x, int y, int color)
+    {
+        return this.drawString(text, (float)x, (float)y, color, false);
     }
 
-    public int drawString(String text, float x, float y, int color, boolean dropShadow) {
-//        GL11.glEnable(GL11.GL_BLEND);
-
+    public int drawString(String text, float x, float y, int color, boolean dropShadow)
+    {
         this.enableAlpha();
+
+        if (this.blend)
+        {
+            GlStateManager.getBlendState(this.oldBlendState);
+            GlStateManager.enableBlend();
+            GlStateManager.blendFunc(770, 771);
+        }
+
         this.resetStyles();
         int i;
-        if (dropShadow) {
-            i = this.renderString(text, x + 1.0f, y + 1.0f, color, true);
+
+        if (dropShadow)
+        {
+            i = this.renderString(text, x + 1.0F, y + 1.0F, color, true);
             i = Math.max(i, this.renderString(text, x, y, color, false));
-        } else {
+        }
+        else
+        {
             i = this.renderString(text, x, y, color, false);
         }
+
+        if (this.blend)
+        {
+            GlStateManager.setBlendState(this.oldBlendState);
+        }
+
         return i;
     }
 
-    public void drawChromaString(String text, float xIn, float y) {
-        float x = xIn;
-        for (char textChar : text.toCharArray()) {
-            long l = System.currentTimeMillis() - (long)(x * 50.0f - y * 50.0f);
-            int i = Color.HSBtoRGB((float)(l % 10000L) / 10000.0f, 1.0f, 1.0f);
-            String tmp = String.valueOf(textChar);
-            this.drawString(tmp, x, y, i, true);
-            x += (float)((int)((float)this.getCharWidth(textChar) * 1.0f));
+    private String bidiReorder(String text)
+    {
+        try
+        {
+            Bidi bidi = new Bidi((new ArabicShaping(8)).shape(text), 127);
+            bidi.setReorderingMode(0);
+            return bidi.writeReordered(2);
+        }
+        catch (ArabicShapingException var3)
+        {
+            return text;
         }
     }
 
-    private String func_147647_b(String var1) {
-        try {
-            Bidi var2 = new Bidi(new ArabicShaping(8).shape(var1), 127);
-            var2.setReorderingMode(0);
-            return var2.writeReordered(2);
-        } catch (ArabicShapingException var3) {
-            return var1;
-        }
-    }
-
-    private void resetStyles() {
+    private void resetStyles()
+    {
         this.randomStyle = false;
         this.boldStyle = false;
         this.italicStyle = false;
@@ -362,449 +381,616 @@ public class FontRenderer implements IResourceManagerReloadListener {
         this.strikethroughStyle = false;
     }
 
-    private void renderStringAtPos(String p_78255_1_, boolean p_78255_2_, int var3) {
-        TestClassSix var4 = this.lIlIlIllIIIIIIIIllllIIllI.lIIIIlIIllIIlIIlIIIlIIllI(p_78255_1_, var3, p_78255_2_);
+    private void renderStringAtPos(String text, boolean shadow)
+    {
+        for (int i = 0; i < text.length(); ++i)
+        {
+            char c0 = text.charAt(i);
 
-        if (var4 != null) {
-            var4.lIIIIlIIllIIlIIlIIIlIIllI(this.IllllIllllIlIIIlIIIllllll);
-            GL11.glPushMatrix();
-            GL11.glTranslatef(this.posX, this.posY, 0.0f);
-            var4.lIIIIlIIllIIlIIlIIIlIIllI();
-            GL11.glPopMatrix();
-            this.posX += var4.IlllIIIlIlllIllIlIIlllIlI();
-        } else {
-            float var5 = this.posX;
-            float var6 = this.posY;
-            this.posX = 0.0f;
-            this.posY = 0.0f;
-            this.IlllIIlllIIIIllIIllllIlIl = new ArrayList();
-            this.IllIIlIIlllllIllIIIlllIII = new boolean[p_78255_1_.length()];
-            this.IllIlIlIllllIlIIllllIIlll = p_78255_1_.length();
-            boolean var7 = false;
-            while (this.IllIlIlIllllIlIIllllIIlll >= 0) {
-                if (this.IllIlIlIllllIlIIllllIIlll == 0) {
-                    this.IllIlIlIllllIlIIllllIIlll = -1;
-                }
-                this.posX = 0.0f;
-                this.resourceLocation = null;
-                this.textColor = -1;
-                this.resetStyles();
-                this.var3 = 0;
-                while (this.var3 < p_78255_1_.length()) {
-                    int var10;
-                    int var9;
-                    char var8 = p_78255_1_.charAt(this.var3);
-                    if (var8 == '§' && this.var3 + 1 < p_78255_1_.length()) {
-                        var9 = "0123456789abcdefklmnor".indexOf(Character.toLowerCase(p_78255_1_.charAt(this.var3 + 1)));
-                        if (var9 < 16) {
-                            this.randomStyle = false;
-                            this.boldStyle = false;
-                            this.strikethroughStyle = false;
-                            this.underlineStyle = false;
-                            this.italicStyle = false;
-                            if (var9 < 0 || var9 > 15) {
-                                var9 = 15;
-                            }
-                            if (p_78255_2_) {
-                                var9 += 16;
-                            }
-                            var10 = this.colorCode[var9];
-                            if (Config.isCustomColors()) {
-                                var10 = CustomColorizer.getTextColor(var9, var10);
-                            }
-                            this.textColor = var10;
-                        } else if (var9 == 16) {
-                            this.randomStyle = true;
-                            var7 = true;
-                        } else if (var9 == 17) {
-                            this.boldStyle = true;
-                        } else if (var9 == 18) {
-                            this.strikethroughStyle = true;
-                        } else if (var9 == 19) {
-                            this.underlineStyle = true;
-                        } else if (var9 == 20) {
-                            this.italicStyle = true;
-                        } else if (var9 == 21) {
-                            this.randomStyle = false;
-                            this.boldStyle = false;
-                            this.strikethroughStyle = false;
-                            this.underlineStyle = false;
-                            this.italicStyle = false;
-                            this.textColor = -1;
-                        }
-                        this.IllIIIIIIIlIlIllllIIllIII();
-                        ++this.var3;
-                        this.IllIIIIIIIlIlIllllIIllIII();
-                    } else {
-                        boolean var12;
-                        var9 = "\u00c0\u00c1\u00c2\u00c8\u00ca\u00cb\u00cd\u00d3\u00d4\u00d5\u00da\u00df\u00e3\u00f5\u011f\u0130\u0131\u0152\u0153\u015e\u015f\u0174\u0175\u017e\u0207\u0000\u0000\u0000\u0000\u0000\u0000\u0000 !\"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~\u0000\u00c7\u00fc\u00e9\u00e2\u00e4\u00e0\u00e5\u00e7\u00ea\u00eb\u00e8\u00ef\u00ee\u00ec\u00c4\u00c5\u00c9\u00e6\u00c6\u00f4\u00f6\u00f2\u00fb\u00f9\u00ff\u00d6\u00dc\u00f8\u00a3\u00d8\u00d7\u0192\u00e1\u00ed\u00f3\u00fa\u00f1\u00d1\u00aa\u00ba\u00bf\u00ae\u00ac\u00bd\u00bc\u00a1\u00ab\u00bb\u2591\u2592\u2593\u2502\u2524\u2561\u2562\u2556\u2555\u2563\u2551\u2557\u255d\u255c\u255b\u2510\u2514\u2534\u252c\u251c\u2500\u253c\u255e\u255f\u255a\u2554\u2569\u2566\u2560\u2550\u256c\u2567\u2568\u2564\u2565\u2559\u2558\u2552\u2553\u256b\u256a\u2518\u250c\u2588\u2584\u258c\u2590\u2580\u03b1\u03b2\u0393\u03c0\u03a3\u03c3\u03bc\u03c4\u03a6\u0398\u03a9\u03b4\u221e\u2205\u2208\u2229\u2261\u00b1\u2265\u2264\u2320\u2321\u00f7\u2248\u00b0\u2219\u00b7\u221a\u207f\u00b2\u25a0\u0000".indexOf(var8);
-                        if (this.randomStyle && var9 != -1) {
-                            while ((int)this.charWidth[var9] != (int)this.charWidth[var10 = this.fontRandom.nextInt(this.charWidth.length)]) {
-                            }
-                            var9 = var10;
-                        }
-                        float var11 = var9 != -1 && !this.unicodeFlag ? this.offsetBold : 0.5f;
-                        boolean bl = var12 = (var8 == '\u0000' || var9 == -1 || this.unicodeFlag) && p_78255_2_;
-                        if (var12) {
-                            this.posX -= var11;
-                            this.posY -= var11;
-                        }
-                        float var13 = this.renderCharAtPos(var9, var8, this.italicStyle);
-                        if (var12) {
-                            this.posX += var11;
-                            this.posY += var11;
-                        }
-                        if (this.boldStyle) {
-                            this.posX += var11;
-                            if (var12) {
-                                this.posX -= var11;
-                                this.posY -= var11;
-                            }
-                            this.renderCharAtPos(var9, var8, this.italicStyle);
-                            this.posX -= var11;
-                            if (var12) {
-                                this.posX += var11;
-                                this.posY += var11;
-                            }
-                            var13 += var11;
-                        }
-                        if (this.IllIlIlIllllIlIIllllIIlll == -1 && (this.strikethroughStyle || this.underlineStyle)) {
-                            if (!Tessellator.instance.isDrawing) {
-                                int var14 = GL11.glGenLists(1);
-                                this.IlllIIlllIIIIllIIllllIlIl.add(new TestClassOne(var14, null));
-                                GL11.glNewList(var14, 4864);
-                                Tessellator.instance.startDrawingQuads();
-                            }
-                            this.lIIIIllIIlIlIllIIIlIllIlI();
-                            if (this.strikethroughStyle) {
-                                Tessellator.instance.addVertex(this.posX, this.posY + (float)(this.FONT_HEIGHT / 2), 0.0);
-                                Tessellator.instance.addVertex(this.posX + var13, this.posY + (float)(this.FONT_HEIGHT / 2), 0.0);
-                                Tessellator.instance.addVertex(this.posX + var13, this.posY + (float)(this.FONT_HEIGHT / 2) - 1.0f, 0.0);
-                                Tessellator.instance.addVertex(this.posX, this.posY + (float)(this.FONT_HEIGHT / 2) - 1.0f, 0.0);
-                            }
-                            if (this.underlineStyle) {
-                                Tessellator.instance.addVertex(this.posX - 1.0f, this.posY + (float)this.FONT_HEIGHT, 0.0);
-                                Tessellator.instance.addVertex(this.posX + var13, this.posY + (float)this.FONT_HEIGHT, 0.0);
-                                Tessellator.instance.addVertex(this.posX + var13, this.posY + (float)this.FONT_HEIGHT - 1.0f, 0.0);
-                                Tessellator.instance.addVertex(this.posX - 1.0f, this.posY + (float)this.FONT_HEIGHT - 1.0f, 0.0);
-                            }
-                        }
-                        this.posX += var13;
+            if (c0 == 167 && i + 1 < text.length())
+            {
+                int l = "0123456789abcdefklmnor".indexOf(text.toLowerCase(Locale.ENGLISH).charAt(i + 1));
+
+                if (l < 16)
+                {
+                    this.randomStyle = false;
+                    this.boldStyle = false;
+                    this.strikethroughStyle = false;
+                    this.underlineStyle = false;
+                    this.italicStyle = false;
+
+                    if (l < 0 || l > 15)
+                    {
+                        l = 15;
                     }
-                    ++this.var3;
+
+                    if (shadow)
+                    {
+                        l += 16;
+                    }
+
+                    int i1 = this.colorCode[l];
+
+                    if (Config.isCustomColors())
+                    {
+                        i1 = CustomColors.getTextColor(l, i1);
+                    }
+
+                    this.textColor = i1;
+                    this.setColor((float)(i1 >> 16) / 255.0F, (float)(i1 >> 8 & 255) / 255.0F, (float)(i1 & 255) / 255.0F, this.alpha);
                 }
-                if (!Tessellator.instance.isDrawing) continue;
-                Tessellator.instance.draw();
-                GL11.glEndList();
+                else if (l == 16)
+                {
+                    this.randomStyle = true;
+                }
+                else if (l == 17)
+                {
+                    this.boldStyle = true;
+                }
+                else if (l == 18)
+                {
+                    this.strikethroughStyle = true;
+                }
+                else if (l == 19)
+                {
+                    this.underlineStyle = true;
+                }
+                else if (l == 20)
+                {
+                    this.italicStyle = true;
+                }
+                else if (l == 21)
+                {
+                    this.randomStyle = false;
+                    this.boldStyle = false;
+                    this.strikethroughStyle = false;
+                    this.underlineStyle = false;
+                    this.italicStyle = false;
+                    this.setColor(this.red, this.blue, this.green, this.alpha);
+                }
+
+                ++i;
             }
-            var4 = new TestClassSix(this.IlllIIlllIIIIllIIllllIlIl, this.posX, this.IllllIllllIlIIIlIIIllllll, var7);
-            this.lIlIlIllIIIIIIIIllllIIllI.put(new TestClassThree(p_78255_1_, var3, p_78255_2_), var4);
-            GL11.glPushMatrix();
-            GL11.glTranslatef(var5, var6, 0.0f);
-            var4.lIIIIlIIllIIlIIlIIIlIIllI();
-            GL11.glPopMatrix();
-            this.IlllIIlllIIIIllIIllllIlIl = null;
-            this.posX += var5;
+            else
+            {
+                int j = "\u00c0\u00c1\u00c2\u00c8\u00ca\u00cb\u00cd\u00d3\u00d4\u00d5\u00da\u00df\u00e3\u00f5\u011f\u0130\u0131\u0152\u0153\u015e\u015f\u0174\u0175\u017e\u0207\u0000\u0000\u0000\u0000\u0000\u0000\u0000 !\"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~\u0000\u00c7\u00fc\u00e9\u00e2\u00e4\u00e0\u00e5\u00e7\u00ea\u00eb\u00e8\u00ef\u00ee\u00ec\u00c4\u00c5\u00c9\u00e6\u00c6\u00f4\u00f6\u00f2\u00fb\u00f9\u00ff\u00d6\u00dc\u00f8\u00a3\u00d8\u00d7\u0192\u00e1\u00ed\u00f3\u00fa\u00f1\u00d1\u00aa\u00ba\u00bf\u00ae\u00ac\u00bd\u00bc\u00a1\u00ab\u00bb\u2591\u2592\u2593\u2502\u2524\u2561\u2562\u2556\u2555\u2563\u2551\u2557\u255d\u255c\u255b\u2510\u2514\u2534\u252c\u251c\u2500\u253c\u255e\u255f\u255a\u2554\u2569\u2566\u2560\u2550\u256c\u2567\u2568\u2564\u2565\u2559\u2558\u2552\u2553\u256b\u256a\u2518\u250c\u2588\u2584\u258c\u2590\u2580\u03b1\u03b2\u0393\u03c0\u03a3\u03c3\u03bc\u03c4\u03a6\u0398\u03a9\u03b4\u221e\u2205\u2208\u2229\u2261\u00b1\u2265\u2264\u2320\u2321\u00f7\u2248\u00b0\u2219\u00b7\u221a\u207f\u00b2\u25a0\u0000".indexOf(c0);
+
+                if (this.randomStyle && j != -1)
+                {
+                    int k = this.getCharWidth(c0);
+                    char c1;
+
+                    while (true)
+                    {
+                        j = this.fontRandom.nextInt("\u00c0\u00c1\u00c2\u00c8\u00ca\u00cb\u00cd\u00d3\u00d4\u00d5\u00da\u00df\u00e3\u00f5\u011f\u0130\u0131\u0152\u0153\u015e\u015f\u0174\u0175\u017e\u0207\u0000\u0000\u0000\u0000\u0000\u0000\u0000 !\"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~\u0000\u00c7\u00fc\u00e9\u00e2\u00e4\u00e0\u00e5\u00e7\u00ea\u00eb\u00e8\u00ef\u00ee\u00ec\u00c4\u00c5\u00c9\u00e6\u00c6\u00f4\u00f6\u00f2\u00fb\u00f9\u00ff\u00d6\u00dc\u00f8\u00a3\u00d8\u00d7\u0192\u00e1\u00ed\u00f3\u00fa\u00f1\u00d1\u00aa\u00ba\u00bf\u00ae\u00ac\u00bd\u00bc\u00a1\u00ab\u00bb\u2591\u2592\u2593\u2502\u2524\u2561\u2562\u2556\u2555\u2563\u2551\u2557\u255d\u255c\u255b\u2510\u2514\u2534\u252c\u251c\u2500\u253c\u255e\u255f\u255a\u2554\u2569\u2566\u2560\u2550\u256c\u2567\u2568\u2564\u2565\u2559\u2558\u2552\u2553\u256b\u256a\u2518\u250c\u2588\u2584\u258c\u2590\u2580\u03b1\u03b2\u0393\u03c0\u03a3\u03c3\u03bc\u03c4\u03a6\u0398\u03a9\u03b4\u221e\u2205\u2208\u2229\u2261\u00b1\u2265\u2264\u2320\u2321\u00f7\u2248\u00b0\u2219\u00b7\u221a\u207f\u00b2\u25a0\u0000".length());
+                        c1 = "\u00c0\u00c1\u00c2\u00c8\u00ca\u00cb\u00cd\u00d3\u00d4\u00d5\u00da\u00df\u00e3\u00f5\u011f\u0130\u0131\u0152\u0153\u015e\u015f\u0174\u0175\u017e\u0207\u0000\u0000\u0000\u0000\u0000\u0000\u0000 !\"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~\u0000\u00c7\u00fc\u00e9\u00e2\u00e4\u00e0\u00e5\u00e7\u00ea\u00eb\u00e8\u00ef\u00ee\u00ec\u00c4\u00c5\u00c9\u00e6\u00c6\u00f4\u00f6\u00f2\u00fb\u00f9\u00ff\u00d6\u00dc\u00f8\u00a3\u00d8\u00d7\u0192\u00e1\u00ed\u00f3\u00fa\u00f1\u00d1\u00aa\u00ba\u00bf\u00ae\u00ac\u00bd\u00bc\u00a1\u00ab\u00bb\u2591\u2592\u2593\u2502\u2524\u2561\u2562\u2556\u2555\u2563\u2551\u2557\u255d\u255c\u255b\u2510\u2514\u2534\u252c\u251c\u2500\u253c\u255e\u255f\u255a\u2554\u2569\u2566\u2560\u2550\u256c\u2567\u2568\u2564\u2565\u2559\u2558\u2552\u2553\u256b\u256a\u2518\u250c\u2588\u2584\u258c\u2590\u2580\u03b1\u03b2\u0393\u03c0\u03a3\u03c3\u03bc\u03c4\u03a6\u0398\u03a9\u03b4\u221e\u2205\u2208\u2229\u2261\u00b1\u2265\u2264\u2320\u2321\u00f7\u2248\u00b0\u2219\u00b7\u221a\u207f\u00b2\u25a0\u0000".charAt(j);
+
+                        if (k == this.getCharWidth(c1))
+                        {
+                            break;
+                        }
+                    }
+
+                    c0 = c1;
+                }
+
+                float f1 = j != -1 && !this.unicodeFlag ? this.offsetBold : 0.5F;
+                boolean flag = (c0 == 0 || j == -1 || this.unicodeFlag) && shadow;
+
+                if (flag)
+                {
+                    this.posX -= f1;
+                    this.posY -= f1;
+                }
+
+                float f = this.renderChar(c0, this.italicStyle);
+
+                if (flag)
+                {
+                    this.posX += f1;
+                    this.posY += f1;
+                }
+
+                if (this.boldStyle)
+                {
+                    this.posX += f1;
+
+                    if (flag)
+                    {
+                        this.posX -= f1;
+                        this.posY -= f1;
+                    }
+
+                    this.renderChar(c0, this.italicStyle);
+                    this.posX -= f1;
+
+                    if (flag)
+                    {
+                        this.posX += f1;
+                        this.posY += f1;
+                    }
+
+                    f += f1;
+                }
+
+                this.doDraw(f);
+            }
         }
     }
 
-    private void IllIIIIIIIlIlIllllIIllIII() {
-        if (!this.IllIIlIIlllllIllIIIlllIII[this.var3]) {
-            this.IllIIlIIlllllIllIIIlllIII[this.var3] = true;
-            --this.IllIlIlIllllIlIIllllIIlll;
+    protected void doDraw(float p_doDraw_1_)
+    {
+        if (this.strikethroughStyle)
+        {
+            Tessellator tessellator = Tessellator.getInstance();
+            WorldRenderer worldrenderer = tessellator.getWorldRenderer();
+            GlStateManager.disableTexture2D();
+            worldrenderer.begin(7, DefaultVertexFormats.POSITION);
+            worldrenderer.pos((double)this.posX, (double)(this.posY + (float)(this.FONT_HEIGHT / 2)), 0.0D).endVertex();
+            worldrenderer.pos((double)(this.posX + p_doDraw_1_), (double)(this.posY + (float)(this.FONT_HEIGHT / 2)), 0.0D).endVertex();
+            worldrenderer.pos((double)(this.posX + p_doDraw_1_), (double)(this.posY + (float)(this.FONT_HEIGHT / 2) - 1.0F), 0.0D).endVertex();
+            worldrenderer.pos((double)this.posX, (double)(this.posY + (float)(this.FONT_HEIGHT / 2) - 1.0F), 0.0D).endVertex();
+            tessellator.draw();
+            GlStateManager.enableTexture2D();
         }
+
+        if (this.underlineStyle)
+        {
+            Tessellator tessellator1 = Tessellator.getInstance();
+            WorldRenderer worldrenderer1 = tessellator1.getWorldRenderer();
+            GlStateManager.disableTexture2D();
+            worldrenderer1.begin(7, DefaultVertexFormats.POSITION);
+            int i = this.underlineStyle ? -1 : 0;
+            worldrenderer1.pos((double)(this.posX + (float)i), (double)(this.posY + (float)this.FONT_HEIGHT), 0.0D).endVertex();
+            worldrenderer1.pos((double)(this.posX + p_doDraw_1_), (double)(this.posY + (float)this.FONT_HEIGHT), 0.0D).endVertex();
+            worldrenderer1.pos((double)(this.posX + p_doDraw_1_), (double)(this.posY + (float)this.FONT_HEIGHT - 1.0F), 0.0D).endVertex();
+            worldrenderer1.pos((double)(this.posX + (float)i), (double)(this.posY + (float)this.FONT_HEIGHT - 1.0F), 0.0D).endVertex();
+            tessellator1.draw();
+            GlStateManager.enableTexture2D();
+        }
+
+        this.posX += p_doDraw_1_;
     }
 
-    private void lIIIIllIIlIlIllIIIlIllIlI() {
-        if (this.textColor == -1) {
-            Tessellator.instance.setColorRGBA_F(this.red, this.blue, this.green, this.alpha);
-        } else {
-            Tessellator.instance.setColorRGBA_F((float)(this.textColor >> 16) / 255.0f, (float)(this.textColor >> 8 & 0xFF) / 255.0f, (float)(this.textColor & 0xFF) / 255.0f, this.alpha);
+    private int renderStringAligned(String text, int x, int y, int width, int color, boolean dropShadow)
+    {
+        if (this.bidiFlag)
+        {
+            int i = this.getStringWidth(this.bidiReorder(text));
+            x = x + width - i;
         }
+
+        return this.renderString(text, (float)x, (float)y, color, dropShadow);
     }
 
-    private int renderStringAligned(String text, int x, int y, int p_78274_4_, int color, boolean dropShadow) {
-        if (this.bidiFlag) {
-            int i = this.getStringWidth(this.func_147647_b(text));
-            x = x + p_78274_4_ - i;
-        }
-        return this.renderString(text, x, y, color, dropShadow);
-    }
-
-    private int renderString(String text, float x, float y, int color, boolean dropShadow) {
-        if (text == null) {
+    private int renderString(String text, float x, float y, int color, boolean dropShadow)
+    {
+        if (text == null)
+        {
             return 0;
         }
-        if (this.bidiFlag) {
-            text = this.func_147647_b(text);
+        else
+        {
+            if (this.bidiFlag)
+            {
+                text = this.bidiReorder(text);
+            }
+
+            if ((color & -67108864) == 0)
+            {
+                color |= -16777216;
+            }
+
+            if (dropShadow)
+            {
+                color = (color & 16579836) >> 2 | color & -16777216;
+            }
+
+            this.red = (float)(color >> 16 & 255) / 255.0F;
+            this.blue = (float)(color >> 8 & 255) / 255.0F;
+            this.green = (float)(color & 255) / 255.0F;
+            this.alpha = (float)(color >> 24 & 255) / 255.0F;
+            this.setColor(this.red, this.blue, this.green, this.alpha);
+            this.posX = x;
+            this.posY = y;
+            this.renderStringAtPos(text, dropShadow);
+            return (int)this.posX;
         }
-        if ((color & 0xFC000000) == 0) {
-            color |= 0xFF000000;
-        }
-        if (dropShadow) {
-            color = (color & 0xFCFCFC) >> 2 | color & 0xFF000000;
-        }
-        this.red = (float)(color >> 16 & 0xFF) / 255.0f;
-        this.blue = (float)(color >> 8 & 0xFF) / 255.0f;
-        this.green = (float)(color & 0xFF) / 255.0f;
-        this.alpha = (float)(color >> 24 & 0xFF) / 255.0f;
-        this.posX = x;
-        this.posY = y;
-        this.renderStringAtPos(text, dropShadow, color);
-        return (int)this.posX;
     }
 
-    public int getStringWidth(String text) {
-        if (text == null) {
+    public int getStringWidth(String text)
+    {
+        if (text == null)
+        {
             return 0;
         }
-        float f = 0.0f;
-        boolean flag = false;
-        for (int i = 0; i < text.length(); ++i) {
-            char var5 = text.charAt(i);
-            float var6 = this.getCharWidthFloat(var5);
-            if (var6 < 0.0f && i < text.length() - 1) {
-                if ((var5 = text.charAt(++i)) != 'l' && var5 != 'L') {
-                    if (var5 == 'r' || var5 == 'R') {
-                        flag = false;
+        else
+        {
+            float f = 0.0F;
+            boolean flag = false;
+
+            for (int i = 0; i < text.length(); ++i)
+            {
+                char c0 = text.charAt(i);
+                float f1 = this.getCharWidthFloat(c0);
+
+                if (f1 < 0.0F && i < text.length() - 1)
+                {
+                    ++i;
+                    c0 = text.charAt(i);
+
+                    if (c0 != 108 && c0 != 76)
+                    {
+                        if (c0 == 114 || c0 == 82)
+                        {
+                            flag = false;
+                        }
                     }
-                } else {
-                    flag = true;
+                    else
+                    {
+                        flag = true;
+                    }
+
+                    f1 = 0.0F;
                 }
-                var6 = 0.0f;
+
+                f += f1;
+
+                if (flag && f1 > 0.0F)
+                {
+                    f += this.unicodeFlag ? 1.0F : this.offsetBold;
+                }
             }
-            f += var6;
-            if (!flag || !(var6 > 0.0f)) continue;
-            f += this.unicodeFlag ? 1.0f : this.offsetBold;
+
+            return Math.round(f);
         }
-        return (int)f;
     }
 
-    public int getCharWidth(char var1) {
-        return Math.round(this.getCharWidthFloat(var1));
+    public int getCharWidth(char character)
+    {
+        return Math.round(this.getCharWidthFloat(character));
     }
 
-    private float getCharWidthFloat(char p_getCharWidthFloat_1_) {
-        if (p_getCharWidthFloat_1_ == 167) {
+    private float getCharWidthFloat(char p_getCharWidthFloat_1_)
+    {
+        if (p_getCharWidthFloat_1_ == 167)
+        {
             return -1.0F;
-        } else if (p_getCharWidthFloat_1_ == 32) {
-            return this.charWidth[32];
-        } else {
+        }
+        else if (p_getCharWidthFloat_1_ != 32 && p_getCharWidthFloat_1_ != 160)
+        {
             int i = "\u00c0\u00c1\u00c2\u00c8\u00ca\u00cb\u00cd\u00d3\u00d4\u00d5\u00da\u00df\u00e3\u00f5\u011f\u0130\u0131\u0152\u0153\u015e\u015f\u0174\u0175\u017e\u0207\u0000\u0000\u0000\u0000\u0000\u0000\u0000 !\"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~\u0000\u00c7\u00fc\u00e9\u00e2\u00e4\u00e0\u00e5\u00e7\u00ea\u00eb\u00e8\u00ef\u00ee\u00ec\u00c4\u00c5\u00c9\u00e6\u00c6\u00f4\u00f6\u00f2\u00fb\u00f9\u00ff\u00d6\u00dc\u00f8\u00a3\u00d8\u00d7\u0192\u00e1\u00ed\u00f3\u00fa\u00f1\u00d1\u00aa\u00ba\u00bf\u00ae\u00ac\u00bd\u00bc\u00a1\u00ab\u00bb\u2591\u2592\u2593\u2502\u2524\u2561\u2562\u2556\u2555\u2563\u2551\u2557\u255d\u255c\u255b\u2510\u2514\u2534\u252c\u251c\u2500\u253c\u255e\u255f\u255a\u2554\u2569\u2566\u2560\u2550\u256c\u2567\u2568\u2564\u2565\u2559\u2558\u2552\u2553\u256b\u256a\u2518\u250c\u2588\u2584\u258c\u2590\u2580\u03b1\u03b2\u0393\u03c0\u03a3\u03c3\u03bc\u03c4\u03a6\u0398\u03a9\u03b4\u221e\u2205\u2208\u2229\u2261\u00b1\u2265\u2264\u2320\u2321\u00f7\u2248\u00b0\u2219\u00b7\u221a\u207f\u00b2\u25a0\u0000".indexOf(p_getCharWidthFloat_1_);
 
-            if (p_getCharWidthFloat_1_ > 0 && i != -1 && !this.unicodeFlag) {
-                return this.charWidth[i];
-            } else if (this.glyphWidth[p_getCharWidthFloat_1_] != 0) {
+            if (p_getCharWidthFloat_1_ > 0 && i != -1 && !this.unicodeFlag)
+            {
+                return this.charWidthFloat[i];
+            }
+            else if (this.glyphWidth[p_getCharWidthFloat_1_] != 0)
+            {
                 int j = this.glyphWidth[p_getCharWidthFloat_1_] >>> 4;
                 int k = this.glyphWidth[p_getCharWidthFloat_1_] & 15;
-                j = j & 15;
+
+                if (k > 7)
+                {
+                    k = 15;
+                    j = 0;
+                }
+
                 ++k;
-                return (float) ((k - j) / 2 + 1);
-            } else {
+                return (float)((k - j) / 2 + 1);
+            }
+            else
+            {
                 return 0.0F;
             }
         }
+        else
+        {
+            return this.charWidthFloat[32];
+        }
     }
 
-    public String trimStringToWidth(String var1, int var2) {
-        return this.trimStringToWidth(var1, var2, false);
+    public String trimStringToWidth(String text, int width)
+    {
+        return this.trimStringToWidth(text, width, false);
     }
 
-    public String trimStringToWidth(String var1, int var2, boolean var3) {
-        StringBuilder var4 = new StringBuilder();
-        float var5 = 0.0f;
-        int var6 = var3 ? var1.length() - 1 : 0;
-        int var7 = var3 ? -1 : 1;
-        boolean var8 = false;
-        boolean var9 = false;
-        for (int var10 = var6; var10 >= 0 && var10 < var1.length() && var5 < (float)var2; var10 += var7) {
-            char var11 = var1.charAt(var10);
-            float var12 = this.getCharWidthFloat(var11);
-            if (var8) {
-                var8 = false;
-                if (var11 != 'l' && var11 != 'L') {
-                    if (var11 == 'r' || var11 == 'R') {
-                        var9 = false;
+    public String trimStringToWidth(String text, int width, boolean reverse)
+    {
+        StringBuilder stringbuilder = new StringBuilder();
+        float f = 0.0F;
+        int i = reverse ? text.length() - 1 : 0;
+        int j = reverse ? -1 : 1;
+        boolean flag = false;
+        boolean flag1 = false;
+
+        for (int k = i; k >= 0 && k < text.length() && f < (float)width; k += j)
+        {
+            char c0 = text.charAt(k);
+            float f1 = this.getCharWidthFloat(c0);
+
+            if (flag)
+            {
+                flag = false;
+
+                if (c0 != 108 && c0 != 76)
+                {
+                    if (c0 == 114 || c0 == 82)
+                    {
+                        flag1 = false;
                     }
-                } else {
-                    var9 = true;
                 }
-            } else if (var12 < 0.0f) {
-                var8 = true;
-            } else {
-                var5 += var12;
-                if (var9) {
-                    var5 += 1.0f;
+                else
+                {
+                    flag1 = true;
                 }
             }
-            if (var5 > (float)var2) break;
-            if (var3) {
-                var4.insert(0, var11);
-                continue;
+            else if (f1 < 0.0F)
+            {
+                flag = true;
             }
-            var4.append(var11);
+            else
+            {
+                f += f1;
+
+                if (flag1)
+                {
+                    ++f;
+                }
+            }
+
+            if (f > (float)width)
+            {
+                break;
+            }
+
+            if (reverse)
+            {
+                stringbuilder.insert(0, (char)c0);
+            }
+            else
+            {
+                stringbuilder.append(c0);
+            }
         }
-        return var4.toString();
+
+        return stringbuilder.toString();
     }
 
-    private String trimStringNewline(String var1) {
-        while (var1 != null && var1.endsWith("\n")) {
-            var1 = var1.substring(0, var1.length() - 1);
+    private String trimStringNewline(String text)
+    {
+        while (text != null && text.endsWith("\n"))
+        {
+            text = text.substring(0, text.length() - 1);
         }
-        return var1;
+
+        return text;
     }
 
-    public void drawSplitString(String var1, int var2, int var3, int var4, int var5) {
+    public void drawSplitString(String str, int x, int y, int wrapWidth, int textColor)
+    {
+        if (this.blend)
+        {
+            GlStateManager.getBlendState(this.oldBlendState);
+            GlStateManager.enableBlend();
+            GlStateManager.blendFunc(770, 771);
+        }
+
         this.resetStyles();
-        this.textColor = var5;
-        var1 = this.trimStringNewline(var1);
-        this.renderSplitString(var1, var2, var3, var4, false);
-    }
+        this.textColor = textColor;
+        str = this.trimStringNewline(str);
+        this.renderSplitString(str, x, y, wrapWidth, false);
 
-    private void renderSplitString(String var1, int var2, int var3, int var4, boolean var5) {
-        List var6 = this.listFormattedStringToWidth(var1, var4);
-        for (Object var8 : var6) {
-            this.renderStringAligned((String) var8, var2, var3, var4, this.textColor, var5);
-            var3 += this.FONT_HEIGHT;
+        if (this.blend)
+        {
+            GlStateManager.setBlendState(this.oldBlendState);
         }
     }
 
-    public int splitStringWidth(String var1, int var2) {
-        return this.FONT_HEIGHT * this.listFormattedStringToWidth(var1, var2).size();
+    private void renderSplitString(String str, int x, int y, int wrapWidth, boolean addShadow)
+    {
+        for (String s : this.listFormattedStringToWidth(str, wrapWidth))
+        {
+            this.renderStringAligned(s, x, y, wrapWidth, this.textColor, addShadow);
+            y += this.FONT_HEIGHT;
+        }
     }
 
-    public void setUnicodeFlag(boolean var1) {
-        this.unicodeFlag = var1;
+    public int splitStringWidth(String str, int maxLength)
+    {
+        return this.FONT_HEIGHT * this.listFormattedStringToWidth(str, maxLength).size();
     }
 
-    public boolean getUnicodeFlag() {
+    public void setUnicodeFlag(boolean unicodeFlagIn)
+    {
+        this.unicodeFlag = unicodeFlagIn;
+    }
+
+    public boolean getUnicodeFlag()
+    {
         return this.unicodeFlag;
     }
 
-    public void setBidiFlag(boolean var1) {
-        this.bidiFlag = var1;
+    public void setBidiFlag(boolean bidiFlagIn)
+    {
+        this.bidiFlag = bidiFlagIn;
     }
 
-    public List listFormattedStringToWidth(String var1, int var2) {
-        return Arrays.asList(this.wrapFormattedStringToWidth(var1, var2).split("\n"));
+    public List<String> listFormattedStringToWidth(String str, int wrapWidth)
+    {
+        return Arrays.<String>asList(this.wrapFormattedStringToWidth(str, wrapWidth).split("\n"));
     }
 
-    String wrapFormattedStringToWidth(String var1, int var2) {
-        int var3 = this.sizeStringToWidth(var1, var2);
-        if (var1.length() <= var3) {
-            return var1;
+    String wrapFormattedStringToWidth(String str, int wrapWidth)
+    {
+        if (str.length() <= 1)
+        {
+            return str;
         }
-        String var4 = var1.substring(0, var3);
-        char var5 = var1.charAt(var3);
-        boolean var6 = var5 == ' ' || var5 == '\n';
-        String var7 = FontRenderer.getFormatFromString(var4) + var1.substring(var3 + (var6 ? 1 : 0));
-        return var4 + "\n" + this.wrapFormattedStringToWidth(var7, var2);
+        else
+        {
+            int i = this.sizeStringToWidth(str, wrapWidth);
+
+            if (str.length() <= i)
+            {
+                return str;
+            }
+            else
+            {
+                String s = str.substring(0, i);
+                char c0 = str.charAt(i);
+                boolean flag = c0 == 32 || c0 == 10;
+                String s1 = getFormatFromString(s) + str.substring(i + (flag ? 1 : 0));
+                return s + "\n" + this.wrapFormattedStringToWidth(s1, wrapWidth);
+            }
+        }
     }
 
-    private int sizeStringToWidth(String var1, int var2) {
-        int var5;
-        int var3 = var1.length();
-        float var4 = 0.0f;
-        int var6 = -1;
-        boolean var7 = false;
-        for (var5 = 0; var5 < var3; ++var5) {
-            char var8 = var1.charAt(var5);
-            switch (var8) {
-                case '\n': {
-                    --var5;
+    private int sizeStringToWidth(String str, int wrapWidth)
+    {
+        int i = str.length();
+        float f = 0.0F;
+        int j = 0;
+        int k = -1;
+
+        for (boolean flag = false; j < i; ++j)
+        {
+            char c0 = str.charAt(j);
+
+            switch (c0)
+            {
+                case '\n':
+                    --j;
                     break;
-                }
-                case ' ': {
-                    var6 = var5;
-                }
-                default: {
-                    var4 += this.getCharWidthFloat(var8);
-                    if (!var7) break;
-                    var4 += 1.0f;
-                    break;
-                }
-                case '§': {
-                    char var9;
-                    if (var5 >= var3 - 1) break;
-                    if ((var9 = var1.charAt(++var5)) != 'l' && var9 != 'L') {
-                        if (var9 != 'r' && var9 != 'R' && !FontRenderer.isFormatColor(var9)) break;
-                        var7 = false;
-                        break;
+
+                case ' ':
+                    k = j;
+
+                default:
+                    f += (float)this.getCharWidth(c0);
+
+                    if (flag)
+                    {
+                        ++f;
                     }
-                    var7 = true;
-                }
+
+                    break;
+
+                case '\u00a7':
+                    if (j < i - 1)
+                    {
+                        ++j;
+                        char c1 = str.charAt(j);
+
+                        if (c1 != 108 && c1 != 76)
+                        {
+                            if (c1 == 114 || c1 == 82 || isFormatColor(c1))
+                            {
+                                flag = false;
+                            }
+                        }
+                        else
+                        {
+                            flag = true;
+                        }
+                    }
             }
-            if (var8 == '\n') {
-                var6 = ++var5;
+
+            if (c0 == 10)
+            {
+                ++j;
+                k = j;
                 break;
             }
-            if (var4 > (float)var2) break;
-        }
-        return var5 != var3 && var6 != -1 && var6 < var5 ? var6 : var5;
-    }
 
-    /**
-     * Checks if the char code is a hexadecimal character, used to set colour.
-     */
-    private static boolean isFormatColor(char var0) {
-        return var0 >= '0' && var0 <= '9' || var0 >= 'a' && var0 <= 'f' || var0 >= 'A' && var0 <= 'F';
-    }
-
-    /**
-     * Checks if the char code is O-K...lLrRk-o... used to set special formatting.
-     */
-    private static boolean isFormatSpecial(char var0) {
-        return var0 >= 'k' && var0 <= 'o' || var0 >= 'K' && var0 <= 'O' || var0 == 'r' || var0 == 'R';
-    }
-
-    /**
-     * Digests a string for nonprinting formatting characters then returns a string containing only that formatting.
-     */
-    private static String getFormatFromString(String var0) {
-        String var1 = "";
-        int var2 = -1;
-        int var3 = var0.length();
-        while ((var2 = var0.indexOf(167, var2 + 1)) != -1) {
-            if (var2 >= var3 - 1) continue;
-            char var4 = var0.charAt(var2 + 1);
-            if (FontRenderer.isFormatColor(var4)) {
-                var1 = "§" + var4;
-                continue;
+            if (Math.round(f) > wrapWidth)
+            {
+                break;
             }
-            if (!FontRenderer.isFormatSpecial(var4)) continue;
-            var1 = var1 + "§" + var4;
         }
-        return var1;
+
+        return j != i && k != -1 && k < j ? k : j;
     }
 
-    public boolean getBidiFlag() {
+    private static boolean isFormatColor(char colorChar)
+    {
+        return colorChar >= 48 && colorChar <= 57 || colorChar >= 97 && colorChar <= 102 || colorChar >= 65 && colorChar <= 70;
+    }
+
+    private static boolean isFormatSpecial(char formatChar)
+    {
+        return formatChar >= 107 && formatChar <= 111 || formatChar >= 75 && formatChar <= 79 || formatChar == 114 || formatChar == 82;
+    }
+
+    public static String getFormatFromString(String text)
+    {
+        String s = "";
+        int i = -1;
+        int j = text.length();
+
+        while ((i = text.indexOf(167, i + 1)) != -1)
+        {
+            if (i < j - 1)
+            {
+                char c0 = text.charAt(i + 1);
+
+                if (isFormatColor(c0))
+                {
+                    s = "\u00a7" + c0;
+                }
+                else if (isFormatSpecial(c0))
+                {
+                    s = s + "\u00a7" + c0;
+                }
+            }
+        }
+
+        return s;
+    }
+
+    public boolean getBidiFlag()
+    {
         return this.bidiFlag;
     }
 
-    protected void enableAlpha() {
-        GL11.glEnable(3008);
-    }
+    public int getColorCode(char character)
+    {
+        int i = "0123456789abcdef".indexOf(character);
 
-    protected InputStream getResourceInputStream(ResourceLocation var1) throws IOException {
-        return Minecraft.getMinecraft().getResourceManager().getResource(var1).getInputStream();
-    }
+        if (i >= 0 && i < this.colorCode.length)
+        {
+            int j = this.colorCode[i];
 
-    public void IIIIllIlIIIllIlllIlllllIl() {
-        int var1 = 10;
-        long var2 = this.IllllIllllIlIIIlIIIllllll - (long)(20 * var1);
-        ITestClassFive var4 = this.lIlIlIllIIIIIIIIllllIIllI.IlllIIIlIlllIllIlIIlllIlI().lIIIIlIIllIIlIIlIIIlIIllI();
-        while (true) {
-            if (!var4.hasNext()) {
-                if (this.IllllIllllIlIIIlIIIllllll % 50L == 0L) {
-                    this.lIlIlIllIIIIIIIIllllIIllI.lIIIIllIIlIlIllIIIlIllIlI();
-                }
-                ++this.IllllIllllIlIIIlIIIllllll;
-                return;
+            if (Config.isCustomColors())
+            {
+                j = CustomColors.getTextColor(i, j);
             }
-            TestClassSix var5 = (TestClassSix)var4.next();
-            if (!var5.IIIIllIIllIIIIllIllIIIlIl() && var5.IIIIllIlIIIllIlllIlllllIl() >= var2) continue;
-            var5.lIIIIIIIIIlIllIIllIlIIlIl();
-            var4.remove();
+
+            return j;
         }
+        else
+        {
+            return 16777215;
+        }
+    }
+
+    protected void setColor(float p_setColor_1_, float p_setColor_2_, float p_setColor_3_, float p_setColor_4_)
+    {
+        GlStateManager.color(p_setColor_1_, p_setColor_2_, p_setColor_3_, p_setColor_4_);
+    }
+
+    protected void enableAlpha()
+    {
+        GlStateManager.enableAlpha();
+    }
+
+    protected void bindTexture(ResourceLocation p_bindTexture_1_)
+    {
+        this.renderEngine.bindTexture(p_bindTexture_1_);
+    }
+
+    protected InputStream getResourceInputStream(ResourceLocation p_getResourceInputStream_1_) throws IOException
+    {
+        return Minecraft.getMinecraft().getResourceManager().getResource(p_getResourceInputStream_1_).getInputStream();
     }
 }

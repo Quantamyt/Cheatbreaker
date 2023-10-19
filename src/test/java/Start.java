@@ -24,8 +24,11 @@ public class Start {
         }
 
         Main.main(concat(new String[] {
+                "--username", "Aplosh",
+                "--uuid", "a4434163-f43e-4b17-98f2-3b08ee4f5513",
+                "--accessToken", "0",
                 "--version", "CheatBreaker",
-                "--assetIndex", "1.7.10",
+                "--assetIndex", "1.8",
                 "--userProperties", "{}",
                 "--gameDir", new File(workingDirectory, ".").getAbsolutePath(),
                 "--assetsDir", new File(workingDirectory, "assets/").getAbsolutePath()

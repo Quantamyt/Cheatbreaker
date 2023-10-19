@@ -1,94 +1,128 @@
 package net.minecraft.entity.ai;
 
+import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import net.minecraft.command.IEntitySelector;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityCreature;
 import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.util.EntitySelectors;
 
-public class EntityAINearestAttackableTarget extends EntityAITarget {
-    private final Class targetClass;
+public class EntityAINearestAttackableTarget<T extends EntityLivingBase> extends EntityAITarget
+{
+    protected final Class<T> targetClass;
     private final int targetChance;
+    protected final EntityAINearestAttackableTarget.Sorter theNearestAttackableTargetSorter;
+    protected Predicate <? super T > targetEntitySelector;
+    protected EntityLivingBase targetEntity;
 
-    /** Instance of EntityAINearestAttackableTargetSorter. */
-    private final EntityAINearestAttackableTarget.Sorter theNearestAttackableTargetSorter;
-
-    /**
-     * This filter is applied to the Entity search.  Only matching entities will be targetted.  (null -> no
-     * restrictions)
-     */
-    private final IEntitySelector targetEntitySelector;
-    private EntityLivingBase targetEntity;
-
-
-    public EntityAINearestAttackableTarget(EntityCreature p_i1663_1_, Class p_i1663_2_, int p_i1663_3_, boolean p_i1663_4_) {
-        this(p_i1663_1_, p_i1663_2_, p_i1663_3_, p_i1663_4_, false);
+    public EntityAINearestAttackableTarget(EntityCreature creature, Class<T> classTarget, boolean checkSight)
+    {
+        this(creature, classTarget, checkSight, false);
     }
 
-    public EntityAINearestAttackableTarget(EntityCreature p_i1664_1_, Class p_i1664_2_, int p_i1664_3_, boolean p_i1664_4_, boolean p_i1664_5_) {
-        this(p_i1664_1_, p_i1664_2_, p_i1664_3_, p_i1664_4_, p_i1664_5_, null);
+    public EntityAINearestAttackableTarget(EntityCreature creature, Class<T> classTarget, boolean checkSight, boolean onlyNearby)
+    {
+        this(creature, classTarget, 10, checkSight, onlyNearby, (Predicate <? super T >)null);
     }
 
-    public EntityAINearestAttackableTarget(EntityCreature p_i1665_1_, Class p_i1665_2_, int p_i1665_3_, boolean p_i1665_4_, boolean p_i1665_5_, final IEntitySelector p_i1665_6_) {
-        super(p_i1665_1_, p_i1665_4_, p_i1665_5_);
-        this.targetClass = p_i1665_2_;
-        this.targetChance = p_i1665_3_;
-        this.theNearestAttackableTargetSorter = new EntityAINearestAttackableTarget.Sorter(p_i1665_1_);
+    public EntityAINearestAttackableTarget(EntityCreature creature, Class<T> classTarget, int chance, boolean checkSight, boolean onlyNearby, final Predicate <? super T > targetSelector)
+    {
+        super(creature, checkSight, onlyNearby);
+        this.targetClass = classTarget;
+        this.targetChance = chance;
+        this.theNearestAttackableTargetSorter = new EntityAINearestAttackableTarget.Sorter(creature);
         this.setMutexBits(1);
-        this.targetEntitySelector = new IEntitySelector() {
+        this.targetEntitySelector = new Predicate<T>()
+        {
+            public boolean apply(T p_apply_1_)
+            {
+                if (targetSelector != null && !targetSelector.apply(p_apply_1_))
+                {
+                    return false;
+                }
+                else
+                {
+                    if (p_apply_1_ instanceof EntityPlayer)
+                    {
+                        double d0 = EntityAINearestAttackableTarget.this.getTargetDistance();
 
-            public boolean isEntityApplicable(Entity p_82704_1_) {
-                return p_82704_1_ instanceof EntityLivingBase && ((p_i1665_6_ == null || p_i1665_6_.isEntityApplicable(p_82704_1_)) && EntityAINearestAttackableTarget.this.isSuitableTarget((EntityLivingBase) p_82704_1_, false));
+                        if (p_apply_1_.isSneaking())
+                        {
+                            d0 *= 0.800000011920929D;
+                        }
+
+                        if (p_apply_1_.isInvisible())
+                        {
+                            float f = ((EntityPlayer)p_apply_1_).getArmorVisibility();
+
+                            if (f < 0.1F)
+                            {
+                                f = 0.1F;
+                            }
+
+                            d0 *= (double)(0.7F * f);
+                        }
+
+                        if ((double)p_apply_1_.getDistanceToEntity(EntityAINearestAttackableTarget.this.taskOwner) > d0)
+                        {
+                            return false;
+                        }
+                    }
+
+                    return EntityAINearestAttackableTarget.this.isSuitableTarget(p_apply_1_, false);
+                }
             }
         };
     }
 
-    /**
-     * Returns whether the EntityAIBase should begin execution.
-     */
-    public boolean shouldExecute() {
-        if (this.targetChance > 0 && this.taskOwner.getRNG().nextInt(this.targetChance) != 0) {
+    public boolean shouldExecute()
+    {
+        if (this.targetChance > 0 && this.taskOwner.getRNG().nextInt(this.targetChance) != 0)
+        {
             return false;
-        } else {
-            double var1 = this.getTargetDistance();
-            List var3 = this.taskOwner.worldObj.selectEntitiesWithinAABB(this.targetClass, this.taskOwner.boundingBox.expand(var1, 4.0D, var1), this.targetEntitySelector);
-            Collections.sort(var3, this.theNearestAttackableTargetSorter);
+        }
+        else
+        {
+            double d0 = this.getTargetDistance();
+            List<T> list = this.taskOwner.worldObj.<T>getEntitiesWithinAABB(this.targetClass, this.taskOwner.getEntityBoundingBox().expand(d0, 4.0D, d0), Predicates.<T> and (this.targetEntitySelector, EntitySelectors.NOT_SPECTATING));
+            Collections.sort(list, this.theNearestAttackableTargetSorter);
 
-            if (var3.isEmpty()) {
+            if (list.isEmpty())
+            {
                 return false;
-            } else {
-                this.targetEntity = (EntityLivingBase)var3.get(0);
+            }
+            else
+            {
+                this.targetEntity = (EntityLivingBase)list.get(0);
                 return true;
             }
         }
     }
 
-    /**
-     * Execute a one shot task or start executing a continuous task
-     */
-    public void startExecuting() {
+    public void startExecuting()
+    {
         this.taskOwner.setAttackTarget(this.targetEntity);
         super.startExecuting();
     }
 
-    public static class Sorter implements Comparator {
+    public static class Sorter implements Comparator<Entity>
+    {
         private final Entity theEntity;
 
-
-        public Sorter(Entity p_i1662_1_) {
-            this.theEntity = p_i1662_1_;
+        public Sorter(Entity theEntityIn)
+        {
+            this.theEntity = theEntityIn;
         }
 
-        public int compare(Entity p_compare_1_, Entity p_compare_2_) {
-            double var3 = this.theEntity.getDistanceSqToEntity(p_compare_1_);
-            double var5 = this.theEntity.getDistanceSqToEntity(p_compare_2_);
-            return var3 < var5 ? -1 : (var3 > var5 ? 1 : 0);
-        }
-
-        public int compare(Object p_compare_1_, Object p_compare_2_) {
-            return this.compare((Entity)p_compare_1_, (Entity)p_compare_2_);
+        public int compare(Entity p_compare_1_, Entity p_compare_2_)
+        {
+            double d0 = this.theEntity.getDistanceSqToEntity(p_compare_1_);
+            double d1 = this.theEntity.getDistanceSqToEntity(p_compare_2_);
+            return d0 < d1 ? -1 : (d0 > d1 ? 1 : 0);
         }
     }
 }

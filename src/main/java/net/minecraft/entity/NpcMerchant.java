@@ -3,40 +3,55 @@ package net.minecraft.entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.InventoryMerchant;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.ChatComponentTranslation;
+import net.minecraft.util.IChatComponent;
 import net.minecraft.village.MerchantRecipe;
 import net.minecraft.village.MerchantRecipeList;
 
-public class NpcMerchant implements IMerchant {
-    /** Instance of Merchants Inventory. */
-    private final InventoryMerchant theMerchantInventory;
-
-    /** This merchant's current player customer. */
-    private final EntityPlayer customer;
-
-    /** The MerchantRecipeList instance. */
+public class NpcMerchant implements IMerchant
+{
+    private InventoryMerchant theMerchantInventory;
+    private EntityPlayer customer;
     private MerchantRecipeList recipeList;
+    private IChatComponent field_175548_d;
 
-
-    public NpcMerchant(EntityPlayer p_i1746_1_) {
-        this.customer = p_i1746_1_;
-        this.theMerchantInventory = new InventoryMerchant(p_i1746_1_, this);
+    public NpcMerchant(EntityPlayer p_i45817_1_, IChatComponent p_i45817_2_)
+    {
+        this.customer = p_i45817_1_;
+        this.field_175548_d = p_i45817_2_;
+        this.theMerchantInventory = new InventoryMerchant(p_i45817_1_, this);
     }
 
-    public EntityPlayer getCustomer() {
+    public EntityPlayer getCustomer()
+    {
         return this.customer;
     }
 
-    public void setCustomer(EntityPlayer p_70932_1_) {}
+    public void setCustomer(EntityPlayer p_70932_1_)
+    {
+    }
 
-    public MerchantRecipeList getRecipes(EntityPlayer p_70934_1_) {
+    public MerchantRecipeList getRecipes(EntityPlayer p_70934_1_)
+    {
         return this.recipeList;
     }
 
-    public void setRecipes(MerchantRecipeList p_70930_1_) {
-        this.recipeList = p_70930_1_;
+    public void setRecipes(MerchantRecipeList recipeList)
+    {
+        this.recipeList = recipeList;
     }
 
-    public void useRecipe(MerchantRecipe p_70933_1_) {}
+    public void useRecipe(MerchantRecipe recipe)
+    {
+        recipe.incrementToolUses();
+    }
 
-    public void func_110297_a_(ItemStack p_110297_1_) {}
+    public void verifySellingItem(ItemStack stack)
+    {
+    }
+
+    public IChatComponent getDisplayName()
+    {
+        return (IChatComponent)(this.field_175548_d != null ? this.field_175548_d : new ChatComponentTranslation("entity.Villager.name", new Object[0]));
+    }
 }

@@ -1,12 +1,12 @@
 package com.cheatbreaker.client.ui.mainmenu;
 
-import java.util.concurrent.ThreadLocalRandom;
-
 import com.cheatbreaker.client.ui.fading.FloatFade;
 import com.cheatbreaker.client.ui.fading.MinMaxFade;
 import com.cheatbreaker.client.ui.util.RenderUtil;
 import net.minecraft.util.ResourceLocation;
 import org.lwjgl.opengl.GL11;
+
+import java.util.concurrent.ThreadLocalRandom;
 
 public final class LunarNetworkLogoElement extends AbstractElement {
     private final ResourceLocation baseLogo;
@@ -29,7 +29,8 @@ public final class LunarNetworkLogoElement extends AbstractElement {
             if (this.IlIIIIIIIlIlllIIIlIlIIIIl[i - 1] != null && !this.IlIIIIIIIlIlllIIIlIlIIIIl[i - 1].isZeroOrLess()) {
                 this.llIIllIlIlllllIlIllIIlIll = false;
             }
-            if (this.IlIIIIIIIlIlllIIIlIlIIIIl[i - 1] != null && this.IlIIIIIIIlIlllIIIlIlIIIIl[i - 1].isZeroOrLess()) continue;
+            if (this.IlIIIIIIIlIlllIIIlIlIIIIl[i - 1] != null && this.IlIIIIIIIlIlllIIIlIlIIIIl[i - 1].isZeroOrLess())
+                continue;
             long l = ThreadLocalRandom.current().nextLong(4000L, 12000L);
             if (this.llIIllIlIlllllIlIllIIlIll) {
                 this.lIllllIllIIIlIlllIIlIllll[i - 1] = Math.max(ThreadLocalRandom.current().nextFloat(), 0.8f);
@@ -79,15 +80,15 @@ public final class LunarNetworkLogoElement extends AbstractElement {
 
     class IIlllIIIlllIlIlIlllllIIIl
             extends FloatFade {
-        private MinMaxFade runTime;
-        private MinMaxFade runLength;
+        private final MinMaxFade runTime;
+        private final MinMaxFade runLength;
         final LunarNetworkLogoElement loopAnimation;
 
         private IIlllIIIlllIlIlIlllllIIIl(LunarNetworkLogoElement lunarNetworkLogoElement, long duration) {
             super(duration);
             this.loopAnimation = lunarNetworkLogoElement;
-            this.runTime = new MinMaxFade(Math.min((long)Math.min((float)duration * 0.2f, 3000.0f), 1500L));
-            this.runLength = new MinMaxFade(Math.min((long)((float)duration * 0.4f), 5000L));
+            this.runTime = new MinMaxFade(Math.min((long) Math.min((float) duration * 0.2f, 3000.0f), 1500L));
+            this.runLength = new MinMaxFade(Math.min((long) ((float) duration * 0.4f), 5000L));
         }
 
         @Override
@@ -109,7 +110,7 @@ public final class LunarNetworkLogoElement extends AbstractElement {
             if (this.runTime.isZeroOrLess()) {
                 return Math.max(1.0f * this.runTime.getFadeAmount(), 0.15f);
             }
-            if (this.IlIlllIIIIllIllllIllIIlIl() <= this.runLength.getDuration()) {
+            if (this.getRemainingTime() <= this.runLength.getDuration()) {
                 if (!this.runLength.isTimeNotAtZero()) {
                     this.runLength.startAnimation();
                 }

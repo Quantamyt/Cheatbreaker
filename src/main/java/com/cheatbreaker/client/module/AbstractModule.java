@@ -1,13 +1,17 @@
 package com.cheatbreaker.client.module;
 
 import com.cheatbreaker.client.CheatBreaker;
+import com.cheatbreaker.client.cosmetic.profile.ClientProfile;
 import com.cheatbreaker.client.event.EventBus;
-import com.cheatbreaker.client.event.impl.ClickEvent;
-import com.cheatbreaker.client.event.impl.KeyboardEvent;
+import com.cheatbreaker.client.event.impl.keyboard.KeyboardEvent;
+import com.cheatbreaker.client.event.impl.mouse.ClickEvent;
 import com.cheatbreaker.client.module.data.CustomizationLevel;
 import com.cheatbreaker.client.module.data.PreviewType;
 import com.cheatbreaker.client.module.data.Setting;
-import com.cheatbreaker.client.ui.module.*;
+import com.cheatbreaker.client.module.impl.normal.hypixel.ModuleNickHider;
+import com.cheatbreaker.client.ui.module.AnchorHelper;
+import com.cheatbreaker.client.ui.module.GuiAnchor;
+import com.cheatbreaker.client.ui.module.Position;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.client.Minecraft;
@@ -18,46 +22,62 @@ import org.lwjgl.opengl.GL11;
 import java.util.*;
 import java.util.function.Consumer;
 
+/**
+ * @see Object (LMFAO)
+ *
+ * This Object defines the module Object of the CheatBreaker Client.
+ */
 @Getter @Setter
 public abstract class AbstractModule {
     protected Minecraft mc = Minecraft.getMinecraft();
+
+    private final Map<Class<? extends EventBus.Event>, Consumer> eventMap = new HashMap<>();
+    private final List<Object> defaultSettingsValues;
+    private final List<Setting> settingsList;
+
     private boolean staffModule = false;
     private boolean staffModuleEnabled = false;
+    public boolean defaultState = false;
+    private boolean renderHud = true;
+    public boolean defaultRenderHud = true;
+    public boolean notRenderHUD = true;
+    public boolean hiddenFromHud = false;
+    private boolean enabled = false;
+    private boolean wasRenderHud = false;
+    public boolean defaultWasRenderHud = false;
+
     private final String name;
     private String description;
     private List<String> creators;
-    private boolean enabled = false;
-    public boolean defaultState = false;
-    public GuiAnchor guiAnchor;
-    public GuiAnchor defaultGuiAnchor;
+    private List<String> aliases;
+
+    public String defaultGuiScale;
+    private String previewLabel;
+
     private float xTranslation = 0.0f;
-    public float defaultXTranslation = 0.0f;
     private float yTranslation = 0.0f;
+    public float defaultXTranslation = 0.0f;
     public float defaultYTranslation = 0.0f;
-    private boolean renderHud = true;
-    public boolean defaultRenderHud = true;
-    private boolean wasRenderHud = false;
-    public boolean defaultWasRenderHud = false;
-    public boolean hiddenFromHud = false;
+
     public float width = 0.0f;
     public float height = 0.0f;
-    public boolean notRenderHUD = true;
-    private final List<Setting> settingsList;
-    private final List<Object> defaultSettingsValues;
+
+    private float previewIconWidth;
+    private float previewIconHeight;
+    private float previewLabelSize;
+
+    public GuiAnchor guiAnchor;
+    public GuiAnchor defaultGuiAnchor;
+
     public Setting scale;
     public Setting guiScale;
     public Setting toggleKeybind;
     public Setting hideFromHUDKeybind;
     public Setting tempHideFromHUDKeybind;
-    public String defaultGuiScale;
-    private final Map<Class<? extends EventBus.Event>, Consumer> eventMap = new HashMap<>();
+
     private PreviewType previewType;
+
     private ResourceLocation previewIcon;
-    private float previewIconWidth;
-    private float previewIconHeight;
-    private float previewLabelSize;
-    private String previewLabel;
-    protected String[] excludeOptions = new String[] {"OFF", "Above", "Below", "At", "Not At"};
 
     public AbstractModule(String name) {
         this.name = name;
@@ -97,19 +117,19 @@ public abstract class AbstractModule {
 
     protected void addAllEvents() {
         for (Map.Entry<Class<? extends EventBus.Event>, Consumer> entry : this.eventMap.entrySet()) {
-            CheatBreaker.getInstance().getEventBus().addEvent((Class<? extends EventBus.Event>)entry.getKey(), entry.getValue());
+            CheatBreaker.getInstance().getEventBus().addEvent(entry.getKey(), entry.getValue());
         }
     }
 
     protected void removeAllEvents() {
         for (Map.Entry<Class<? extends EventBus.Event>, Consumer> entry : this.eventMap.entrySet()) {
-            CheatBreaker.getInstance().getEventBus().removeEvent((Class<? extends EventBus.Event>)entry.getKey(), entry.getValue());
+            CheatBreaker.getInstance().getEventBus().removeEvent(entry.getKey(), entry.getValue());
         }
     }
 
     public void setState(boolean state) {
         if (state != this.defaultState) {
-            CheatBreaker.getInstance().createNewProfile();
+            CheatBreaker.getInstance().getConfigManager().createNewProfile();
         }
         if (state) {
             if (!this.enabled) {
@@ -185,52 +205,65 @@ public abstract class AbstractModule {
         if (event.getMouseButton() == this.tempHideFromHUDKeybind.getIntegerValue() && this.tempHideFromHUDKeybind.isHasMouseBind()) {
             this.setHiddenFromHud(!this.hiddenFromHud);
         }
-        Setting nameTagsKeybind = CheatBreaker.getInstance().getModuleManager().nametagMod.hideNamePlatesKeybind;
+        Setting nameTagsKeybind = CheatBreaker.getInstance().getModuleManager().nameTagMod.hideNamePlatesKeybind;
         if (event.getMouseButton() == nameTagsKeybind.getIntegerValue() && nameTagsKeybind.isHasMouseBind()) {
-            Minecraft.getMinecraft().hideNametags = !Minecraft.getMinecraft().hideNametags;
+            CheatBreaker.getInstance().hideNameTags = !CheatBreaker.getInstance().hideNameTags;
         }
     }
 
-    public void setCreators(String ... creators) {
+    public void setCreators(String... creators) {
         this.creators = Arrays.asList(creators);
+    }
+
+    public void setAliases(String... aliases) {
+        this.aliases = Arrays.asList(aliases);
     }
 
     public void scaleAndTranslate(ScaledResolution scaledResolution) {
         this.scaleAndTranslate(scaledResolution, this.width, this.height);
     }
-    
+
+    public boolean containsSettingByName(String name) {
+        for (Setting setting : this.getSettingsList()) {
+            if (setting.getSettingName().equalsIgnoreCase(name)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public float masterScale() {
         float var15 = 1.0f;
         if (this.guiScale.getValue().equals("Global")) {
-            switch (CheatBreaker.getInstance().getGlobalSettings().modScale.getStringValue()) {
+            switch ((String) CheatBreaker.getInstance().getGlobalSettings().guiScale.getValue()) {
                 case "Small":
-                    var15 *= 0.5F / CheatBreaker.getScaleFactor();
+                    var15 = var15 * 0.5F / CheatBreaker.getScaleFactor();
                     break;
                 case "Normal":
-                    var15 /= CheatBreaker.getScaleFactor();
+                    var15 = var15 / CheatBreaker.getScaleFactor();
                     break;
                 case "Large":
-                    var15 *= 1.5F / CheatBreaker.getScaleFactor();
+                    var15 = var15 * 1.5F / CheatBreaker.getScaleFactor();
                     break;
                 case "Auto":
-                    var15 *= 2.0F / CheatBreaker.getScaleFactor();
+                    var15 = var15 * 2.0F / CheatBreaker.getScaleFactor();
             }
         } else {
-            switch (this.guiScale.getStringValue()) {
+            switch ((String) this.guiScale.getValue()) {
                 case "Small":
-                    var15 *= 0.5F / CheatBreaker.getScaleFactor();
+                    var15 = var15 * 0.5F / CheatBreaker.getScaleFactor();
                     break;
                 case "Normal":
-                    var15 /= CheatBreaker.getScaleFactor();
+                    var15 = var15 / CheatBreaker.getScaleFactor();
                     break;
                 case "Large":
-                    var15 *= 1.5F / CheatBreaker.getScaleFactor();
+                    var15 = var15 * 1.5F / CheatBreaker.getScaleFactor();
                     break;
                 case "Auto":
-                    var15 *= 2.0F / CheatBreaker.getScaleFactor();
+                    var15 = var15 * 2.0F / CheatBreaker.getScaleFactor();
             }
         }
-        return this.scale.getFloatValue() * CheatBreaker.getInstance().getGlobalSettings().modScaleMultiplier.getFloatValue() * var15;
+        return (Float) this.scale.getValue() * (float) CheatBreaker.getInstance().getGlobalSettings().globalGuiScale.getValue() * var15;
     }
 
     public void scaleAndTranslate(ScaledResolution scaledResolution, float width, float height) {
@@ -240,6 +273,7 @@ public abstract class AbstractModule {
         GL11.glScalef(scale, scale, scale);
         width *= scale;
         height *= scale;
+
         switch (this.guiAnchor) {
             case LEFT_TOP:
                 f3 = 2.0f;
@@ -247,41 +281,41 @@ public abstract class AbstractModule {
                 break;
             case LEFT_MIDDLE:
                 f3 = 2.0f;
-                f4 = (float)(scaledResolution.getScaledHeight() / 2) - height / 2.0f;
+                f4 = (float) (scaledResolution.getScaledHeight() / 2) - height / 2.0f;
                 break;
             case LEFT_BOTTOM:
-                f4 = (float)scaledResolution.getScaledHeight() - height - 2.0f;
+                f4 = (float) scaledResolution.getScaledHeight() - height - 2.0f;
                 f3 = 2.0f;
                 break;
             case MIDDLE_TOP:
-                f3 = (float)(scaledResolution.getScaledWidth() / 2) - width / 2.0f;
+                f3 = (float) (scaledResolution.getScaledWidth() / 2) - width / 2.0f;
                 f4 = 2.0f;
                 break;
             case MIDDLE_MIDDLE:
-                f3 = (float)(scaledResolution.getScaledWidth() / 2) - width / 2.0f;
-                f4 = (float)(scaledResolution.getScaledHeight() / 2) - height / 2.0f;
+                f3 = (float) (scaledResolution.getScaledWidth() / 2) - width / 2.0f;
+                f4 = (float) (scaledResolution.getScaledHeight() / 2) - height / 2.0f;
                 break;
             case MIDDLE_BOTTOM_LEFT:
-                f3 = (float)(scaledResolution.getScaledWidth() / 2) - width;
-                f4 = (float)scaledResolution.getScaledHeight() - height - 2.0f;
+                f3 = (float) (scaledResolution.getScaledWidth() / 2) - width;
+                f4 = (float) scaledResolution.getScaledHeight() - height - 2.0f;
                 break;
             case MIDDLE_BOTTOM_RIGHT:
-                f3 = scaledResolution.getScaledWidth() / 2;
-                f4 = (float)scaledResolution.getScaledHeight() - height - 2.0f;
+                f3 = scaledResolution.getScaledWidth() / 2F;
+                f4 = (float) scaledResolution.getScaledHeight() - height - 2.0f;
                 break;
             case RIGHT_TOP:
-                f3 = (float)scaledResolution.getScaledWidth() - width - 2.0f;
+                f3 = (float) scaledResolution.getScaledWidth() - width - 2.0f;
                 f4 = 2.0f;
                 break;
             case RIGHT_MIDDLE:
-                f3 = (float)scaledResolution.getScaledWidth() - width;
-                f4 = (float)(scaledResolution.getScaledHeight() / 2) - height / 2.0f;
+                f3 = (float) scaledResolution.getScaledWidth() - width;
+                f4 = (float) (scaledResolution.getScaledHeight() / 2) - height / 2.0f;
                 break;
             case RIGHT_BOTTOM:
-                f3 = (float)scaledResolution.getScaledWidth() - width;
-                f4 = (float)scaledResolution.getScaledHeight() - height;
-
+                f3 = (float) scaledResolution.getScaledWidth() - width;
+                f4 = (float) scaledResolution.getScaledHeight() - height;
         }
+
         GL11.glTranslatef(f3 / scale, f4 / scale, 0.0f);
         GL11.glTranslatef(this.xTranslation / scale, this.yTranslation / scale, 0.0f);
     }
@@ -289,8 +323,8 @@ public abstract class AbstractModule {
     public float[] getScaledPoints(ScaledResolution scaledResolution, boolean bl) {
         float f = 0.0f;
         float f2 = 0.0f;
-        float f3 = this.width * (Float) this.masterScale();
-        float f4 = this.height * (Float) this.masterScale();
+        float f3 = this.width * this.masterScale();
+        float f4 = this.height * this.masterScale();
         switch (this.guiAnchor) {
             case LEFT_TOP:
                 f = 2.0f;
@@ -298,46 +332,46 @@ public abstract class AbstractModule {
                 break;
             case LEFT_MIDDLE:
                 f = 2.0f;
-                f2 = (float)(scaledResolution.getScaledHeight() / 2) - f4 / 2.0f;
+                f2 = (float) (scaledResolution.getScaledHeight() / 2) - f4 / 2.0f;
                 break;
             case LEFT_BOTTOM:
-                f2 = (float)scaledResolution.getScaledHeight() - f4 - 2.0f;
+                f2 = (float) scaledResolution.getScaledHeight() - f4 - 2.0f;
                 f = 2.0f;
                 break;
             case MIDDLE_TOP:
-                f = (float)(scaledResolution.getScaledWidth() / 2) - f3 / 2.0f;
+                f = (float) (scaledResolution.getScaledWidth() / 2) - f3 / 2.0f;
                 f2 = 2.0f;
                 break;
             case MIDDLE_MIDDLE:
-                f = (float)(scaledResolution.getScaledWidth() / 2) - f3 / 2.0f;
-                f2 = (float)(scaledResolution.getScaledHeight() / 2) - f4 / 2.0f;
+                f = (float) (scaledResolution.getScaledWidth() / 2) - f3 / 2.0f;
+                f2 = (float) (scaledResolution.getScaledHeight() / 2) - f4 / 2.0f;
                 break;
             case MIDDLE_BOTTOM_LEFT:
-                f = (float)(scaledResolution.getScaledWidth() / 2) - f3;
-                f2 = (float)scaledResolution.getScaledHeight() - f4 - 2.0f;
+                f = (float) (scaledResolution.getScaledWidth() / 2) - f3;
+                f2 = (float) scaledResolution.getScaledHeight() - f4 - 2.0f;
                 break;
             case MIDDLE_BOTTOM_RIGHT:
-                f = scaledResolution.getScaledWidth() / 2;
-                f2 = (float)scaledResolution.getScaledHeight() - f4 - 2.0f;
+                f = scaledResolution.getScaledWidth() / 2F;
+                f2 = (float) scaledResolution.getScaledHeight() - f4 - 2.0f;
                 break;
             case RIGHT_TOP:
-                f = (float)scaledResolution.getScaledWidth() - f3 - 2.0f;
+                f = (float) scaledResolution.getScaledWidth() - f3 - 2.0f;
                 f2 = 2.0f;
                 break;
             case RIGHT_MIDDLE:
-                f = (float)scaledResolution.getScaledWidth() - f3;
-                f2 = (float)(scaledResolution.getScaledHeight() / 2) - f4 / 2.0f;
+                f = (float) scaledResolution.getScaledWidth() - f3;
+                f2 = (float) (scaledResolution.getScaledHeight() / 2) - f4 / 2.0f;
                 break;
             case RIGHT_BOTTOM:
-                f = (float)scaledResolution.getScaledWidth() - f3;
-                f2 = (float)scaledResolution.getScaledHeight() - f4;
+                f = (float) scaledResolution.getScaledWidth() - f3;
+                f2 = (float) scaledResolution.getScaledHeight() - f4;
         }
-        return new float[]{(f + (bl ? this.xTranslation : 0.0f)) / (Float) this.masterScale(), (f2 + (bl ? this.yTranslation : 0.0f)) / (Float) this.masterScale()};
+        return new float[]{(f + (bl ? this.xTranslation : 0.0f)) / this.masterScale(), (f2 + (bl ? this.yTranslation : 0.0f)) / this.masterScale()};
     }
 
     public void setAnchor(GuiAnchor anchor) {
         if (anchor != this.defaultGuiAnchor) {
-            CheatBreaker.getInstance().createNewProfile();
+            CheatBreaker.getInstance().getConfigManager().createNewProfile();
         }
         this.guiAnchor = anchor;
     }
@@ -366,24 +400,8 @@ public abstract class AbstractModule {
 
     public void setRenderHud(boolean bl) {
         if (bl != this.defaultRenderHud) {
-            CheatBreaker.getInstance().createNewProfile();
+            CheatBreaker.getInstance().getConfigManager().createNewProfile();
         }
-
         this.renderHud = bl;
-    }
-
-    public void setDefaultRenderHud(boolean bl) {
-        this.renderHud = bl;
-        this.defaultRenderHud = bl;
-    }
-
-    protected boolean excludeArrayOptions(Setting setting, int realValue, float sliderValue) {
-        switch (setting.getStringValue()) {
-            case "Above": return realValue > sliderValue;
-            case "Below": return realValue < sliderValue;
-            case "At": return realValue == sliderValue;
-            case "Not At": return realValue != sliderValue;
-            default: return false;
-        }
     }
 }

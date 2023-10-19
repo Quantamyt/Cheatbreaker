@@ -5,14 +5,19 @@ import net.minecraft.client.renderer.texture.TextureUtil;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.ColorizerGrass;
 
-public class GrassColorReloadListener implements IResourceManagerReloadListener {
-    private static final ResourceLocation field_130078_a = new ResourceLocation("textures/colormap/grass.png");
+public class GrassColorReloadListener implements IResourceManagerReloadListener
+{
+    private static final ResourceLocation LOC_GRASS_PNG = new ResourceLocation("textures/colormap/grass.png");
 
-
-    public void onResourceManagerReload(IResourceManager p_110549_1_) {
-        try {
-            ColorizerGrass.setGrassBiomeColorizer(TextureUtil.readImageData(p_110549_1_, field_130078_a));
-        } catch (IOException var3) {
+    public void onResourceManagerReload(IResourceManager resourceManager)
+    {
+        try
+        {
+            ColorizerGrass.setGrassBiomeColorizer(TextureUtil.readImageData(resourceManager, LOC_GRASS_PNG));
+        }
+        catch (IOException var3)
+        {
+            ;
         }
     }
 }

@@ -1,6 +1,7 @@
 package net.minecraft.item.crafting;
 
-import java.util.ArrayList;
+import com.google.common.collect.Lists;
+import java.util.List;
 import net.minecraft.init.Items;
 import net.minecraft.inventory.InventoryCrafting;
 import net.minecraft.item.ItemDye;
@@ -9,180 +10,252 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.world.World;
 
-public class RecipeFireworks implements IRecipe {
+public class RecipeFireworks implements IRecipe
+{
     private ItemStack field_92102_a;
 
-
-    /**
-     * Used to check if a recipe matches current crafting inventory
-     */
-    public boolean matches(InventoryCrafting p_77569_1_, World p_77569_2_) {
+    public boolean matches(InventoryCrafting inv, World worldIn)
+    {
         this.field_92102_a = null;
-        int var3 = 0;
-        int var4 = 0;
-        int var5 = 0;
-        int var6 = 0;
-        int var7 = 0;
-        int var8 = 0;
+        int i = 0;
+        int j = 0;
+        int k = 0;
+        int l = 0;
+        int i1 = 0;
+        int j1 = 0;
 
-        for (int var9 = 0; var9 < p_77569_1_.getSizeInventory(); ++var9) {
-            ItemStack var10 = p_77569_1_.getStackInSlot(var9);
+        for (int k1 = 0; k1 < inv.getSizeInventory(); ++k1)
+        {
+            ItemStack itemstack = inv.getStackInSlot(k1);
 
-            if (var10 != null) {
-                if (var10.getItem() == Items.gunpowder) {
-                    ++var4;
-                } else if (var10.getItem() == Items.firework_charge) {
-                    ++var6;
-                } else if (var10.getItem() == Items.dye) {
-                    ++var5;
-                } else if (var10.getItem() == Items.paper) {
-                    ++var3;
-                } else if (var10.getItem() == Items.glowstone_dust) {
-                    ++var7;
-                } else if (var10.getItem() == Items.diamond) {
-                    ++var7;
-                } else if (var10.getItem() == Items.fire_charge) {
-                    ++var8;
-                } else if (var10.getItem() == Items.feather) {
-                    ++var8;
-                } else if (var10.getItem() == Items.gold_nugget) {
-                    ++var8;
-                } else {
-                    if (var10.getItem() != Items.skull) {
+            if (itemstack != null)
+            {
+                if (itemstack.getItem() == Items.gunpowder)
+                {
+                    ++j;
+                }
+                else if (itemstack.getItem() == Items.firework_charge)
+                {
+                    ++l;
+                }
+                else if (itemstack.getItem() == Items.dye)
+                {
+                    ++k;
+                }
+                else if (itemstack.getItem() == Items.paper)
+                {
+                    ++i;
+                }
+                else if (itemstack.getItem() == Items.glowstone_dust)
+                {
+                    ++i1;
+                }
+                else if (itemstack.getItem() == Items.diamond)
+                {
+                    ++i1;
+                }
+                else if (itemstack.getItem() == Items.fire_charge)
+                {
+                    ++j1;
+                }
+                else if (itemstack.getItem() == Items.feather)
+                {
+                    ++j1;
+                }
+                else if (itemstack.getItem() == Items.gold_nugget)
+                {
+                    ++j1;
+                }
+                else
+                {
+                    if (itemstack.getItem() != Items.skull)
+                    {
                         return false;
                     }
 
-                    ++var8;
+                    ++j1;
                 }
             }
         }
 
-        var7 += var5 + var8;
+        i1 = i1 + k + j1;
 
-        if (var4 <= 3 && var3 <= 1) {
-            NBTTagCompound var16;
-            NBTTagCompound var19;
-
-            if (var4 >= 1 && var3 == 1 && var7 == 0) {
+        if (j <= 3 && i <= 1)
+        {
+            if (j >= 1 && i == 1 && i1 == 0)
+            {
                 this.field_92102_a = new ItemStack(Items.fireworks);
 
-                if (var6 > 0) {
-                    var16 = new NBTTagCompound();
-                    var19 = new NBTTagCompound();
-                    NBTTagList var23 = new NBTTagList();
+                if (l > 0)
+                {
+                    NBTTagCompound nbttagcompound1 = new NBTTagCompound();
+                    NBTTagCompound nbttagcompound3 = new NBTTagCompound();
+                    NBTTagList nbttaglist = new NBTTagList();
 
-                    for (int var24 = 0; var24 < p_77569_1_.getSizeInventory(); ++var24) {
-                        ItemStack var26 = p_77569_1_.getStackInSlot(var24);
+                    for (int k2 = 0; k2 < inv.getSizeInventory(); ++k2)
+                    {
+                        ItemStack itemstack3 = inv.getStackInSlot(k2);
 
-                        if (var26 != null && var26.getItem() == Items.firework_charge && var26.hasTagCompound() && var26.getTagCompound().func_150297_b("Explosion", 10)) {
-                            var23.appendTag(var26.getTagCompound().getCompoundTag("Explosion"));
+                        if (itemstack3 != null && itemstack3.getItem() == Items.firework_charge && itemstack3.hasTagCompound() && itemstack3.getTagCompound().hasKey("Explosion", 10))
+                        {
+                            nbttaglist.appendTag(itemstack3.getTagCompound().getCompoundTag("Explosion"));
                         }
                     }
 
-                    var19.setTag("Explosions", var23);
-                    var19.setByte("Flight", (byte)var4);
-                    var16.setTag("Fireworks", var19);
-                    this.field_92102_a.setTagCompound(var16);
+                    nbttagcompound3.setTag("Explosions", nbttaglist);
+                    nbttagcompound3.setByte("Flight", (byte)j);
+                    nbttagcompound1.setTag("Fireworks", nbttagcompound3);
+                    this.field_92102_a.setTagCompound(nbttagcompound1);
                 }
 
                 return true;
-            } else if (var4 == 1 && var3 == 0 && var6 == 0 && var5 > 0 && var8 <= 1) {
+            }
+            else if (j == 1 && i == 0 && l == 0 && k > 0 && j1 <= 1)
+            {
                 this.field_92102_a = new ItemStack(Items.firework_charge);
-                var16 = new NBTTagCompound();
-                var19 = new NBTTagCompound();
-                byte var22 = 0;
-                ArrayList var12 = new ArrayList();
+                NBTTagCompound nbttagcompound = new NBTTagCompound();
+                NBTTagCompound nbttagcompound2 = new NBTTagCompound();
+                byte b0 = 0;
+                List<Integer> list = Lists.<Integer>newArrayList();
 
-                for (int var13 = 0; var13 < p_77569_1_.getSizeInventory(); ++var13) {
-                    ItemStack var14 = p_77569_1_.getStackInSlot(var13);
+                for (int l1 = 0; l1 < inv.getSizeInventory(); ++l1)
+                {
+                    ItemStack itemstack2 = inv.getStackInSlot(l1);
 
-                    if (var14 != null) {
-                        if (var14.getItem() == Items.dye) {
-                            var12.add(Integer.valueOf(ItemDye.field_150922_c[var14.getItemDamage()]));
-                        } else if (var14.getItem() == Items.glowstone_dust) {
-                            var19.setBoolean("Flicker", true);
-                        } else if (var14.getItem() == Items.diamond) {
-                            var19.setBoolean("Trail", true);
-                        } else if (var14.getItem() == Items.fire_charge) {
-                            var22 = 1;
-                        } else if (var14.getItem() == Items.feather) {
-                            var22 = 4;
-                        } else if (var14.getItem() == Items.gold_nugget) {
-                            var22 = 2;
-                        } else if (var14.getItem() == Items.skull) {
-                            var22 = 3;
+                    if (itemstack2 != null)
+                    {
+                        if (itemstack2.getItem() == Items.dye)
+                        {
+                            list.add(Integer.valueOf(ItemDye.dyeColors[itemstack2.getMetadata() & 15]));
+                        }
+                        else if (itemstack2.getItem() == Items.glowstone_dust)
+                        {
+                            nbttagcompound2.setBoolean("Flicker", true);
+                        }
+                        else if (itemstack2.getItem() == Items.diamond)
+                        {
+                            nbttagcompound2.setBoolean("Trail", true);
+                        }
+                        else if (itemstack2.getItem() == Items.fire_charge)
+                        {
+                            b0 = 1;
+                        }
+                        else if (itemstack2.getItem() == Items.feather)
+                        {
+                            b0 = 4;
+                        }
+                        else if (itemstack2.getItem() == Items.gold_nugget)
+                        {
+                            b0 = 2;
+                        }
+                        else if (itemstack2.getItem() == Items.skull)
+                        {
+                            b0 = 3;
                         }
                     }
                 }
 
-                int[] var25 = new int[var12.size()];
+                int[] aint1 = new int[list.size()];
 
-                for (int var27 = 0; var27 < var25.length; ++var27) {
-                    var25[var27] = ((Integer)var12.get(var27)).intValue();
+                for (int l2 = 0; l2 < aint1.length; ++l2)
+                {
+                    aint1[l2] = ((Integer)list.get(l2)).intValue();
                 }
 
-                var19.setIntArray("Colors", var25);
-                var19.setByte("Type", var22);
-                var16.setTag("Explosion", var19);
-                this.field_92102_a.setTagCompound(var16);
+                nbttagcompound2.setIntArray("Colors", aint1);
+                nbttagcompound2.setByte("Type", b0);
+                nbttagcompound.setTag("Explosion", nbttagcompound2);
+                this.field_92102_a.setTagCompound(nbttagcompound);
                 return true;
-            } else if (var4 == 0 && var3 == 0 && var6 == 1 && var5 > 0 && var5 == var7) {
-                ArrayList var15 = new ArrayList();
+            }
+            else if (j == 0 && i == 0 && l == 1 && k > 0 && k == i1)
+            {
+                List<Integer> list1 = Lists.<Integer>newArrayList();
 
-                for (int var17 = 0; var17 < p_77569_1_.getSizeInventory(); ++var17) {
-                    ItemStack var11 = p_77569_1_.getStackInSlot(var17);
+                for (int i2 = 0; i2 < inv.getSizeInventory(); ++i2)
+                {
+                    ItemStack itemstack1 = inv.getStackInSlot(i2);
 
-                    if (var11 != null) {
-                        if (var11.getItem() == Items.dye) {
-                            var15.add(Integer.valueOf(ItemDye.field_150922_c[var11.getItemDamage()]));
-                        } else if (var11.getItem() == Items.firework_charge) {
-                            this.field_92102_a = var11.copy();
+                    if (itemstack1 != null)
+                    {
+                        if (itemstack1.getItem() == Items.dye)
+                        {
+                            list1.add(Integer.valueOf(ItemDye.dyeColors[itemstack1.getMetadata() & 15]));
+                        }
+                        else if (itemstack1.getItem() == Items.firework_charge)
+                        {
+                            this.field_92102_a = itemstack1.copy();
                             this.field_92102_a.stackSize = 1;
                         }
                     }
                 }
 
-                int[] var18 = new int[var15.size()];
+                int[] aint = new int[list1.size()];
 
-                for (int var20 = 0; var20 < var18.length; ++var20) {
-                    var18[var20] = ((Integer)var15.get(var20)).intValue();
+                for (int j2 = 0; j2 < aint.length; ++j2)
+                {
+                    aint[j2] = ((Integer)list1.get(j2)).intValue();
                 }
 
-                if (this.field_92102_a != null && this.field_92102_a.hasTagCompound()) {
-                    NBTTagCompound var21 = this.field_92102_a.getTagCompound().getCompoundTag("Explosion");
+                if (this.field_92102_a != null && this.field_92102_a.hasTagCompound())
+                {
+                    NBTTagCompound nbttagcompound4 = this.field_92102_a.getTagCompound().getCompoundTag("Explosion");
 
-                    if (var21 == null) {
+                    if (nbttagcompound4 == null)
+                    {
                         return false;
-                    } else {
-                        var21.setIntArray("FadeColors", var18);
+                    }
+                    else
+                    {
+                        nbttagcompound4.setIntArray("FadeColors", aint);
                         return true;
                     }
-                } else {
+                }
+                else
+                {
                     return false;
                 }
-            } else {
+            }
+            else
+            {
                 return false;
             }
-        } else {
+        }
+        else
+        {
             return false;
         }
     }
 
-    /**
-     * Returns an Item that is the result of this recipe
-     */
-    public ItemStack getCraftingResult(InventoryCrafting p_77572_1_) {
+    public ItemStack getCraftingResult(InventoryCrafting inv)
+    {
         return this.field_92102_a.copy();
     }
 
-    /**
-     * Returns the size of the recipe area
-     */
-    public int getRecipeSize() {
+    public int getRecipeSize()
+    {
         return 10;
     }
 
-    public ItemStack getRecipeOutput() {
+    public ItemStack getRecipeOutput()
+    {
         return this.field_92102_a;
+    }
+
+    public ItemStack[] getRemainingItems(InventoryCrafting inv)
+    {
+        ItemStack[] aitemstack = new ItemStack[inv.getSizeInventory()];
+
+        for (int i = 0; i < aitemstack.length; ++i)
+        {
+            ItemStack itemstack = inv.getStackInSlot(i);
+
+            if (itemstack != null && itemstack.getItem().hasContainerItem())
+            {
+                aitemstack[i] = new ItemStack(itemstack.getItem().getContainerItem());
+            }
+        }
+
+        return aitemstack;
     }
 }

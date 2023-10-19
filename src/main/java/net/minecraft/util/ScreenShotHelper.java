@@ -4,7 +4,7 @@ import com.cheatbreaker.client.CheatBreaker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.texture.TextureUtil;
-import net.minecraft.client.shader.FrameBuffer;
+import net.minecraft.client.shader.Framebuffer;
 import net.minecraft.event.ClickEvent;
 import net.minecraft.event.HoverEvent;
 import org.apache.logging.log4j.LogManager;
@@ -17,7 +17,6 @@ import java.awt.*;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.image.BufferedImage;
-import java.awt.image.RenderedImage;
 import java.io.File;
 import java.io.IOException;
 import java.nio.IntBuffer;
@@ -33,11 +32,11 @@ public class ScreenShotHelper {
     private static IntBuffer pixelBuffer;
     private static int[] pixelValues;
 
-    public static IChatComponent lIIIIlIIllIIlIIlIIIlIIllI(File file, int n, int n2, FrameBuffer frameBuffer) {
+    public static IChatComponent lIIIIlIIllIIlIIlIIIlIIllI(File file, int n, int n2, Framebuffer frameBuffer) {
         return ScreenShotHelper.lIIIIlIIllIIlIIlIIIlIIllI(file, null, n, n2, frameBuffer);
     }
 
-    public static void saveScreenshot(File file, int n, int n2, FrameBuffer frameBuffer) {
+    public static void saveScreenshot(File file, int n, int n2, Framebuffer frameBuffer) {
         try {
             if ((Boolean) CheatBreaker.getInstance().getGlobalSettings().shutterSound.getValue()) {
                 CheatBreaker.getInstance().getAudioManager().playSound("shutter");
@@ -55,20 +54,23 @@ public class ScreenShotHelper {
                 pixelBuffer = BufferUtils.createIntBuffer(n3);
                 pixelValues = new int[n3];
             }
+
             GL11.glPixelStorei(3333, 1);
             GL11.glPixelStorei(3317, 1);
             pixelBuffer.clear();
+
             if (OpenGlHelper.isFramebufferEnabled()) {
                 GL11.glBindTexture(3553, frameBuffer.framebufferTexture);
                 GL11.glGetTexImage(3553, 0, 32993, 33639, pixelBuffer);
             } else {
                 GL11.glReadPixels(0, 0, n, n2, 32993, 33639, pixelBuffer);
             }
+
             pixelBuffer.get(pixelValues);
             int n4 = n;
             int n5 = n2;
             new Thread(() -> {
-                TextureUtil.func_147953_a(pixelValues, n4, n5);
+                TextureUtil.processPixelValues(pixelValues, n4, n5);
                 BufferedImage bufferedImage = null;
                 if (OpenGlHelper.isFramebufferEnabled()) {
                     int n33;
@@ -100,8 +102,8 @@ public class ScreenShotHelper {
                     if ((Boolean) CheatBreaker.getInstance().getGlobalSettings().copyOption.getValue()) savedMessage.appendSibling(copy);
                     if ((Boolean) CheatBreaker.getInstance().getGlobalSettings().uploadOption.getValue()) savedMessage.appendSibling(upload);
                     if ((Boolean) CheatBreaker.getInstance().getGlobalSettings().copyAutomatically.getValue()) IllIlIIIllllIIllIIlllIIlI(file22.getName());
-                        if ((Boolean) CheatBreaker.getInstance().getGlobalSettings().sendScreenshotMessage.getValue()) {
-                        Minecraft.getMinecraft().ingameGUI.getChatGUI().func_146227_a(savedMessage);
+                    if ((Boolean) CheatBreaker.getInstance().getGlobalSettings().sendScreenshotMessage.getValue()) {
+                        Minecraft.getMinecraft().ingameGUI.getChatGUI().printChatMessage(savedMessage);
                     }
 
                 } catch (IOException iOException) {
@@ -149,7 +151,7 @@ public class ScreenShotHelper {
         }
     }
 
-    public static IChatComponent lIIIIlIIllIIlIIlIIIlIIllI(File file, String string, int n, int n2, FrameBuffer frameBuffer) {
+    public static IChatComponent lIIIIlIIllIIlIIlIIIlIIllI(File file, String string, int n, int n2, Framebuffer frameBuffer) {
         try {
             File file2 = new File(file, "screenshots");
             if (!file2.exists()) {
@@ -167,15 +169,17 @@ public class ScreenShotHelper {
             GL11.glPixelStorei(3333, 1);
             GL11.glPixelStorei(3317, 1);
             pixelBuffer.clear();
+
             if (OpenGlHelper.isFramebufferEnabled()) {
                 GL11.glBindTexture(3553, frameBuffer.framebufferTexture);
                 GL11.glGetTexImage(3553, 0, 32993, 33639, pixelBuffer);
             } else {
                 GL11.glReadPixels(0, 0, n, n2, 32993, 33639, pixelBuffer);
             }
+
             pixelBuffer.get(pixelValues);
-            TextureUtil.func_147953_a(pixelValues, n, n2);
-            BufferedImage bufferedImage = null;
+            TextureUtil.processPixelValues(pixelValues, n, n2);
+            BufferedImage bufferedImage;
             if (OpenGlHelper.isFramebufferEnabled()) {
                 int n4;
                 bufferedImage = new BufferedImage(frameBuffer.framebufferWidth, frameBuffer.framebufferHeight, 1);
@@ -188,6 +192,7 @@ public class ScreenShotHelper {
                 bufferedImage = new BufferedImage(n, n2, 1);
                 bufferedImage.setRGB(0, 0, n, n2, pixelValues, 0, n);
             }
+
             File file3 = string == null ? ScreenShotHelper.getTimestampedPNGFileForDirectory(file2) : new File(file2, string);
             ImageIO.write(bufferedImage, "png", file3);
             ChatComponentText chatComponentText = new ChatComponentText(file3.getName());

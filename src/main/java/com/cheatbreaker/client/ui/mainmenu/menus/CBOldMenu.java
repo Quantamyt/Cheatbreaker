@@ -6,9 +6,10 @@ import com.cheatbreaker.client.ui.util.RenderUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiMainMenu;
-import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.util.ResourceLocation;
 import org.lwjgl.opengl.GL11;
+
+import java.io.IOException;
 
 
 public class CBOldMenu extends GuiMainMenu {
@@ -28,11 +29,11 @@ public class CBOldMenu extends GuiMainMenu {
     public void updateScreen() {
         super.updateScreen();
         this.eventButton += 0.06283185307179587;
-        this.lastMouseEvent = (float)((Math.sin(this.eventButton) / 2.0 + 0.5) * 180.0);
+        this.lastMouseEvent = (float) ((Math.sin(this.eventButton) / 2.0 + 0.5) * 180.0);
     }
 
     @Override
-    protected void keyTyped(char c, int n) {
+    protected void keyTyped(char c, int n) throws IOException {
 
         if (n == 1 && Minecraft.getMinecraft().currentScreen instanceof CBOldMenu) {
             return;
@@ -44,7 +45,7 @@ public class CBOldMenu extends GuiMainMenu {
     @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
         super.drawScreen(mouseX, mouseY, partialTicks);
-        Tessellator tessellator = Tessellator.instance;
+//        Tessellator tessellator = Tessellator.instance;
         GL11.glPushMatrix();
         GL11.glTranslatef(0.0f, 20, 0.0f);
         Gui.drawRect(this.width / 2F - 71, this.height / 4F - 40, this.width / 2F + 71, this.height / 4F + 110, -1342177281);
@@ -57,21 +58,22 @@ public class CBOldMenu extends GuiMainMenu {
         float f2 = 0.8648649f * 0.7515625f;
         GL11.glScalef(f2, f2, f2);
         GL11.glPushMatrix();
-        GL11.glTranslatef(((float)(this.width / 2) - 40.0F * f2) / f2, ((float)(this.height / 4) - 40.0F * f2) / f2, 0.0f);
+        GL11.glTranslatef(((float) (this.width / 2) - 40.0F * f2) / f2, ((float) (this.height / 4) - 40.0F * f2) / f2, 0.0f);
         int n3 = 40;
         GL11.glTranslatef(n3, n3, n3);
         GL11.glRotatef(this.lastMouseEvent, 0.0f, 0.0f, 1.0f);
         GL11.glTranslatef(-n3, -n3, -n3);
-        RenderUtil.renderIcon(this.logoOuter, (float)n3, 0.0f, 0.0f);
+        RenderUtil.renderIcon(this.logoOuter, (float) n3, 0.0f, 0.0f);
         GL11.glPopMatrix();
-        RenderUtil.renderIcon(this.logoInner, 40.0F, ((float)(this.width / 2) - 40.0F * f2) / f2, ((float)(this.height / 4) - 39.0F * f2) / f2);
+        RenderUtil.renderIcon(this.logoInner, 40.0F, ((float) (this.width / 2) - 40.0F * f2) / f2, ((float) (this.height / 4) - 39.0F * f2) / f2);
         GL11.glPopMatrix();
         GL11.glPopMatrix();
-        tessellator.setColorOpaque_I(-1);
+//        tessellator.setColorOpaque_I(-1);
         super.lIIIIIIIIIlIllIIllIlIIlIl(mouseX, mouseY);
     }
+
     @Override
-    protected void mouseClicked(int mouseX, int mouseY, int mouseButton) {
+    protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException {
         super.mouseClicked(mouseX, mouseY, mouseButton);
         if (mouseX >= 7 && mouseX <= 39 && mouseY >= 5 && mouseY <= 20) {
             MainMenuBase.switchMenu();

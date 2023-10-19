@@ -8,6 +8,14 @@ import net.minecraft.client.gui.Gui;
 import net.minecraft.client.renderer.OpenGlHelper;
 import org.lwjgl.opengl.GL11;
 
+/**
+ * @Module - ModuleCrosshair
+ * @see AbstractModule
+ *
+ * This module activates a custom crosshair in the middle of your screen.
+ *
+ * This is only useful for those weirdos who draw on their monitor.
+ */
 public class ModuleCrosshair extends AbstractModule {
     public Setting crosshairPreviewLabel;
     public Setting previewBackground;
@@ -94,7 +102,7 @@ public class ModuleCrosshair extends AbstractModule {
             } else {
                 OpenGlHelper.glBlendFunc(GL11.GL_SRC_COLOR, GL11.GL_ONE_MINUS_SRC_COLOR, 1, 0);
             }
-            Gui.drawTexturedModalRect(x2 - 7, y2 - 7, 0, 0, 16, 16);
+            this.mc.ingameGUI.drawTexturedModalRect(x2 - 7, y2 - 7, 0, 0, 16, 16);
         } else {
             if ((boolean) this.vanillaBlending.getValue()) {
                 OpenGlHelper.glBlendFunc(GL11.GL_ONE_MINUS_DST_COLOR, GL11.GL_ONE_MINUS_SRC_COLOR, 1, 0);

@@ -1,9 +1,9 @@
 package com.cheatbreaker.client.ui.mainmenu.element;
 
 import com.cheatbreaker.client.CheatBreaker;
+import com.cheatbreaker.client.ui.fading.ColorFade;
 import com.cheatbreaker.client.ui.mainmenu.AbstractElement;
 import com.cheatbreaker.client.ui.util.RenderUtil;
-import com.cheatbreaker.client.ui.fading.ColorFade;
 import net.minecraft.util.ResourceLocation;
 import org.lwjgl.opengl.GL11;
 

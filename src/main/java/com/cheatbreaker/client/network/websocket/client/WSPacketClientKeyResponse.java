@@ -1,11 +1,19 @@
 package com.cheatbreaker.client.network.websocket.client;
 
 import com.cheatbreaker.client.network.websocket.WSNetHandler;
-import net.minecraft.network.PacketBuffer;
 import com.cheatbreaker.client.network.websocket.WSPacket;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import net.minecraft.network.PacketBuffer;
 
-import java.beans.ConstructorProperties;
-
+/**
+ * @WSPacket WSPacketClientKeyResponse
+ * @see WSPacket
+ *
+ * This packet writes and receives responses from sending the client key.
+ */
+@Getter @NoArgsConstructor @AllArgsConstructor
 public class WSPacketClientKeyResponse extends WSPacket {
     private byte[] data;
 
@@ -21,17 +29,5 @@ public class WSPacketClientKeyResponse extends WSPacket {
 
     @Override
     public void process(WSNetHandler wSNetHandler) {
-    }
-
-    public byte[] getData() {
-        return this.data;
-    }
-
-    @ConstructorProperties(value={"data"})
-    public WSPacketClientKeyResponse(byte[] data) {
-        this.data = data;
-    }
-
-    public WSPacketClientKeyResponse() {
     }
 }

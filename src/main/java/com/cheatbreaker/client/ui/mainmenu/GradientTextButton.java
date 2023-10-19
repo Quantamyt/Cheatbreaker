@@ -1,8 +1,8 @@
 package com.cheatbreaker.client.ui.mainmenu;
 
 import com.cheatbreaker.client.CheatBreaker;
-import com.cheatbreaker.client.ui.util.RenderUtil;
 import com.cheatbreaker.client.ui.fading.ColorFade;
+import com.cheatbreaker.client.ui.util.RenderUtil;
 
 public class GradientTextButton extends AbstractElement {
     private String string;

@@ -4,65 +4,82 @@ import java.util.Random;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.init.Blocks;
+import net.minecraft.util.BlockPos;
 import net.minecraft.world.World;
 
-public class WorldGenLiquids extends WorldGenerator {
-    private final Block field_150521_a;
+public class WorldGenLiquids extends WorldGenerator
+{
+    private Block block;
 
-
-    public WorldGenLiquids(Block p_i45465_1_) {
-        this.field_150521_a = p_i45465_1_;
+    public WorldGenLiquids(Block p_i45465_1_)
+    {
+        this.block = p_i45465_1_;
     }
 
-    public boolean generate(World p_76484_1_, Random p_76484_2_, int p_76484_3_, int p_76484_4_, int p_76484_5_) {
-        if (p_76484_1_.getBlock(p_76484_3_, p_76484_4_ + 1, p_76484_5_) != Blocks.stone) {
+    public boolean generate(World worldIn, Random rand, BlockPos position)
+    {
+        if (worldIn.getBlockState(position.up()).getBlock() != Blocks.stone)
+        {
             return false;
-        } else if (p_76484_1_.getBlock(p_76484_3_, p_76484_4_ - 1, p_76484_5_) != Blocks.stone) {
+        }
+        else if (worldIn.getBlockState(position.down()).getBlock() != Blocks.stone)
+        {
             return false;
-        } else if (p_76484_1_.getBlock(p_76484_3_, p_76484_4_, p_76484_5_).getMaterial() != Material.air && p_76484_1_.getBlock(p_76484_3_, p_76484_4_, p_76484_5_) != Blocks.stone) {
+        }
+        else if (worldIn.getBlockState(position).getBlock().getMaterial() != Material.air && worldIn.getBlockState(position).getBlock() != Blocks.stone)
+        {
             return false;
-        } else {
-            int var6 = 0;
+        }
+        else
+        {
+            int i = 0;
 
-            if (p_76484_1_.getBlock(p_76484_3_ - 1, p_76484_4_, p_76484_5_) == Blocks.stone) {
-                ++var6;
+            if (worldIn.getBlockState(position.west()).getBlock() == Blocks.stone)
+            {
+                ++i;
             }
 
-            if (p_76484_1_.getBlock(p_76484_3_ + 1, p_76484_4_, p_76484_5_) == Blocks.stone) {
-                ++var6;
+            if (worldIn.getBlockState(position.east()).getBlock() == Blocks.stone)
+            {
+                ++i;
             }
 
-            if (p_76484_1_.getBlock(p_76484_3_, p_76484_4_, p_76484_5_ - 1) == Blocks.stone) {
-                ++var6;
+            if (worldIn.getBlockState(position.north()).getBlock() == Blocks.stone)
+            {
+                ++i;
             }
 
-            if (p_76484_1_.getBlock(p_76484_3_, p_76484_4_, p_76484_5_ + 1) == Blocks.stone) {
-                ++var6;
+            if (worldIn.getBlockState(position.south()).getBlock() == Blocks.stone)
+            {
+                ++i;
             }
 
-            int var7 = 0;
+            int j = 0;
 
-            if (p_76484_1_.isAirBlock(p_76484_3_ - 1, p_76484_4_, p_76484_5_)) {
-                ++var7;
+            if (worldIn.isAirBlock(position.west()))
+            {
+                ++j;
             }
 
-            if (p_76484_1_.isAirBlock(p_76484_3_ + 1, p_76484_4_, p_76484_5_)) {
-                ++var7;
+            if (worldIn.isAirBlock(position.east()))
+            {
+                ++j;
             }
 
-            if (p_76484_1_.isAirBlock(p_76484_3_, p_76484_4_, p_76484_5_ - 1)) {
-                ++var7;
+            if (worldIn.isAirBlock(position.north()))
+            {
+                ++j;
             }
 
-            if (p_76484_1_.isAirBlock(p_76484_3_, p_76484_4_, p_76484_5_ + 1)) {
-                ++var7;
+            if (worldIn.isAirBlock(position.south()))
+            {
+                ++j;
             }
 
-            if (var6 == 3 && var7 == 1) {
-                p_76484_1_.setBlock(p_76484_3_, p_76484_4_, p_76484_5_, this.field_150521_a, 0, 2);
-                p_76484_1_.scheduledUpdatesAreImmediate = true;
-                this.field_150521_a.updateTick(p_76484_1_, p_76484_3_, p_76484_4_, p_76484_5_, p_76484_2_);
-                p_76484_1_.scheduledUpdatesAreImmediate = false;
+            if (i == 3 && j == 1)
+            {
+                worldIn.setBlockState(position, this.block.getDefaultState(), 2);
+                worldIn.forceBlockUpdateTick(this.block, position, rand);
             }
 
             return true;

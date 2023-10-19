@@ -3,11 +3,14 @@ package com.cheatbreaker.client.ui.mainmenu.menus;
 import com.cheatbreaker.client.CheatBreaker;
 import com.cheatbreaker.client.ui.mainmenu.MainMenuBase;
 import com.cheatbreaker.client.ui.util.RenderUtil;
+import lombok.SneakyThrows;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.*;
 import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.client.renderer.WorldRenderer;
 import net.minecraft.client.renderer.texture.DynamicTexture;
+import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.realms.RealmsBridge;
 import net.minecraft.util.EnumChatFormatting;
@@ -60,9 +63,6 @@ public class VanillaMenu extends GuiScreen implements GuiYesNoCallback {
     private final ResourceLocation logoOuter = new ResourceLocation("client/logo_outer.png");
     private final ResourceLocation logoInner = new ResourceLocation("client/logo_inner.png");
 
-    /*
-     * WARNING - Removed try catching itself - possible behaviour change.
-     */
     public VanillaMenu() {
         this.field_146972_A = selectedButton;
         BufferedReader var1 = null;
@@ -79,17 +79,18 @@ public class VanillaMenu extends GuiScreen implements GuiYesNoCallback {
                     this.splashText = var2.get(lastMouseEvent.nextInt(var2.size()));
                 } while (this.splashText.hashCode() == 125780783);
             }
-        } catch (IOException ignored) {}
-        finally {
+        } catch (IOException ignored) {
+        } finally {
             if (var1 != null) {
                 try {
                     var1.close();
-                } catch (IOException ignored) {}
+                } catch (IOException ignored) {
+                }
             }
         }
         this.field_146298_h = lastMouseEvent.nextFloat();
         this.field_92025_p = "";
-        if (!GLContext.getCapabilities().OpenGL20 && !OpenGlHelper.func_153193_b()) {
+        if (!GLContext.getCapabilities().OpenGL20 && !OpenGlHelper.areShadersSupported()) {
             this.field_92025_p = I18n.format("title.oldgl1");
             this.field_146972_A = I18n.format("title.oldgl2");
             this.field_104024_v = "https://help.mojang.com/customer/portal/articles/325948?ref=game";
@@ -100,7 +101,7 @@ public class VanillaMenu extends GuiScreen implements GuiYesNoCallback {
     public void updateScreen() {
         ++this.panoramaTimer;
         this.lllIlIIllllIIIIlIllIlIIII += 0.06283185307179587;
-        this.lIIIIlllIIlIlllllIlIllIII = (float)((Math.sin(this.lllIlIIllllIIIIlIllIlIIII) / 2.0 + 0.5) * 180.0);
+        this.lIIIIlllIIlIlllllIlIllIII = (float) ((Math.sin(this.lllIlIIllllIIIIlIllIlIIII) / 2.0 + 0.5) * 180.0);
     }
 
     @Override
@@ -135,7 +136,7 @@ public class VanillaMenu extends GuiScreen implements GuiYesNoCallback {
         boolean var2 = true;
         int var3 = this.height / 4 + 48;
         if (this.mc.isDemo()) {
-            this.lIIIIIIIIIlIllIIllIlIIlIl(var3, 24);
+            this.drawPanorama(var3, 24);
         } else {
             this.lIIIIlIIllIIlIIlIIIlIIllI(var3, 24);
         }
@@ -150,7 +151,7 @@ public class VanillaMenu extends GuiScreen implements GuiYesNoCallback {
             this.field_92024_r = this.fontRendererObj.getStringWidth(this.field_146972_A);
             int var6 = Math.max(this.field_92023_s, this.field_92024_r);
             this.field_92022_t = (this.width - var6) / 2;
-            this.field_92021_u = this.buttonList.get(0).field_146129_i - 24;
+            this.field_92021_u = this.buttonList.get(0).yPosition - 24;
             this.field_92020_v = this.field_92022_t + var6;
             this.field_92019_w = this.field_92021_u + 24;
         }
@@ -158,12 +159,12 @@ public class VanillaMenu extends GuiScreen implements GuiYesNoCallback {
 
     private void lIIIIlIIllIIlIIlIIIlIIllI(int var1, int var2) {
         this.buttonList.add(new GuiButton(1, this.width / 2 - 100, var1, I18n.format("menu.singleplayer")));
-        this.buttonList.add(new GuiButton(2, this.width / 2 - 100, var1 + var2 * 1, I18n.format("menu.multiplayer")));
+        this.buttonList.add(new GuiButton(2, this.width / 2 - 100, var1 + var2, I18n.format("menu.multiplayer")));
     }
 
-    private void lIIIIIIIIIlIllIIllIlIIlIl(int var1, int var2) {
+    private void drawPanorama(int var1, int var2) {
         this.buttonList.add(new GuiButton(11, this.width / 2 - 100, var1, I18n.format("menu.playdemo")));
-        this.buttonResetDemo = new GuiButton(12, this.width / 2 - 100, var1 + var2 * 1, I18n.format("menu.resetdemo"));
+        this.buttonResetDemo = new GuiButton(12, this.width / 2 - 100, var1 + var2, I18n.format("menu.resetdemo"));
         this.buttonList.add(this.buttonResetDemo);
         ISaveFormat var3 = this.mc.getSaveLoader();
         WorldInfo var4 = var3.getWorldInfo("Demo_World");
@@ -174,7 +175,6 @@ public class VanillaMenu extends GuiScreen implements GuiYesNoCallback {
 
     @Override
     protected void actionPerformed(GuiButton var1) {
-        ISaveFormat var2;
         WorldInfo var3;
         if (var1.id == 0) {
             this.mc.displayGuiScreen(new GuiOptions(this, this.mc.gameSettings));
@@ -197,8 +197,8 @@ public class VanillaMenu extends GuiScreen implements GuiYesNoCallback {
         if (var1.id == 11) {
             this.mc.launchIntegratedServer("Demo_World", "Demo_World", DemoWorldServer.demoWorldSettings);
         }
-        if (var1.id == 12 && (var3 = (var2 = this.mc.getSaveLoader()).getWorldInfo("Demo_World")) != null) {
-            GuiYesNo var4 = GuiSelectWorld.func_152129_a(this, var3.getWorldName(), 12);
+        if (var1.id == 12 && (var3 = this.mc.getSaveLoader().getWorldInfo("Demo_World")) != null) {
+            GuiYesNo var4 = GuiSelectWorld.makeDeleteWorldYesNo(this, var3.getWorldName(), 12);
             this.mc.displayGuiScreen(var4);
         }
     }
@@ -229,8 +229,9 @@ public class VanillaMenu extends GuiScreen implements GuiYesNoCallback {
         }
     }
 
-    private void lIIIIIIIIIlIllIIllIlIIlIl(int var1, int var2, float var3) {
-        Tessellator var4 = Tessellator.instance;
+    private void drawPanorama(int var1, int var2, float var3) {
+        Tessellator tessellator = Tessellator.getInstance();
+        WorldRenderer worldrenderer = tessellator.getWorldRenderer();
         GL11.glMatrixMode(5889);
         GL11.glPushMatrix();
         GL11.glLoadIdentity();
@@ -249,12 +250,12 @@ public class VanillaMenu extends GuiScreen implements GuiYesNoCallback {
         int var5 = 8;
         for (int var6 = 0; var6 < var5 * var5; ++var6) {
             GL11.glPushMatrix();
-            float var7 = ((float)(var6 % var5) / (float)var5 - 0.5f) / 64.0f;
-            float var8 = ((float)(var6 / var5) / (float)var5 - 0.5f) / 64.0f;
+            float var7 = ((float) (var6 % var5) / (float) var5 - 0.5f) / 64.0f;
+            float var8 = ((float) (var6 / var5) / (float) var5 - 0.5f) / 64.0f;
             float var9 = 0.0f;
             GL11.glTranslatef(var7, var8, var9);
-            GL11.glRotatef(MathHelper.sin(((float)this.panoramaTimer + var3) / 400.0f) * 25.0f + 20.0f, 1.0f, 0.0f, 0.0f);
-            GL11.glRotatef(-((float)this.panoramaTimer + var3) * 0.055882353f * 1.7894737f, 0.0f, 1.0f, 0.0f);
+            GL11.glRotatef(MathHelper.sin(((float) this.panoramaTimer + var3) / 400.0f) * 25.0f + 20.0f, 1.0f, 0.0f, 0.0f);
+            GL11.glRotatef(-((float) this.panoramaTimer + var3) * 0.055882353f * 1.7894737f, 0.0f, 1.0f, 0.0f);
             for (int var10 = 0; var10 < 6; ++var10) {
                 GL11.glPushMatrix();
                 if (var10 == 1) {
@@ -273,20 +274,18 @@ public class VanillaMenu extends GuiScreen implements GuiYesNoCallback {
                     GL11.glRotatef(-90.0f, 1.0f, 0.0f, 0.0f);
                 }
                 this.mc.getTextureManager().bindTexture(titlePanoramaPaths[var10]);
-                var4.startDrawingQuads();
-                var4.setColorRGBA_I(0xFFFFFF, 255 / (var6 + 1));
+                worldrenderer.begin(7, DefaultVertexFormats.POSITION_TEX_COLOR);
                 float var11 = 0.0f;
-                var4.addVertexWithUV(-1.0, -1.0, 1.0, 0.0f + var11, 0.0f + var11);
-                var4.addVertexWithUV(1.0, -1.0, 1.0, 1.0f - var11, 0.0f + var11);
-                var4.addVertexWithUV(1.0, 1.0, 1.0, 1.0f - var11, 1.0f - var11);
-                var4.addVertexWithUV(-1.0, 1.0, 1.0, 0.0f + var11, 1.0f - var11);
-                var4.draw();
+                worldrenderer.pos(-1.0, -1.0, 1.0).tex(0.0f + var11, 0.0f + var11).color(255, 255, 255, 255 / (var6 + 1)).endVertex();
+                worldrenderer.pos(1.0, -1.0, 1.0).tex(1.0f - var11, 0.0f + var11).color(255, 255, 255, 255 / (var6 + 1)).endVertex();
+                worldrenderer.pos(1.0, 1.0, 1.0).tex(1.0f - var11, 1.0f - var11).color(255, 255, 255, 255 / (var6 + 1)).endVertex();
+                worldrenderer.pos(-1.0, 1.0, 1.0).tex(0.0f + var11, 1.0f - var11).color(255, 255, 255, 255 / (var6 + 1)).endVertex();
+                tessellator.draw();
                 GL11.glPopMatrix();
             }
             GL11.glPopMatrix();
             GL11.glColorMask(true, true, true, false);
         }
-        var4.setTranslation(0.0, 0.0, 0.0);
         GL11.glColorMask(true, true, true, true);
         GL11.glMatrixMode(5889);
         GL11.glPopMatrix();
@@ -297,7 +296,7 @@ public class VanillaMenu extends GuiScreen implements GuiYesNoCallback {
         GL11.glEnable(2929);
     }
 
-    private void lIIIIlIIllIIlIIlIIIlIIllI(float var1) {
+    private void rotateAndBlurSkybox(float var1) {
         this.mc.getTextureManager().bindTexture(this.backgroundTexture);
         GL11.glTexParameteri(3553, 10241, 9729);
         GL11.glTexParameteri(3553, 10240, 9729);
@@ -305,21 +304,21 @@ public class VanillaMenu extends GuiScreen implements GuiYesNoCallback {
         GL11.glEnable(3042);
         OpenGlHelper.glBlendFunc(770, 771, 1, 0);
         GL11.glColorMask(true, true, true, false);
-        Tessellator var2 = Tessellator.instance;
-        var2.startDrawingQuads();
+        Tessellator tessellator = Tessellator.getInstance();
+        WorldRenderer worldrenderer = tessellator.getWorldRenderer();
+        worldrenderer.begin(7, DefaultVertexFormats.POSITION_TEX_COLOR);
         GL11.glDisable(3008);
         int var3 = 3;
         for (int var4 = 0; var4 < var3; ++var4) {
-            var2.setColorRGBA_F(1.0f, 1.0f, 1.0f, 1.0f / (float)(var4 + 1));
             int var5 = this.width;
             int var6 = this.height;
-            float var7 = (float)(var4 - var3 / 2) / 256.0f;
-            var2.addVertexWithUV(var5, var6, zLevel, 0.0f + var7, 1.0);
-            var2.addVertexWithUV(var5, 0.0, zLevel, 1.0f + var7, 1.0);
-            var2.addVertexWithUV(0.0, 0.0, zLevel, 1.0f + var7, 0.0);
-            var2.addVertexWithUV(0.0, var6, zLevel, 0.0f + var7, 0.0);
+            float var7 = (float) (var4 - var3 / 2) / 256.0f;
+            worldrenderer.pos(var5, var6, zLevel).tex(0.0f + var7, 1.0).color(1.0f, 1.0f, 1.0f, 1.0f / (float) (var4 + 1)).endVertex();
+            worldrenderer.pos(var5, 0.0, zLevel).tex(1.0f + var7, 1.0).color(1.0f, 1.0f, 1.0f, 1.0f / (float) (var4 + 1)).endVertex();
+            worldrenderer.pos(0.0, 0.0, zLevel).tex(1.0f + var7, 0.0).color(1.0f, 1.0f, 1.0f, 1.0f / (float) (var4 + 1)).endVertex();
+            worldrenderer.pos(0.0, var6, zLevel).tex(0.0f + var7, 0.0).color(1.0f, 1.0f, 1.0f, 1.0f / (float) (var4 + 1)).endVertex();
         }
-        var2.draw();
+        tessellator.draw();
         GL11.glEnable(3008);
         GL11.glColorMask(true, true, true, true);
     }
@@ -327,29 +326,30 @@ public class VanillaMenu extends GuiScreen implements GuiYesNoCallback {
     private void IlllIIIlIlllIllIlIIlllIlI(int var1, int var2, float var3) {
         this.mc.getFramebuffer().unbindFramebuffer();
         GL11.glViewport(0, 0, 256, 256);
-        this.lIIIIIIIIIlIllIIllIlIIlIl(var1, var2, var3);
-        this.lIIIIlIIllIIlIIlIIIlIIllI(var3);
-        this.lIIIIlIIllIIlIIlIIIlIIllI(var3);
-        this.lIIIIlIIllIIlIIlIIIlIIllI(var3);
-        this.lIIIIlIIllIIlIIlIIIlIIllI(var3);
-        this.lIIIIlIIllIIlIIlIIIlIIllI(var3);
-        this.lIIIIlIIllIIlIIlIIIlIIllI(var3);
-        this.lIIIIlIIllIIlIIlIIIlIIllI(var3);
+        this.drawPanorama(var1, var2, var3);
+        this.rotateAndBlurSkybox(var3);
+        this.rotateAndBlurSkybox(var3);
+        this.rotateAndBlurSkybox(var3);
+        this.rotateAndBlurSkybox(var3);
+        this.rotateAndBlurSkybox(var3);
+        this.rotateAndBlurSkybox(var3);
+        this.rotateAndBlurSkybox(var3);
         this.mc.getFramebuffer().bindFramebuffer(true);
         GL11.glViewport(0, 0, this.mc.displayWidth, this.mc.displayHeight);
-        Tessellator var4 = Tessellator.instance;
-        var4.startDrawingQuads();
-        float var5 = this.width > this.height ? 120.0f / (float)this.width : 120.0f / (float)this.height;
-        float var6 = (float)this.height * var5 / 256.0f;
-        float var7 = (float)this.width * var5 / 256.0f;
-        var4.setColorRGBA_F(1.0f, 1.0f, 1.0f, 1.0f);
+        Tessellator tessellator = Tessellator.getInstance();
+        WorldRenderer worldrenderer = tessellator.getWorldRenderer();
+
+        worldrenderer.begin(7, DefaultVertexFormats.POSITION_TEX_COLOR);
+        float var5 = this.width > this.height ? 120.0f / (float) this.width : 120.0f / (float) this.height;
+        float var6 = (float) this.height * var5 / 256.0f;
+        float var7 = (float) this.width * var5 / 256.0f;
         int var8 = this.width;
         int var9 = this.height;
-        var4.addVertexWithUV(0.0, var9, zLevel, 0.5f - var6, 0.5f + var7);
-        var4.addVertexWithUV(var8, var9, zLevel, 0.5f - var6, 0.5f - var7);
-        var4.addVertexWithUV(var8, 0.0, zLevel, 0.5f + var6, 0.5f - var7);
-        var4.addVertexWithUV(0.0, 0.0, zLevel, 0.5f + var6, 0.5f + var7);
-        var4.draw();
+        worldrenderer.pos(0.0, var9, zLevel).tex(0.5f - var6, 0.5f + var7).color(1.0f, 1.0f, 1.0f, 1.0f).endVertex();
+        worldrenderer.pos(var8, var9, zLevel).tex(0.5f - var6, 0.5f - var7).color(1.0f, 1.0f, 1.0f, 1.0f).endVertex();
+        worldrenderer.pos(var8, 0.0, zLevel).tex(0.5f + var6, 0.5f - var7).color(1.0f, 1.0f, 1.0f, 1.0f).endVertex();
+        worldrenderer.pos(0.0, 0.0, zLevel).tex(0.5f + var6, 0.5f + var7).color(1.0f, 1.0f, 1.0f, 1.0f).endVertex();
+        tessellator.draw();
     }
 
     @Override
@@ -357,27 +357,27 @@ public class VanillaMenu extends GuiScreen implements GuiYesNoCallback {
         GL11.glDisable(3008);
         this.IlllIIIlIlllIllIlIIlllIlI(mouseX, mouseY, partialTicks);
         GL11.glEnable(3008);
-        Tessellator var4 = Tessellator.instance;
+//        Tessellator var4 = Tessellator.instance;
         int var5 = 274;
         int var6 = this.width / 2 - var5 / 2;
         boolean var7 = true;
-        VanillaMenu.drawGradientRect(0.0f, 0.0f, (float)this.width, (float)this.height, -2130706433, 0xFFFFFF);
-        VanillaMenu.drawGradientRect(0.0f, 0.0f, (float)this.width, (float)this.height, 0, Integer.MIN_VALUE);
+        this.drawGradientRect(0, 0, this.width, this.height, -2130706433, 0xFFFFFF);
+        this.drawGradientRect(0, 0, this.width, this.height, 0, Integer.MIN_VALUE);
         GL11.glPushMatrix();
         GL11.glTranslatef(this.width / 2 - 40, this.height / 4 - 40, 0.0f);
         int var8 = 40;
         GL11.glTranslatef(var8, var8, var8);
         GL11.glRotatef(this.lIIIIlllIIlIlllllIlIllIII, 0.0f, 0.0f, 1.0f);
         GL11.glTranslatef(-var8, -var8, -var8);
-        RenderUtil.renderIcon(this.logoOuter, (float)var8, 0.0f, 0.0f);
+        RenderUtil.renderIcon(this.logoOuter, (float) var8, 0.0f, 0.0f);
         GL11.glPopMatrix();
-        RenderUtil.renderIcon(this.logoInner, 40.0f, (float)(this.width / 2 - 40), (float)(this.height / 4 - 38));
-        var4.setColorOpaque_I(-1);
+        RenderUtil.renderIcon(this.logoInner, 40.0f, (float) (this.width / 2 - 40), (float) (this.height / 4 - 38));
+//        var4.setColorOpaque_I(-1);
         GL11.glPushMatrix();
         GL11.glTranslatef(this.width / 2 + 90, 70.0f, 0.0f);
         GL11.glRotatef(-20.0f, 0.0f, 0.0f, 1.0f);
-        float var9 = 1.8f - MathHelper.abs(MathHelper.sin((float)(Minecraft.getSystemTime() % 1000L) / 1000.0f * 3.998391f * 0.78571427f * 2.0f) * 0.09589041f * 1.0428572f);
-        var9 = var9 * 100.0f / (float)(this.fontRendererObj.getStringWidth(this.splashText) + 32);
+        float var9 = 1.8f - MathHelper.abs(MathHelper.sin((float) (Minecraft.getSystemTime() % 1000L) / 1000.0f * 3.998391f * 0.78571427f * 2.0f) * 0.09589041f * 1.0428572f);
+        var9 = var9 * 100.0f / (float) (this.fontRendererObj.getStringWidth(this.splashText) + 32);
         GL11.glScalef(var9, var9, var9);
         GL11.glPopMatrix();
         String commitText = "CheatBreaker " + CheatBreaker.getInstance().getGitBuildVersion() + " (" + CheatBreaker.getInstance().getGitCommitIdAbbrev() + "/" + CheatBreaker.getInstance().getGitBranch() + ")";
@@ -387,27 +387,22 @@ public class VanillaMenu extends GuiScreen implements GuiYesNoCallback {
         if (this.field_92025_p != null && this.field_92025_p.length() > 0) {
             VanillaMenu.drawRect(this.field_92022_t - 2, this.field_92021_u - 2, this.field_92020_v + 2, this.field_92019_w - 1, 0x55200000);
             this.drawString(this.fontRendererObj, this.field_92025_p, this.field_92022_t, this.field_92021_u, -1);
-            this.drawString(this.fontRendererObj, this.field_146972_A, (this.width - this.field_92024_r) / 2, this.buttonList.get(0).field_146129_i - 12, -1);
+            this.drawString(this.fontRendererObj, this.field_146972_A, (this.width - this.field_92024_r) / 2, this.buttonList.get(0).yPosition - 12, -1);
         }
         super.drawScreen(mouseX, mouseY, partialTicks);
     }
 
-    /*
-     * WARNING - Removed try catching itself - possible behaviour change.
-     */
     @Override
+    @SneakyThrows
     protected void mouseClicked(int mouseX, int mouseY, int mouseButton) {
         super.mouseClicked(mouseX, mouseY, mouseButton);
-        Object var4 = this.threadLock;
-        Object var5 = this.threadLock;
-        Object object = this.threadLock;
         if (mouseX >= 7 && mouseX <= 39 && mouseY >= 5 && mouseY <= 20) {
             MainMenuBase.switchMenu();
         }
-        synchronized (object) {
+        synchronized (this.threadLock) {
             if (this.field_92025_p.length() > 0 && mouseX >= this.field_92022_t && mouseX <= this.field_92020_v && mouseY >= this.field_92021_u && mouseY <= this.field_92019_w) {
                 GuiConfirmOpenLink var6 = new GuiConfirmOpenLink(this, this.field_104024_v, 13, true);
-                var6.func_146358_g();
+                var6.disableSecurityWarning();
                 this.mc.displayGuiScreen(var6);
             }
         }

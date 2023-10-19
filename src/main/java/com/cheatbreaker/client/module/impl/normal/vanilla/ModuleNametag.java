@@ -4,9 +4,15 @@ import com.cheatbreaker.client.module.AbstractModule;
 import com.cheatbreaker.client.module.data.CustomizationLevel;
 import com.cheatbreaker.client.module.data.Setting;
 
-public class ModuleNametag extends AbstractModule {
+/**
+ * @Module - ModuleNametag
+ * @see AbstractModule
+ *
+ * This module changes the Vanilla Minecraft NameTag for players.
+ */
+public class ModuleNameTag extends AbstractModule {
 
-    private final String[] disallowedCharacters = new String[]{" ", "[", "]", "!", "=", "-", "@", "#", "$", "%", "^", "&", "*", "(", ")", "~", "`", "|", ";", ":", "'", "\"", ",", "<", ">", ".", "?", "/"};
+    private final String[] disallowedCharacters = new String[]{ " ", "[", "]", "!", "=", "-", "@", "#", "$", "%", "^", "&", "*", "(", ")", "~", "`", "|", ";", ":", "'", "\"", ",", "<", ">", ".", "?", "/" };
 
     public Setting hideNamePlatesKeybind;
     public Setting generalOptionsLabel;
@@ -21,7 +27,7 @@ public class ModuleNametag extends AbstractModule {
     public Setting textColor;
     public Setting backgroundColor;
 
-    public ModuleNametag() {
+    public ModuleNameTag() {
         super("Nametag");
         this.setDefaultState(true);
         this.hideNamePlatesKeybind = new Setting(this, "Hide Nametags Keybind").setValue(0).setCustomizationLevel(CustomizationLevel.SIMPLE);
@@ -33,7 +39,7 @@ public class ModuleNametag extends AbstractModule {
         this.showNametagsInF1 = new Setting(this, "Show Nametags when GUI is hidden").setValue(false);
 
         this.colorOptionsLabel = new Setting(this, "label").setValue("Color Options");
-        this.customTextColor = new Setting(this, "Strip Formatting Colors").setValue(false);
+        this.customTextColor = new Setting(this, "Custom Text Color").setValue(false);
         this.textColor = new Setting(this, "Text Color").setValue(-1).setMinMax(Integer.MIN_VALUE, Integer.MAX_VALUE).setCondition(() -> (Boolean) this.customTextColor.getValue());
         this.backgroundColor = new Setting(this, "Background Color").setValue(0x40000000).setMinMax(Integer.MIN_VALUE, Integer.MAX_VALUE).setCondition(() -> (Boolean) this.background.getValue());
         this.setDescription("Displays the username above players.");

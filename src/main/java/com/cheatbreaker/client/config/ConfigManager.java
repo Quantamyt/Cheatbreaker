@@ -1,62 +1,104 @@
 package com.cheatbreaker.client.config;
 
 import com.cheatbreaker.client.CheatBreaker;
+import com.cheatbreaker.client.audio.music.data.Station;
 import com.cheatbreaker.client.module.AbstractModule;
 import com.cheatbreaker.client.module.data.Setting;
 import com.cheatbreaker.client.module.data.SettingType;
 import com.cheatbreaker.client.module.impl.staff.StaffMod;
-import com.cheatbreaker.client.audio.music.data.Station;
+import com.cheatbreaker.client.ui.element.profile.ProfilesListElement;
 import com.cheatbreaker.client.ui.element.type.ColorPickerColorElement;
 import com.cheatbreaker.client.ui.module.GuiAnchor;
+import com.cheatbreaker.client.ui.module.HudLayoutEditorGui;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.src.Config;
+import net.minecraft.util.ResourceLocation;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
+import java.nio.file.Files;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class ConfigManager {
-    private final File configDir;
-    private final File globalConfig;
-    private final File mutesConfig;
-    private final File defaultConfig;
-    public final File profileDir;
 
-    public ConfigManager() {
-        this.configDir = new File(Minecraft.getMinecraft().mcDataDir + File.separator + "config" + File.separator + "cheatbreaker-client-" + Config.MC_VERSION + "-" + CheatBreaker.getInstance().getGitBranch());
-        this.globalConfig = new File(this.configDir + File.separator + "global.cfg");
-        this.mutesConfig = new File(this.configDir + File.separator + "mutes.cfg");
-        this.defaultConfig = new File(this.configDir + File.separator + "default.cfg");
-        this.profileDir = new File(this.configDir + File.separator + "profiles");
-    }
+    private final List<ResourceLocation> presetLocations = new ArrayList<>();
+    public List<Profile> moduleProfiles = new ArrayList<>();
+    public Profile activeProfile;
 
-    public void write() {
+    private final File configDir = new File(Minecraft.getMinecraft().mcDataDir + File.separator + "config" + File.separator + "cheatbreaker-client-" + Config.MC_VERSION.replaceAll("\\.", "-"));
+    public final File profileDir = new File(this.configDir + File.separator + "profiles");
+    private final File globalConfig = new File(this.configDir + File.separator + "global.cfg");
+    private final File mutesConfig = new File(this.configDir + File.separator + "mutes.cfg");
+    private final File defaultConfig = new File(this.configDir + File.separator + "default.cfg");
+
+    /**
+     * Updates the current profile.
+     */
+    public void updateProfile() {
         if (this.createRequiredFiles()) {
-            CheatBreaker.getInstance().getModuleManager().miniMapMod.getVoxelMap().getMapOptions().saveAll();
-            this.writeGlobalConfig(this.globalConfig);
-            this.writeMutesConfig(this.mutesConfig);
-            this.writeProfile(CheatBreaker.getInstance().activeProfile.getName());
+//            CheatBreaker.getInstance().getModuleManager().miniMapMod.getVoxelMap().getMapOptions().saveAll();
+            this.updateGlobalConfiguration(this.globalConfig);
+            this.updateMutesConfiguration(this.mutesConfig);
+            this.updateProfile(CheatBreaker.getInstance().getConfigManager().activeProfile.getName());
         }
     }
 
-    public void read() {
-        if (this.createRequiredFiles()) {
-            this.redGlobalConfig(this.globalConfig);
-            this.readMutesConfig(this.mutesConfig);
-            if (CheatBreaker.getInstance().activeProfile == null) {
-                CheatBreaker.getInstance().activeProfile = CheatBreaker.getInstance().profiles.get(0);
-            } else {
-                this.readProfile(CheatBreaker.getInstance().activeProfile.getName());
+    /**
+     * Returns if the player is using staff modules or not.
+     */
+    public boolean isUsingStaffModules() {
+        for (final AbstractModule cbModule : CheatBreaker.getInstance().getModuleManager().staffMods) {
+            cbModule.setStaffModuleEnabled(true);
+            if (cbModule.isStaffModuleEnabled()) {
+                return false;
             }
-            CheatBreaker.getInstance().getModuleManager().miniMapMod.getVoxelMap().getMapOptions().loadAll();
+        }
+        return true;
+    }
+
+    /**
+     * Creates the default Configuration Preset.
+     */
+    public void createDefaultConfigurationPresets() {
+        File profileDir = this.profileDir;
+        if (profileDir.exists() || profileDir.mkdirs()) {
+            for (ResourceLocation presets : this.presetLocations) {
+                String presetsName = presets.getResourcePath().replaceAll("([a-zA-Z0-9/]+)/", "");
+                File presetsFile = new File(profileDir, presetsName);
+                if (presetsFile.exists()) continue;
+                try {
+                    InputStream presetInputStream = Minecraft.getMinecraft().getResourceManager().getResource(presets).getInputStream();
+                    Files.copy(presetInputStream, presetsFile.toPath());
+                    presetInputStream.close();
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+            }
+        }
+        CheatBreaker.getInstance().logger.info(CheatBreaker.getInstance().loggerPrefix + "Created default configuration presets");
+    }
+
+    /**
+     * Reads the current profile.
+     */
+    public void readCurrentProfile() {
+        if (this.createRequiredFiles()) {
+            this.readGlobalConfiguration(this.globalConfig);
+            this.readMutesConfiguration(this.mutesConfig);
+            if (CheatBreaker.getInstance().getConfigManager().activeProfile == null) {
+                CheatBreaker.getInstance().getConfigManager().activeProfile = this.moduleProfiles.get(0);
+            } else {
+                this.readProfile(CheatBreaker.getInstance().getConfigManager().activeProfile.getName());
+            }
+//            CheatBreaker.getInstance().getModuleManager().miniMapMod.getVoxelMap().getMapOptions().loadAll();
         }
     }
 
+    /**
+     * Creates the required files for configs.
+     */
     private boolean createRequiredFiles() {
         try {
             return !(!this.configDir.exists() && !this.configDir.mkdirs() || !this.defaultConfig.exists() && !this.defaultConfig.createNewFile() || !this.globalConfig.exists() && !this.globalConfig.createNewFile());
@@ -66,12 +108,58 @@ public class ConfigManager {
         return true;
     }
 
-    /*
-     * Could not resolve type clashes
+    /**
+     * Gets the most recently created profile name.
+     */
+    private String getNewProfileName(String name) {
+        File clientDir = new File(Minecraft.getMinecraft().mcDataDir + File.separator + "config" + File.separator + "cheatbreaker-client-" + Config.MC_VERSION.replaceAll("\\.", "-"));
+        File profilesDir = new File(clientDir + File.separator + "profiles");
+        if ((profilesDir.exists() || profilesDir.mkdirs()) && new File(profilesDir + File.separator + name + ".cfg").exists()) {
+            return this.getNewProfileName(name + "1");
+        }
+        return name;
+    }
+
+    /**
+     * Loads all module profiles.
+     */
+    public void loadProfiles() {
+        this.moduleProfiles.add(new Profile("default", true));
+        File profilesDir = new File(Minecraft.getMinecraft().mcDataDir + File.separator + "config" + File.separator + "cheatbreaker-client-" + Config.MC_VERSION.replaceAll("\\.", "-") + File.separator + "profiles");
+        if (profilesDir.exists()) {
+            for (File profile : Objects.requireNonNull(profilesDir.listFiles())) {
+                Minecraft.getMinecraft().cbLoadingScreen.addPhase();
+                if (!profile.getName().endsWith(".cfg")) continue;
+                this.moduleProfiles.add(new Profile(profile.getName().replace(".cfg", ""), false));
+            }
+        }
+
+        CheatBreaker.getInstance().logger.info(CheatBreaker.getInstance().loggerPrefix + "Loaded " + this.moduleProfiles.size() + " custom profiles");
+    }
+
+    /**
+     * Creates a new profile.
+     */
+    public void createNewProfile() {
+        if (this.activeProfile == this.moduleProfiles.get(0)) {
+            Profile defaultProfile;
+            CheatBreaker.getInstance().getConfigManager().activeProfile = defaultProfile = new Profile(this.getNewProfileName("Profile 1"), false);
+            this.moduleProfiles.add(defaultProfile);
+            CheatBreaker.getInstance().configManager.updateProfile();
+            Minecraft var2 = Minecraft.getMinecraft();
+            if (var2.currentScreen instanceof HudLayoutEditorGui) {
+                ProfilesListElement var3 = (ProfilesListElement) ((HudLayoutEditorGui) var2.currentScreen).profilesElement;
+                var3.loadProfiles();
+            }
+        }
+    }
+
+    /**
+     * Reads a profile.
      */
     public void readProfile(String string) {
         if (string.equalsIgnoreCase("default")) {
-            CheatBreaker.getInstance().activeProfile = CheatBreaker.getInstance().profiles.get(0);
+            this.activeProfile = this.moduleProfiles.get(0);
             for (AbstractModule module : CheatBreaker.getInstance().getModuleManager().playerMods) {
                 module.setState(module.defaultState);
                 module.setWasRenderHud(module.defaultWasRenderHud);
@@ -94,7 +182,7 @@ public class ConfigManager {
         File file2 = file.exists() || file.mkdirs() ? new File(file + File.separator + string + ".cfg") : null;
 
         if (!file2.exists()) {
-            this.writeProfile(string);
+            this.updateProfile(string);
             return;
         }
 
@@ -156,29 +244,43 @@ public class ConfigManager {
 
                     split = string2.split("=", 2);
                     if (split.length != 2) continue;
+                    if (module == CheatBreaker.getInstance().getModuleManager().autoTextMod) {
+                        for (int j = 0; j < 50; j++) {
+                            if (split[1].contains("keycode:")) {
+                                boolean mouseFlag = false;
+                                Setting setting;
+                                String val = "";
+
+                                if (split[1].contains("mouse:")) {
+                                    val = StringUtils.substringAfter(split[1], ";mouse:");
+                                    mouseFlag = true;
+                                }
+
+                                String key = StringUtils.substringAfter(split[1], ";keycode:").replaceAll(";mouse:" + val, "");
+
+                                Object[] arrobject = split[1].split(";");
+                                String value = (String) arrobject[0];
+                                value = value.replaceAll(";mouse:" + val, "");
+
+                                if (Integer.parseInt(key) == 0 && Boolean.parseBoolean(val)) {
+                                    mouseFlag = false;
+                                }
+
+                                if (!CheatBreaker.getInstance().getModuleManager().autoTextMod.containsSettingByName(split[0])) {
+                                    setting = new Setting(CheatBreaker.getInstance().getModuleManager().autoTextMod.getSettingsList(), split[0]);
+                                    setting.setValue(value).setKeyCode(Integer.parseInt(key));
+                                    setting.setHasMouseBind(mouseFlag);
+                                }
+                            }
+                        }
+                    }
+
                     for (Setting setting : module.getSettingsList()) {
                         if (setting.getSettingName().equalsIgnoreCase("label") || !setting.getSettingName().equalsIgnoreCase(split[0]))
                             continue;
 
-                        if (split[1].contains("keycode:")) {
-                            String val = "";
 
-                            if (split[1].contains("mouse:")) {
-                                val = StringUtils.substringAfter(split[1], ";mouse:");
-                                setting.setHasMouseBind(true);
-                            }
-
-                            String key = StringUtils.substringAfter(split[1], ";keycode:").replaceAll(";mouse:" + val, "");
-
-                            Object[] arrobject = split[1].split(";");
-                            String value = (String) arrobject[0];
-                            value = value.replaceAll(";mouse:" + val, "");
-
-                            if (Integer.parseInt(key) == 0 && Boolean.parseBoolean(val)) {
-                                setting.setHasMouseBind(false);
-                            }
-
-                            setting.setValue(value).setKeyCode(Integer.parseInt(key)).setHasKeycode(true);
+                        if (module == CheatBreaker.getInstance().getModuleManager().autoTextMod) {
                             break;
                         }
 
@@ -188,8 +290,8 @@ public class ConfigManager {
                             Object[] arrobject = split[1].split(";");
                             String value = (String) arrobject[0];
 
-//                            System.out.println("mouse boolean: " + val);
-//                            System.out.println("value: " + value);
+                            System.out.println("mouse boolean: " + val);
+                            System.out.println("value: " + value);
 
                             if (Integer.parseInt(value) == 0 && val) {
                                 setting.setHasMouseBind(false); // prevent possible issues
@@ -267,7 +369,7 @@ public class ConfigManager {
                             exception.printStackTrace();
                             if (setting != CheatBreaker.getInstance().getModuleManager().keystrokesMod.boxSize) continue;
                             CheatBreaker.getInstance().getModuleManager().keystrokesMod.updateKeyElements();
-                            Minecraft.getMinecraft().ingameGUI.getChatGUI().func_146245_b();
+                            Minecraft.getMinecraft().ingameGUI.getChatGUI().clearChatMessages();
                         }
                     }
                 } catch (Exception exception) {
@@ -278,15 +380,15 @@ public class ConfigManager {
         } catch (IOException iOException) {
             iOException.printStackTrace();
         }
-        this.writeProfile(string);
+        this.updateProfile(string);
     }
 
-    /*
-     * Could not resolve type clashes
+    /**
+     * Reads the global settings configuration file.
      */
-    public void redGlobalConfig(File file) {
+    public void readGlobalConfiguration(File file) {
         if (!file.exists()) {
-            this.writeGlobalConfig(file);
+            this.updateGlobalConfiguration(file);
             return;
         }
         try {
@@ -325,11 +427,11 @@ public class ConfigManager {
                         continue;
                     }
                     if (arrString[0].equalsIgnoreCase("XrayBlocks")) {
-                        CheatBreaker.getInstance().getModuleManager().staffModuleXray.getBlocks().clear();
+                        CheatBreaker.getInstance().getModuleManager().xray.getBlocks().clear();
                         String[] declaration = arrString[1].split(",");
                         for (String object2 : declaration) {
                             try {
-                                CheatBreaker.getInstance().getModuleManager().staffModuleXray.getBlocks().add(Integer.parseInt(object2));
+                                CheatBreaker.getInstance().getModuleManager().xray.getBlocks().add(Integer.parseInt(object2));
                             } catch (NumberFormatException numberFormatException) {
                                 numberFormatException.printStackTrace();
                             }
@@ -352,7 +454,7 @@ public class ConfigManager {
                             String[] arrstring2 = object2.split(",", 2);
                             try {
                                 int n = Integer.parseInt(arrstring2[1]);
-                                for (Profile profile : CheatBreaker.getInstance().profiles) {
+                                for (Profile profile : this.moduleProfiles) {
                                     if (n == 0 || !profile.getName().equalsIgnoreCase(arrstring2[0])) continue;
                                     profile.index = n;
                                 }
@@ -370,12 +472,12 @@ public class ConfigManager {
                         }
                         if (profileFile == null || !profileFile.exists()) continue;
                         Profile object3 = null;
-                        for (Profile object2 : CheatBreaker.getInstance().profiles) {
+                        for (Profile object2 : this.moduleProfiles) {
                             if (!arrString[1].equalsIgnoreCase(object2.getName())) continue;
                             object3 = object2;
                         }
                         if (object3 == null || object3.getName().equalsIgnoreCase("default")) continue;
-                        CheatBreaker.getInstance().activeProfile = object3;
+                        this.activeProfile = object3;
                         continue;
                     }
                     for (Setting setting : CheatBreaker.getInstance().getGlobalSettings().settingsList) {
@@ -436,13 +538,13 @@ public class ConfigManager {
         } catch (IOException iOException) {
             iOException.printStackTrace();
         }
-        this.writeGlobalConfig(file);
+        this.updateGlobalConfiguration(file);
     }
 
-    /*
-     * Could not resolve type clashes
+    /**
+     * Writes to the global configuration file.
      */
-    public void writeGlobalConfig(File file) {
+    public void updateGlobalConfiguration(File file) {
         try {
             BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(file));
             bufferedWriter.write("################################");
@@ -452,8 +554,8 @@ public class ConfigManager {
             bufferedWriter.write("################################");
             bufferedWriter.newLine();
             bufferedWriter.newLine();
-            if (CheatBreaker.getInstance().activeProfile != null && !CheatBreaker.getInstance().activeProfile.getName().equals("default")) {
-                bufferedWriter.write("ActiveProfile=" + CheatBreaker.getInstance().activeProfile.getName());
+            if (this.activeProfile != null && !this.activeProfile.getName().equals("default")) {
+                bufferedWriter.write("ActiveProfile=" + this.activeProfile.getName());
                 bufferedWriter.newLine();
             }
             for (Setting setting : CheatBreaker.getInstance().getGlobalSettings().settingsList) {
@@ -491,7 +593,7 @@ public class ConfigManager {
                 bufferedWriter.newLine();
             }
             StringBuilder selectedXRayBlocks = new StringBuilder();
-            for (int blocks : CheatBreaker.getInstance().getModuleManager().staffModuleXray.getBlocks()) {
+            for (int blocks : CheatBreaker.getInstance().getModuleManager().xray.getBlocks()) {
                 if (selectedXRayBlocks.length() != 0) {
                     selectedXRayBlocks.append(",");
                 }
@@ -500,7 +602,7 @@ public class ConfigManager {
             bufferedWriter.write("XrayBlocks=" + selectedXRayBlocks);
             bufferedWriter.newLine();
             bufferedWriter.write("ProfileIndexes=");
-            for (Profile profile : CheatBreaker.getInstance().profiles) {
+            for (Profile profile : this.moduleProfiles) {
                 bufferedWriter.write("[" + profile.getName() + "," + profile.index + "]");
             }
             bufferedWriter.newLine();
@@ -510,32 +612,41 @@ public class ConfigManager {
         }
     }
 
-    public void readMutesConfig(File file) {
+    /**
+     * Reads the muted configuration file.
+     * This is used for the Voice Chat integration.
+     */
+    public void readMutesConfiguration(File file) {
         try {
             String string;
             if (!file.exists()) {
-                this.writeMutesConfig(file);
+                this.updateMutesConfiguration(file);
                 return;
             }
             BufferedReader bufferedReader = new BufferedReader(new FileReader(file));
             while ((string = bufferedReader.readLine()) != null) {
                 try {
                     UUID uUID = UUID.fromString(string);
-                    CheatBreaker.getInstance().getCbNetHandler().getVoiceUsers().add(uUID);
-                } catch (Exception ignored) {}
+                    CheatBreaker.getInstance().getCBNetHandler().getPlayersInVoiceChannel().add(uUID);
+                } catch (Exception ignored) {
+                }
             }
         } catch (IOException ignored) {
 
         }
     }
 
-    public void writeMutesConfig(File file) {
+    /**
+     * Writes to the muted configuration file.
+     * This is used for the Voice Chat integration.
+     */
+    public void updateMutesConfiguration(File file) {
         try {
             if (!file.exists()) {
                 file.createNewFile();
             }
             BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(file));
-            for (UUID uUID : CheatBreaker.getInstance().getCbNetHandler().getVoiceUsers()) {
+            for (UUID uUID : CheatBreaker.getInstance().getCBNetHandler().getPlayersInVoiceChannel()) {
                 bufferedWriter.write(uUID.toString());
                 bufferedWriter.newLine();
             }
@@ -545,12 +656,16 @@ public class ConfigManager {
         }
     }
 
-    public void writeProfile(String string) {
-        if (string.equalsIgnoreCase("default")) {
+    /**
+     * Reads the muted configuration file.
+     * This is used for the Voice Chat integration.
+     */
+    public void updateProfile(String profileName) {
+        if (profileName.equalsIgnoreCase("default")) {
             return;
         }
         File file = new File(this.configDir + File.separator + "profiles");
-        File file2 = file.exists() || file.mkdirs() ? new File(file + File.separator + string + ".cfg") : null;
+        File file2 = file.exists() || file.mkdirs() ? new File(file + File.separator + profileName + ".cfg") : null;
         ArrayList<AbstractModule> modules = new ArrayList<>();
         modules.addAll(CheatBreaker.getInstance().getModuleManager().playerMods);
         modules.addAll(CheatBreaker.getInstance().getModuleManager().staffMods);
@@ -608,7 +723,7 @@ public class ConfigManager {
                         writer.newLine();
                     }
                     if (setting.getSettingName().equalsIgnoreCase("label")) continue;
-                    if (setting.getType() == SettingType.STRING) {
+                    if (setting.getType() == SettingType.STRING && setting.getSettingName().startsWith("Hot key")) {
                         writer.write(setting.getSettingName() + "=" + (setting.getValue() + (setting.isHasKeycode() ? ";keycode:" + setting.getKeyCode() : "") + (setting.isHasMouseBind() ? ";mouse:" + setting.isHasMouseBind() : "")).replaceAll("§", "&"));
                     } else if (setting.getType() == SettingType.INTEGER && setting.getSettingName().endsWith("Keybind") && setting.getSettingName().contains("Toggle")) {
                         writer.write(setting.getSettingName() + "=" + setting.getValue() + (setting.isHasMouseBind() ? ";mouse:" + setting.isHasMouseBind() : ""));

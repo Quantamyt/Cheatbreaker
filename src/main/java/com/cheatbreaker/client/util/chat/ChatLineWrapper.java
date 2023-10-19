@@ -13,6 +13,6 @@ public class ChatLineWrapper extends ChatLine {
     }
 
     public static ChatLineWrapper of(ChatLine chatLine) {
-        return new ChatLineWrapper(chatLine.getUpdatedCounter(), chatLine.func_151461_a(), chatLine.getChatLineID());
+        return new ChatLineWrapper(chatLine.getUpdatedCounter(), chatLine.getChatComponent(), chatLine.getChatLineID());
     }
 }

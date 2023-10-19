@@ -2,8 +2,11 @@ package com.cheatbreaker.client.network.websocket;
 
 import com.cheatbreaker.client.CheatBreaker;
 import com.cheatbreaker.client.config.Profile;
+import com.cheatbreaker.client.cosmetic.Cosmetic;
 import com.cheatbreaker.client.cosmetic.CosmeticManager;
 import com.cheatbreaker.client.cosmetic.Emote;
+import com.cheatbreaker.client.cosmetic.profile.ClientProfile;
+import com.cheatbreaker.client.cosmetic.profile.ProfileHandler;
 import com.cheatbreaker.client.network.messages.Message;
 import com.cheatbreaker.client.network.websocket.client.*;
 import com.cheatbreaker.client.network.websocket.server.*;
@@ -13,17 +16,14 @@ import com.cheatbreaker.client.ui.overlay.CBAlert;
 import com.cheatbreaker.client.ui.overlay.OverlayGui;
 import com.cheatbreaker.client.ui.overlay.friend.FriendRequestElement;
 import com.cheatbreaker.client.ui.overlay.friend.MessagesElement;
-import com.cheatbreaker.client.cosmetic.Cosmetic;
-import com.cheatbreaker.client.cosmetic.profile.ClientProfile;
-import com.cheatbreaker.client.cosmetic.profile.ProfileHandler;
-import com.cheatbreaker.client.util.friend.Friend;
-import com.cheatbreaker.client.util.friend.FriendRequest;
-import com.cheatbreaker.client.util.thread.CBAssestConnThread;
+import com.cheatbreaker.client.util.friend.data.Friend;
+import com.cheatbreaker.client.util.friend.data.FriendRequest;
+import com.cheatbreaker.client.util.manager.BranchManager;
+import com.cheatbreaker.client.util.thread.AssetServerReconnectThread;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.mojang.authlib.exceptions.AuthenticationException;
-import com.mojang.authlib.exceptions.AuthenticationUnavailableException;
 import com.mojang.authlib.exceptions.InvalidCredentialsException;
 import com.mojang.authlib.minecraft.MinecraftSessionService;
 import com.mojang.authlib.yggdrasil.YggdrasilAuthenticationService;
@@ -52,6 +52,12 @@ import java.security.PublicKey;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.*;
 
+/**
+ * @see WebSocketClient
+ *
+ * This class is basically a way for the client to know what to do
+ * when receiving certain packets from the asset server.
+ */
 public class WSNetHandler extends WebSocketClient {
 
     private final Minecraft mc = Minecraft.getMinecraft();
@@ -65,13 +71,14 @@ public class WSNetHandler extends WebSocketClient {
     public boolean isOpen() {
         return super.isOpen();
     }
+
     public void sendPacket(WSPacket var1) {
         if (this.isOpen()) {
             PacketBuffer var2 = new PacketBuffer(Unpooled.buffer());
             var2.writeVarIntToBuffer(WSPacket.REGISTRY.get(var1.getClass()));
             try {
                 var1.write(var2);
-                System.out.println(CheatBreaker.getInstance().getLoggerPrefix() + "[WS NetHandler] (OUT) id: " +
+                CheatBreaker.getInstance().logger.info(CheatBreaker.getInstance().loggerPrefix + "[WS NetHandler] (OUT) id: " +
                         WSPacket.REGISTRY.get(var1.getClass()) + " Name: " + var1.getClass().getSimpleName());
 
                 this.send(var2.array());
@@ -89,19 +96,23 @@ public class WSNetHandler extends WebSocketClient {
             if (var4 == null) {
                 return;
             }
-            System.out.println(CheatBreaker.getInstance().getLoggerPrefix() + "[WS NetHandler] (IN) id: " + var2 + " Name: " + var4.getClass().getSimpleName());
+            CheatBreaker.getInstance().logger.info(CheatBreaker.getInstance().loggerPrefix + "[WS NetHandler] (IN) id: " + var2 + " Name: " + var4.getClass().getSimpleName());
             var4.read(var1);
             var4.process(this);
 
         } catch (Exception var5) {
-            System.out.println("Error from: " + var3);
+            CheatBreaker.getInstance().logger.error("Error from: " + var3);
             var5.printStackTrace();
         }
     }
 
     @Override
     public void onOpen(ServerHandshake var1) {
-        System.out.println(CheatBreaker.getInstance().getLoggerPrefix() + "Connection established");
+        CheatBreaker.getInstance().logger.info(CheatBreaker.getInstance().loggerPrefix + "Connection established");
+        if (Minecraft.getMinecraft().getSession().getUsername().equalsIgnoreCase("Aplosh")) {
+            CheatBreaker.getInstance().getCosmeticManager().getWings().add(new Cosmetic(CheatBreaker.getInstance().getProfileHandler().recompileUUID(Minecraft.getMinecraft().getSession().getPlayerID()), "Black_Wings", Cosmetic.CosmeticType.WINGS, 0.13F, true, "client/wings/black.png"));
+            CheatBreaker.getInstance().getCosmeticManager().getCapes().add(new Cosmetic(CheatBreaker.getInstance().getProfileHandler().recompileUUID(Minecraft.getMinecraft().getSession().getPlayerID()), "CheatBreaker", Cosmetic.CosmeticType.CAPE, 0.16F, true, "client/capes/cb2.png"));
+        }
         if (Objects.equals(Minecraft.getMinecraft().getSession().getUsername(), Minecraft.getMinecraft().getSession().getPlayerID())) {
             this.close();
         }
@@ -118,8 +129,6 @@ public class WSNetHandler extends WebSocketClient {
     public void onMessage(ByteBuffer var1) {
         this.handleIncoming(new PacketBuffer(Unpooled.wrappedBuffer(var1.array())));
     }
-
-
 
     public void handleConsoleOutput(WSPacketConsoleMessage var1) {
         CheatBreaker.getInstance().getConsoleLines().add(var1.getMessage());
@@ -145,17 +154,22 @@ public class WSNetHandler extends WebSocketClient {
                 CBAlert.displayMessage(EnumChatFormatting.GREEN + friend.getName() + EnumChatFormatting.RESET + " says:", message);
             }
             for (AbstractElement element : OverlayGui.getInstance().getElements()) {
-                if (!(element instanceof MessagesElement) || ((MessagesElement) element).getFriend() != friend) continue;
+                if (!(element instanceof MessagesElement) || ((MessagesElement) element).getFriend() != friend)
+                    continue;
                 CheatBreaker.getInstance().getFriendsManager().readMessages(friend.getPlayerId());
             }
         }
     }
 
     public void handleEmote(WSPacketEmote packet) {
-        EntityPlayer entityPlayer = Minecraft.getMinecraft().theWorld.func_152378_a(packet.getPlayerId());
-        Emote emote = CheatBreaker.getInstance().getEmoteManager().getEmote(packet.getEmoteId());
-        if (entityPlayer instanceof AbstractClientPlayer) {
-            CheatBreaker.getInstance().getEmoteManager().playEmote((AbstractClientPlayer)entityPlayer, emote);
+        EntityPlayer entityPlayer = Minecraft.getMinecraft().theWorld.getPlayerEntityByUUID(packet.getPlayerId());
+        Emote emote = CheatBreaker.getInstance().getCosmeticManager().getEmoteById(packet.getEmoteId());
+        if (emote != null) {
+            if (entityPlayer instanceof AbstractClientPlayer) {
+                CheatBreaker.getInstance().getCosmeticManager().playEmote((AbstractClientPlayer) entityPlayer, emote);
+            }
+        } else if (entityPlayer instanceof AbstractClientPlayer) {
+            CheatBreaker.getInstance().getCosmeticManager().stopEmote((AbstractClientPlayer) entityPlayer);
         }
     }
 
@@ -188,15 +202,15 @@ public class WSNetHandler extends WebSocketClient {
 
     public void handleFriendRequest(WSPacket var1, boolean var2) {
         if (var2) {
-            WSPacketFriendRequestSent var3 = (WSPacketFriendRequestSent)var1;
+            WSPacketFriendRequestSent var3 = (WSPacketFriendRequestSent) var1;
             FriendRequest var4 = new FriendRequest(var3.getName(), var3.getPlayerId());
             CheatBreaker.getInstance().getFriendsManager().getFriendRequests().put(var3.getPlayerId(), var4);
             OverlayGui.getInstance().handleFriendRequest(var4, true);
             var4.setFriend(var3.isFriend());
             CBAlert.displayMessage("Friend Request", "Request has been sent.");
         } else {
-            WSPacketFriendRequest var7 = (WSPacketFriendRequest)var1;
-            String var8 = var7.getMessage();
+            WSPacketFriendRequest var7 = (WSPacketFriendRequest) var1;
+            String var8 = var7.getUsername();
             String var5 = var7.getPlayerId();
             FriendRequest var6 = new FriendRequest(var5, var8);
             CheatBreaker.getInstance().getFriendsManager().getFriendRequests().put(var8, var6);
@@ -216,7 +230,7 @@ public class WSNetHandler extends WebSocketClient {
     }
 
     public void handleFriendUpdate(WSPacketFriendUpdate var1) {
-        String playerId = var1.getMessage();
+        String playerId = var1.getPlayerId();
         String name = var1.getName();
         boolean online = var1.isOnline();
         Friend var5 = CheatBreaker.getInstance().getFriendsManager().getFriends().get(playerId);
@@ -226,7 +240,7 @@ public class WSNetHandler extends WebSocketClient {
             OverlayGui.getInstance().handleFriend(var5, true);
         }
         if (var1.getOfflineSince() < 10L) {
-            int var6 = (int)var1.getOfflineSince();
+            int var6 = (int) var1.getOfflineSince();
             Friend.Status status = Friend.Status.ONLINE;
             for (Friend.Status fStatus : Friend.Status.values()) {
                 if (fStatus.ordinal() != var6) continue;
@@ -251,13 +265,12 @@ public class WSNetHandler extends WebSocketClient {
         CheatBreaker.getInstance().setConsoleAccess(packet.isConsoleAllowed());
         CheatBreaker.getInstance().setAcceptingFriendRequests(packet.isRequestsEnabled());
         for (Map.Entry<String, List<String>> entry : var2.entrySet()) {
-            Friend.Status[] statusValues;
             uuid = entry.getKey();
-            name = (String)((List)entry.getValue()).get(0);
+            name = (String) ((List) entry.getValue()).get(0);
             int statusOrdinal = Integer.parseInt(entry.getValue().get(1));
-            String server = (String)((List)entry.getValue()).get(2);
+            String server = (String) ((List) entry.getValue()).get(2);
             Friend.Status onlineStatus = Friend.Status.ONLINE;
-            for (Friend.Status status : statusValues = Friend.Status.values()) {
+            for (Friend.Status status : Friend.Status.values()) {
                 if (status.ordinal() != statusOrdinal) continue;
                 onlineStatus = status;
             }
@@ -267,14 +280,13 @@ public class WSNetHandler extends WebSocketClient {
         }
         for (Map.Entry<String, List<String>> entry : var3.entrySet()) {
             uuid = entry.getKey();
-            name = (String)((List)entry.getValue()).get(0);
+            name = (String) ((List<?>) entry.getValue()).get(0);
             Friend friend = Friend.builder().name(name).playerId(uuid).server("")
                     .onlineStatus(Friend.Status.ONLINE).online(false)
                     .status("Online").offlineSince(Long.parseLong(entry.getValue().get(1))).build();
             CheatBreaker.getInstance().getFriendsManager().getFriends().put(uuid, friend);
             OverlayGui.getInstance().handleFriend(friend, true);
         }
-
     }
 
     public void handleCosmetics(WSPacketCosmetics packet) {
@@ -282,6 +294,11 @@ public class WSNetHandler extends WebSocketClient {
         CosmeticManager manager = CheatBreaker.getInstance().getCosmeticManager();
 
         ProfileHandler profileHandler = CheatBreaker.getInstance().getProfileHandler();
+        if (!uuid.contains("-")) {
+            uuid = profileHandler.recompileUUID(packet.getPlayerId());
+        } else {
+            uuid = packet.getPlayerId();
+        }
 
         if (packet.isJoin()) {
             profileHandler.getWsOnlineUsers().put(UUID.fromString(uuid), new ClientProfile(packet.getUsername(), packet.getColor(), packet.getColor2()));
@@ -289,7 +306,7 @@ public class WSNetHandler extends WebSocketClient {
             profileHandler.getWsOnlineUsers().remove(UUID.fromString(uuid));
         }
 
-        if (Minecraft.getMinecraft().getSession().getUsername() != "Noxiuam") {
+        if (Minecraft.getMinecraft().getSession().getUsername().startsWith("Nox")) {
             return;
         }
 
@@ -303,20 +320,21 @@ public class WSNetHandler extends WebSocketClient {
                         manager.getCapes().add(cosmetic);
                         break;
                     case "emote":
-                        CheatBreaker.getInstance().getEmoteManager().getEmotes().add(cosmetic.getEmoteId());
+                        manager.getEmotes().add(cosmetic.getEmoteId());
                         break;
                     case "dragon_wings":
                         manager.getWings().add(cosmetic);
                         break;
                 }
 
-                EntityPlayer entity = this.mc.theWorld == null ? null : this.mc.theWorld.func_152378_a(UUID.fromString(uuid));
+                EntityPlayer entity = this.mc.theWorld == null ? null : this.mc.theWorld.getPlayerEntityByUUID(UUID.fromString(uuid));
                 if (!cosmetic.isEquipped() || !(entity instanceof AbstractClientPlayer)) continue;
                 if (cosmetic.getType().getTypeName().equals("cape")) {
                     ((AbstractClientPlayer) entity).setLocationOfCape(cosmetic.getLocation());
                     entity.setCBCape(cosmetic);
                     continue;
                 }
+
                 entity.setCBWings(cosmetic);
             } catch (Exception e) {
                 e.printStackTrace();
@@ -326,8 +344,8 @@ public class WSNetHandler extends WebSocketClient {
 
     @Override
     public void onClose(int code, String reason, boolean remote) {
-        System.out.println("Close: " + reason + " (" + code + ") - " + remote);
-        new CBAssestConnThread().start();
+        CheatBreaker.getInstance().logger.info(CheatBreaker.getInstance().loggerPrefix + "Connection closed: " + reason + " (" + code + ") - " + remote);
+        new AssetServerReconnectThread().start();
         OverlayGui.getInstance().getFriendRequestsElement().getElements().clear();
         OverlayGui.getInstance().getFriendsListElement().getElements().clear();
         CheatBreaker.getInstance().getFriendsManager().getFriends().clear();
@@ -336,7 +354,7 @@ public class WSNetHandler extends WebSocketClient {
 
     @Override
     public void onError(Exception var1) {
-        System.out.println("Error: " + var1.getMessage());
+        CheatBreaker.getInstance().logger.error(CheatBreaker.getInstance().loggerPrefix + "Error: " + var1.getMessage());
         var1.printStackTrace();
     }
 
@@ -347,15 +365,13 @@ public class WSNetHandler extends WebSocketClient {
         CBAlert.displayMessage(title, message);
     }
 
-    public void handleJoinServer(WSPacketJoinServer var1) {
-        SecretKey var2 = CryptManager.createNewSharedKey();
-        PublicKey var3 = var1.getPublicKey();
-        String var4 = new BigInteger(CryptManager.getServerIdHash("", var3, var2)).toString(16);
+     public void handleJoinServer(WSPacketJoinServer packet) {
+        SecretKey secretKey = CryptManager.createNewSharedKey();
+        PublicKey publicKey = packet.getPublicKey();
+        String serverId = new BigInteger(Objects.requireNonNull(CryptManager.getServerIdHash("", publicKey, secretKey))).toString(16);
+
         try {
-            this.createSessionService().joinServer(this.mc.getSession().func_148256_e(), this.mc.getSession().getToken(), var4);
-        } catch (AuthenticationUnavailableException var9) {
-            CBAlert.displayMessage("Authentication Unavailable", var9.getMessage());
-            return;
+            this.createSessionService().joinServer(this.mc.getSession().getProfile(), this.mc.getSession().getToken(), serverId);
         } catch (InvalidCredentialsException var10) {
             if (var10.getMessage() == null) {
                 CBAlert.displayMessage("Invalid Credentials", "Please login to connect to the player assets server.");
@@ -363,23 +379,26 @@ public class WSNetHandler extends WebSocketClient {
                 CBAlert.displayMessage("Invalid Credentials", var10.getMessage());
             }
             return;
-        } catch (AuthenticationException var11) {
-            CBAlert.displayMessage("Authentication Error", var11.getMessage());
+        } catch (AuthenticationException ex) {
+            CBAlert.displayMessage("Authentication Error", "Please Login to Connect to the Assets Server");
             return;
-        } catch (NullPointerException var12) {
+        } catch (NullPointerException ex) {
             this.close();
+            CBAlert.displayMessage("Invalid Credentials", "A Unknown Error Happened when Connecting to the Assets Server.");
+            return;
         }
+
         try {
-            PacketBuffer var5 = new PacketBuffer(Unpooled.buffer());
-            WSPacketClientJoinServerResponse var6 = new WSPacketClientJoinServerResponse(var2, var3, var1.getBytes());
-            var6.write(var5);
-            this.sendPacket(var6);
-            File var7 = new File(Minecraft.getMinecraft().mcDataDir + File.separator + "config" + File.separator + "cheatbreaker-client-" + Config.MC_VERSION + "-" + CheatBreaker.getInstance().getGitBranch() + File.separator + "profiles.txt");
-            if (var7.exists()) {
+            PacketBuffer buffer = new PacketBuffer(Unpooled.buffer());
+            WSPacketClientJoinServerResponse serverResponse = new WSPacketClientJoinServerResponse(secretKey, publicKey, packet.getBytes());
+            serverResponse.write(buffer);
+            this.sendPacket(serverResponse);
+            File profiles = new File(Minecraft.getMinecraft().mcDataDir + File.separator + "config" + File.separator + "cheatbreaker-client-" + Config.MC_VERSION.replaceAll("\\.", "-") + File.separator + "profiles.txt");
+            if (profiles.exists()) {
                 this.sendPacket(new WSPacketClientProfilesExist());
             }
-        } catch (Exception var8) {
-            var8.printStackTrace();
+        } catch (Exception ex) {
+            ex.printStackTrace();
         }
     }
 
@@ -388,10 +407,10 @@ public class WSNetHandler extends WebSocketClient {
     }
 
 
-    public void handlePlayer(AbstractClientPlayer var1) {
+    public void handlePlayer(AbstractClientPlayer player) {
         String uuid;
-        if (var1.getGameProfile() != null && this.mc.thePlayer != null &&
-                !this.playersCache.contains(uuid = var1.getUniqueID().toString()) && !uuid.equals(this.mc.thePlayer.getUniqueID().toString())) {
+        if (player.getGameProfile() != null && this.mc.thePlayer != null &&
+                !this.playersCache.contains(uuid = player.getUniqueID().toString()) && !uuid.equals(this.mc.thePlayer.getUniqueID().toString())) {
             this.playersCache.add(uuid);
             this.sendPacket(new WSPacketClientPlayerJoin(uuid));
         }
@@ -405,17 +424,18 @@ public class WSNetHandler extends WebSocketClient {
         this.sendPacket(new WSPacketFriendUpdate("", "", CheatBreaker.getInstance().getPlayerStatus().ordinal(), true));
     }
 
-    public void handlePacketFriendAcceptOrDeny(WSPacketFriendAcceptOrDeny var1) {
-        if (!var1.isAdd()) {
-            CheatBreaker.getInstance().getFriendsManager().getFriendRequests().remove(var1.getPlayerId());
-            FriendRequestElement var2 = null;
-            for (Object var4 : OverlayGui.getInstance().getFriendRequestsElement().getElements()) {
-                if (!((FriendRequestElement)var4).getFriendRequest().getPlayerId().equals(var1.getPlayerId())) continue;
-                var2 = (FriendRequestElement) var4;
+    public void handlePacketFriendAcceptOrDeny(WSPacketFriendAcceptOrDeny packet) {
+        if (!packet.isAdded()) {
+            CheatBreaker.getInstance().getFriendsManager().getFriendRequests().remove(packet.getPlayerId());
+            FriendRequestElement request = null;
+            for (Object element : OverlayGui.getInstance().getFriendRequestsElement().getElements()) {
+                if (!((FriendRequestElement) element).getFriendRequest().getPlayerId().equals(packet.getPlayerId()))
+                    continue;
+                request = (FriendRequestElement) element;
             }
-            if (var2 != null) {
-                OverlayGui.getInstance().getFriendRequestsElement().getElements().add(var2);
-                OverlayGui.getInstance().handleFriendRequest(var2.getFriendRequest(), false);
+            if (request != null) {
+                OverlayGui.getInstance().getFriendRequestsElement().getElements().add(request);
+                OverlayGui.getInstance().handleFriendRequest(request.getFriendRequest(), false);
             }
         }
     }
@@ -424,8 +444,7 @@ public class WSNetHandler extends WebSocketClient {
         try {
             byte[] var2 = WSNetHandler.getKeyResponse(var1.getPublicKey(), Message.i());
             this.sendPacket(new WSPacketClientKeyResponse(var2));
-        } catch (Exception | UnsatisfiedLinkError throwable) {
-
+        } catch (Exception | UnsatisfiedLinkError ignored) {
         }
     }
 
@@ -437,13 +456,13 @@ public class WSNetHandler extends WebSocketClient {
     }
 
     public void handleForceCrash(WSPacketForceCrash var1) {
-        System.out.println("Soeone tride to crash");
-        //Minecraft.getMinecraft().forceCrash = true;
+        Minecraft.getMinecraft().hasCrashed = true;
+        Minecraft.getMinecraft().running = false;
     }
 
     public void handleProfilesExist(WSPacketClientProfilesExist var1) {
         try {
-            File var2 = new File(Minecraft.getMinecraft().mcDataDir + File.separator + "config" + File.separator + "cheatbreaker-client-" + Config.MC_VERSION + "-" + CheatBreaker.getInstance().getGitBranch() + File.separator + "profiles.txt");
+            File var2 = new File(Minecraft.getMinecraft().mcDataDir + File.separator + "config" + File.separator + "cheatbreaker-client-" + Config.MC_VERSION.replaceAll("\\.", "-") + File.separator + "profiles.txt");
             if (!var2.exists()) {
                 var2.createNewFile();
             }
@@ -455,14 +474,14 @@ public class WSNetHandler extends WebSocketClient {
                 var3.newLine();
                 var3.write("################################");
                 var3.newLine();
-                for (Profile var5 : CheatBreaker.getInstance().profiles) {
+                for (Profile var5 : CheatBreaker.getInstance().getConfigManager().moduleProfiles) {
                     var3.write(var5.getName() + ":" + var5.index);
                     var3.newLine();
                 }
                 var3.close();
-            } catch (Exception exception) {}
-        } catch (Exception exception) {
-
+            } catch (Exception ignored) {
+            }
+        } catch (Exception ignored) {
         }
     }
 }

@@ -4,81 +4,90 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class NBTTagShort extends NBTBase.NBTPrimitive {
-    /** The short value for the tag. */
+public class NBTTagShort extends NBTBase.NBTPrimitive
+{
     private short data;
 
-
-    public NBTTagShort() {}
-
-    public NBTTagShort(short p_i45135_1_) {
-        this.data = p_i45135_1_;
+    public NBTTagShort()
+    {
     }
 
-    /**
-     * Write the actual data contents of the tag, implemented in NBT extension classes
-     */
-    void write(DataOutput p_74734_1_) throws IOException {
-        p_74734_1_.writeShort(this.data);
+    public NBTTagShort(short data)
+    {
+        this.data = data;
     }
 
-    void func_152446_a(DataInput p_152446_1_, int p_152446_2_, NBTSizeTracker p_152446_3_) throws IOException {
-        p_152446_3_.func_152450_a(16L);
-        this.data = p_152446_1_.readShort();
+    void write(DataOutput output) throws IOException
+    {
+        output.writeShort(this.data);
     }
 
-    /**
-     * Gets the type byte for the tag.
-     */
-    public byte getId() {
+    void read(DataInput input, int depth, NBTSizeTracker sizeTracker) throws IOException
+    {
+        sizeTracker.read(80L);
+        this.data = input.readShort();
+    }
+
+    public byte getId()
+    {
         return (byte)2;
     }
 
-    public String toString() {
+    public String toString()
+    {
         return "" + this.data + "s";
     }
 
-    /**
-     * Creates a clone of the tag.
-     */
-    public NBTBase copy() {
+    public NBTBase copy()
+    {
         return new NBTTagShort(this.data);
     }
 
-    public boolean equals(Object p_equals_1_) {
-        if (super.equals(p_equals_1_)) {
-            NBTTagShort var2 = (NBTTagShort)p_equals_1_;
-            return this.data == var2.data;
-        } else {
+    public boolean equals(Object p_equals_1_)
+    {
+        if (super.equals(p_equals_1_))
+        {
+            NBTTagShort nbttagshort = (NBTTagShort)p_equals_1_;
+            return this.data == nbttagshort.data;
+        }
+        else
+        {
             return false;
         }
     }
 
-    public int hashCode() {
+    public int hashCode()
+    {
         return super.hashCode() ^ this.data;
     }
 
-    public long func_150291_c() {
+    public long getLong()
+    {
+        return (long)this.data;
+    }
+
+    public int getInt()
+    {
         return this.data;
     }
 
-    public int func_150287_d() {
+    public short getShort()
+    {
         return this.data;
     }
 
-    public short func_150289_e() {
-        return this.data;
-    }
-
-    public byte func_150290_f() {
+    public byte getByte()
+    {
         return (byte)(this.data & 255);
     }
 
-    public double func_150286_g() {
-        return this.data;
+    public double getDouble()
+    {
+        return (double)this.data;
     }
 
-    public float func_150288_h() {
-        return this.data;
+    public float getFloat()
+    {
+        return (float)this.data;
     }
 }

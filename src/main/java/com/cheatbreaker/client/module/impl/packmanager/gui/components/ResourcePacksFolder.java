@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+
 @Getter
 public class ResourcePacksFolder {
     private final String name;

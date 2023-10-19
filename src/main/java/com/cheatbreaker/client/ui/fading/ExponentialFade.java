@@ -8,6 +8,6 @@ public class ExponentialFade extends FloatFade {
     @Override
     public float getValue() {
         float f = super.getValue();
-        return (float)Math.pow(f * (2.0f - f), 1.0);
+        return (float) Math.pow(f * (2.0f - f), 1.0);
     }
 }

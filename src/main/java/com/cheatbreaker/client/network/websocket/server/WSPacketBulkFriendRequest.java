@@ -11,16 +11,21 @@ import net.minecraft.network.PacketBuffer;
 
 import java.io.IOException;
 
-@Getter
-@AllArgsConstructor
-@NoArgsConstructor
+/**
+ * @WSPacket WSPacketBulkFriendRequest
+ * @see WSPacket
+ *
+ * This packet writes and receives bulk friend requests
+ * and single friend requests from both the client and server.
+ */
+@Getter @AllArgsConstructor @NoArgsConstructor
 public class WSPacketBulkFriendRequest extends WSPacket {
     private String rawFriendRequests;
     private JsonArray bulkArray;
 
     @Override
     public void write(PacketBuffer packetBuffer) throws IOException {
-        packetBuffer.writeStringToBuffer(this.rawFriendRequests);
+        packetBuffer.writeString(this.rawFriendRequests);
     }
 
     @Override

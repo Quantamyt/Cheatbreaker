@@ -1,9 +1,15 @@
 package com.cheatbreaker.client.network.websocket.client;
 
 import com.cheatbreaker.client.network.websocket.WSNetHandler;
-import net.minecraft.network.PacketBuffer;
 import com.cheatbreaker.client.network.websocket.WSPacket;
+import net.minecraft.network.PacketBuffer;
 
+/**
+ * @WSPacket WSPacketClientProfilesExist
+ * @see WSPacket
+ *
+ * This packet checks if a mod configuration profile exists.
+ */
 public class WSPacketClientProfilesExist extends WSPacket {
     @Override
     public void write(PacketBuffer packetBuffer) {

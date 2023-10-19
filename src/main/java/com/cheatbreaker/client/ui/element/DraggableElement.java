@@ -2,8 +2,9 @@ package com.cheatbreaker.client.ui.element;
 
 import com.cheatbreaker.client.ui.mainmenu.AbstractElement;
 import com.sun.javafx.geom.Vec2d;
-import java.util.concurrent.atomic.AtomicBoolean;
 import org.lwjgl.input.Mouse;
+
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public abstract class DraggableElement extends AbstractElement {
     private final Vec2d position = new Vec2d();
@@ -15,9 +16,9 @@ public abstract class DraggableElement extends AbstractElement {
                 this.dragging.set(false);
                 return;
             }
-            double d = (double)f - this.position.x;
-            double d2 = (double)f2 - this.position.y;
-            this.setElementSize((float)d, (float)d2, this.width, this.height);
+            double d = (double) f - this.position.x;
+            double d2 = (double) f2 - this.position.y;
+            this.setElementSize((float) d, (float) d2, this.width, this.height);
         }
     }
 

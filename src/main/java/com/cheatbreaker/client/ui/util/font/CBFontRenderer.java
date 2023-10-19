@@ -1,17 +1,16 @@
 package com.cheatbreaker.client.ui.util.font;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.ResourceLocation;
-import org.codehaus.plexus.personality.plexus.lifecycle.phase.InitializationException;
 import org.lwjgl.opengl.GL11;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class CBFontRenderer extends CBFont {
-    private final char COLOR_CODE_START = (char)167;
+    private final char COLOR_CODE_START = (char) 167;
     protected CharData[] boldItalicChars = new CharData[256];
     protected CharData[] italicChars = new CharData[256];
     protected CharData[] boldChars = new CharData[256];
@@ -45,12 +44,12 @@ public class CBFontRenderer extends CBFont {
     }
 
     public float drawCenteredString(String var1, float var2, float var3, int var4) {
-        return this.drawString(var1, var2 - (float)(this.getStringWidth(var1) / 2), var3, var4);
+        return this.drawString(var1, var2 - (float) (this.getStringWidth(var1) / 2), var3, var4);
     }
 
     public float drawCenteredStringWithShadow(String var1, float var2, float var3, int var4) {
-        this.drawString(var1, (double)(var2 - (float)(this.getStringWidth(var1) / 2)) + 1.0, (double)var3 + 1.0, var4, true);
-        return this.drawString(var1, var2 - (float)(this.getStringWidth(var1) / 2), var3, var4);
+        this.drawString(var1, (double) (var2 - (float) (this.getStringWidth(var1) / 2)) + 1.0, (double) var3 + 1.0, var4, true);
+        return this.drawString(var1, var2 - (float) (this.getStringWidth(var1) / 2), var3, var4);
     }
 
     public float drawString(String var1, double var2, double var4, int var6, boolean var7) {
@@ -68,7 +67,7 @@ public class CBFontRenderer extends CBFont {
             var6 = (var6 & 0xFCFCFC) >> 2 | var6 & 0xFF000000;
         }
         CharData[] var8 = this.charData;
-        float var9 = (float)(var6 >> 24 & 0xFF) / 255.0f;
+        float var9 = (float) (var6 >> 24 & 0xFF) / 255.0f;
         boolean var10 = false;
         boolean var11 = false;
         boolean var12 = false;
@@ -82,9 +81,11 @@ public class CBFontRenderer extends CBFont {
             GL11.glScaled(0.5, 0.5, 0.5);
             GL11.glEnable(3042);
             GL11.glBlendFunc(770, 771);
-            GL11.glColor4f((float)(var6 >> 16 & 0xFF) / 255.0f, (float)(var6 >> 8 & 0xFF) / 255.0f, (float)(var6 & 0xFF) / 255.0f, var9);
+            GL11.glColor4f((float) (var6 >> 16 & 0xFF) / 255.0f, (float) (var6 >> 8 & 0xFF) / 255.0f, (float) (var6 & 0xFF) / 255.0f, var9);
             int var16 = var1.length();
             GL11.glEnable(3553);
+//            System.out.println(this.tex.getGlTextureId());
+            int oldTex = GL11.glGetInteger(32873);
             GL11.glBindTexture(3553, this.tex.getGlTextureId());
             for (int var17 = 0; var17 < var16; ++var17) {
                 char var18 = var1.charAt(var17);
@@ -92,8 +93,7 @@ public class CBFontRenderer extends CBFont {
                     int var19 = 21;
                     try {
                         var19 = "0123456789abcdefklmnor".indexOf(var1.charAt(var17 + 1));
-                    }
-                    catch (Exception var21) {
+                    } catch (Exception var21) {
                         var21.printStackTrace();
                     }
                     if (var19 < 16) {
@@ -111,7 +111,7 @@ public class CBFontRenderer extends CBFont {
                             var19 += 16;
                         }
                         int var20 = this.colorCode[var19];
-                        GL11.glColor4f((float)(var20 >> 16 & 0xFF) / 255.0f, (float)(var20 >> 8 & 0xFF) / 255.0f, (float)(var20 & 0xFF) / 255.0f, var9);
+                        GL11.glColor4f((float) (var20 >> 16 & 0xFF) / 255.0f, (float) (var20 >> 8 & 0xFF) / 255.0f, (float) (var20 & 0xFF) / 255.0f, var9);
                     } else if (var19 == 16) {
                         var10 = true;
                     } else if (var19 == 17) {
@@ -142,7 +142,7 @@ public class CBFontRenderer extends CBFont {
                         var10 = false;
                         var14 = false;
                         var13 = false;
-                        GL11.glColor4f((float)(var6 >> 16 & 0xFF) / 255.0f, (float)(var6 >> 8 & 0xFF) / 255.0f, (float)(var6 & 0xFF) / 255.0f, var9);
+                        GL11.glColor4f((float) (var6 >> 16 & 0xFF) / 255.0f, (float) (var6 >> 8 & 0xFF) / 255.0f, (float) (var6 & 0xFF) / 255.0f, var9);
                         GL11.glBindTexture(3553, this.tex.getGlTextureId());
                         var8 = this.charData;
                     }
@@ -151,24 +151,26 @@ public class CBFontRenderer extends CBFont {
                 }
                 if (var18 >= var8.length || var18 < '\u0000') continue;
                 GL11.glBegin(4);
-                this.drawChar(var8, var18, (float)var2, (float)var4 + 6.0f);
+                this.drawChar(var8, var18, (float) var2, (float) var4 + 6.0f);
                 GL11.glEnd();
                 if (var13) {
-                    this.drawLine(var2, var4 + (double)(var8[var18].height / 2),
-                            var2 + (double)var8[var18].width - 8.0, var4 +
-                                    (double)(var8[var18].height / 2), 1.0f);
+                    this.drawLine(var2, var4 + (double) (var8[var18].height / 2),
+                            var2 + (double) var8[var18].width - 8.0, var4 +
+                                    (double) (var8[var18].height / 2), 1.0f);
                 }
                 if (var14) {
-                    this.drawLine(var2, var4 + (double)var8[var18].height - 2.0,
-                            var2 + (double)var8[var18].width - 8.0, var4 +
-                                    (double)var8[var18].height - 2.0, 1.0f);
+                    this.drawLine(var2, var4 + (double) var8[var18].height - 2.0,
+                            var2 + (double) var8[var18].width - 8.0, var4 +
+                                    (double) var8[var18].height - 2.0, 1.0f);
                 }
                 var2 += var8[var18].width - 8 + this.charOffset;
             }
+            GL11.glDisable(3042);
+            GL11.glBindTexture(3553, oldTex);
             GL11.glHint(3155, 4352);
             GL11.glPopMatrix();
         }
-        return (float)var2 / 2.0f;
+        return (float) var2 / 2.0f;
     }
 
     public String setWrapWords(String string, double width) {
@@ -182,7 +184,7 @@ public class CBFontRenderer extends CBFont {
         int var8 = var4 ? -1 : 1;
         boolean var9 = false;
         boolean var10 = false;
-        for (int var11 = var7; var11 >= 0 && var11 < var1.length() && var6 < (float)width; var11 += var8) {
+        for (int var11 = var7; var11 >= 0 && var11 < var1.length() && var6 < (float) width; var11 += var8) {
             char var12 = var1.charAt(var11);
             double var13 = this.getStringWidth(String.valueOf(var12));
             if (var9) {
@@ -197,12 +199,12 @@ public class CBFontRenderer extends CBFont {
             } else if (var13 < 0.0) {
                 var9 = true;
             } else {
-                var6 = (float)((double)var6 + var13);
+                var6 = (float) ((double) var6 + var13);
                 if (var10) {
                     var6 += 1.0f;
                 }
             }
-            if (var6 > (float)width) break;
+            if (var6 > (float) width) break;
             if (var4) {
                 var5.insert(0, var12);
                 continue;
@@ -281,6 +283,9 @@ public class CBFontRenderer extends CBFont {
         StringBuilder var4 = new StringBuilder();
         StringBuilder var5 = new StringBuilder();
         boolean var6 = false;
+
+        if (var1 == null) return null;
+
         for (char var10 : var1.toCharArray()) {
             String var14;
             String var13;
@@ -296,7 +301,7 @@ public class CBFontRenderer extends CBFont {
             }
             var4.append(var10);
             int var11 = this.getStringWidth(var4.toString());
-            if (!((double)var11 >= var2)) continue;
+            if (!((double) var11 >= var2)) continue;
             String var12 = var4.toString();
             if (var12.contains(" ")) {
                 var13 = var12.substring(0, var12.lastIndexOf(" "));
@@ -318,8 +323,8 @@ public class CBFontRenderer extends CBFont {
     }
 
     public List<String> wrapWords(String text, double width) {
-        ArrayList<String> finalWords = new ArrayList<String>();
-        if ((double)this.getStringWidth(text) > width) {
+        ArrayList<String> finalWords = new ArrayList<>();
+        if ((double) this.getStringWidth(text) > width) {
             String[] words = text.split(" ");
             String currentWord = "";
             int lastColorCode = 65535;
@@ -331,7 +336,7 @@ public class CBFontRenderer extends CBFont {
                     lastColorCode = word.toCharArray()[var12 + 1];
                 }
                 StringBuilder stringBuilder = new StringBuilder();
-                if ((double)this.getStringWidth(stringBuilder.append(currentWord).append(word).append(" ").toString()) < width) {
+                if ((double) this.getStringWidth(stringBuilder.append(currentWord).append(word).append(" ").toString()) < width) {
                     currentWord = currentWord + word + " ";
                     continue;
                 }
@@ -339,7 +344,7 @@ public class CBFontRenderer extends CBFont {
                 currentWord = this.COLOR_CODE_START + lastColorCode + word + " ";
             }
             if (currentWord.length() > 0) {
-                if ((double)this.getStringWidth(currentWord) < width) {
+                if ((double) this.getStringWidth(currentWord) < width) {
                     finalWords.add(this.COLOR_CODE_START + lastColorCode + currentWord + " ");
                     currentWord = "";
                 } else {
@@ -365,7 +370,7 @@ public class CBFontRenderer extends CBFont {
                 lastColorCode = chars[i + 1];
             }
             StringBuilder stringBuilder = new StringBuilder();
-            if ((double)this.getStringWidth(stringBuilder.append(currentWord).append(c).toString()) < var2) {
+            if ((double) this.getStringWidth(stringBuilder.append(currentWord).append(c).toString()) < var2) {
                 currentWord = currentWord + c;
                 continue;
             }

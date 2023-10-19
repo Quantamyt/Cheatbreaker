@@ -26,7 +26,8 @@ varying vec4 posPos;
 vec3 FxaaPixelShader(
   vec4 posPos,   // Output of FxaaVertexShader interpolated across screen.
   sampler2D tex, // Input texture.
-  vec2 rcpFrame) // Constant {1.0/frameWidth, 1.0/frameHeight}. {
+  vec2 rcpFrame) // Constant {1.0/frameWidth, 1.0/frameHeight}.
+{
 
     #define FXAA_REDUCE_MIN   (1.0/128.0)
     //#define FXAA_REDUCE_MUL   (1.0/8.0)
@@ -79,5 +80,5 @@ vec3 FxaaPixelShader(
 
 void main() {
     vec4 baseTexel = texture2D(DiffuseSampler, posPos.xy);
-    gl_FragColor = vec4(FxaaPixelShader(posPos, DiffuseSampler, 1.0 / OutSize), baseTexel.a);
+    gl_FragColor = vec4(FxaaPixelShader(posPos, DiffuseSampler, 1.0 / OutSize), 1.0);
 }

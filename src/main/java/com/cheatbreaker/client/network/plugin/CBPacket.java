@@ -5,125 +5,123 @@ import com.cheatbreaker.client.network.plugin.client.PacketClientVoice;
 import com.cheatbreaker.client.network.plugin.client.PacketVoiceChannelSwitch;
 import com.cheatbreaker.client.network.plugin.client.PacketVoiceMute;
 import com.cheatbreaker.client.network.plugin.server.*;
-import com.cheatbreaker.client.network.plugin.shared.PacketAddWaypoint;
-import com.cheatbreaker.client.network.plugin.shared.PacketRemoveWaypoint;
+import com.cheatbreaker.client.network.plugin.shared.CBPacketAddWaypoint;
+import com.cheatbreaker.client.network.plugin.shared.CBPacketRemoveWaypoint;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import io.netty.buffer.Unpooled;
+import lombok.Getter;
+import lombok.Setter;
 
+import java.io.IOException;
 
-/*
- * This class works exactly the same way
- * as the Websocket packet system! :)
+/**
+ * This class defines what a plugin packet is for the CheatBreaker client.
  */
 public abstract class CBPacket {
-    private static final BiMap REGISTRY = HashBiMap.create();
-    private Object attachment;
+    private static final BiMap<Class<?>, Integer> REGISTRY = HashBiMap.create();
 
-    /*
+    @Getter @Setter private Object attachment;
+
+    /**
      * Writes outgoing data.
      * Example: I wrote a string using buf.writeString(); !
      */
-    public abstract void write(ByteBufWrapper buf);
-    
-    /*
-     * Reads incoming traffic.
-     */
-    public abstract void read(ByteBufWrapper buf);
+    public abstract void write(ByteBufWrapper out) throws IOException;
 
-    /*
+    /**
+     * Reads incoming data.
+     */
+    public abstract void read(ByteBufWrapper in) throws IOException;
+
+    /**
      * This gets ran when a packet is received.
      * Example: When I receive the packet, a chat message is printed.
      */
-    public abstract void process(ICBNetHandler netHandler);
+    public abstract void process(ICBNetHandler handler);
 
-    /*
+    /**
      * Handles incoming traffic read by the packet.
      */
     public static CBPacket handle(ICBNetHandler iCBNetHandler, byte[] arrby) {
         return CBPacket.handle(iCBNetHandler, arrby, null);
     }
 
-    /*
-     * Writes to the server and returns the array.
+    /**
+     * Handles the packet accordingly.
+     * - Updated 2/25/2022 by Noxiuam.
      */
-    public static CBPacket handle(ICBNetHandler iCBNetHandler, byte[] arrby, Object object) {
-        ByteBufWrapper byteBufWrapper = new ByteBufWrapper(Unpooled.wrappedBuffer(arrby));
-        int n = byteBufWrapper.readVarInt();
-        Class class_ = (Class)REGISTRY.inverse().get(n);
-        if (class_ != null) {
+    public static CBPacket handle(ICBNetHandler netHandler, byte[] data, Object attachment) {
+        ByteBufWrapper wrappedBuffer = new ByteBufWrapper(Unpooled.wrappedBuffer(data));
+        int packetId = wrappedBuffer.readVarInt();
+        Class<?> packetClass = REGISTRY.inverse().get(packetId);
+        if (packetClass != null) {
             try {
-                CBPacket cBPacket = (CBPacket)class_.newInstance();
-                if (object != null) {
-                    cBPacket.setAttachment(object);
+                CBPacket packet = (CBPacket) packetClass.newInstance();
+                if (attachment != null) {
+                    packet.setAttachment(attachment);
                 }
-                cBPacket.read(byteBufWrapper);
-                return cBPacket;
-            } catch (IllegalAccessException | InstantiationException exception) {
-                exception.printStackTrace();
+                packet.read(wrappedBuffer);
+                return packet;
+            }
+            catch (IOException | IllegalAccessException | InstantiationException ex) {
+                ex.printStackTrace();
             }
         }
         return null;
     }
 
-    /*
+    /**
      * Writes to the server and returns the array.
      */
-    public static byte[] getPacketData(CBPacket cBPacket) {
-        ByteBufWrapper byteBufWrapper = new ByteBufWrapper(Unpooled.buffer());
-        byteBufWrapper.writeVarInt((Integer)REGISTRY.get(cBPacket.getClass()));
-        cBPacket.write(byteBufWrapper);
-        return byteBufWrapper.buf().array();
+    public static byte[] getPacketData(CBPacket packet) {
+        ByteBufWrapper wrappedBuffer = new ByteBufWrapper(Unpooled.buffer());
+        wrappedBuffer.writeVarInt(REGISTRY.get(packet.getClass()));
+        try {
+            packet.write(wrappedBuffer);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return wrappedBuffer.getBuf().array();
     }
-    
-    /*
+
+    /**
      * Checks if the list already contains a packet, if not, it adds it.
      */
-    private static void addPacket(int n, Class clazz) {
+    private static void addPacket(int id, Class<?> clazz) {
         if (REGISTRY.containsKey(clazz)) {
             throw new IllegalArgumentException("Duplicate packet class (" + clazz.getSimpleName() + "), already used by " + REGISTRY.get(clazz));
         }
-        if (REGISTRY.containsValue(n)) {
-            throw new IllegalArgumentException("Duplicate packet ID (" + n + "), already used by" + ((Class)REGISTRY.inverse().get(n)).getSimpleName());
+
+        if (REGISTRY.containsValue(id)) {
+            throw new IllegalArgumentException("Duplicate packet ID (" + id + "), already used by" + REGISTRY.inverse().get(id).getSimpleName());
         }
-        REGISTRY.put(clazz, n);
+
+        REGISTRY.put(clazz, id);
     }
 
-    /*
+    /**
      * Writes the length of incoming traffic and the traffic itself short using the ByteBufWrapper.
      */
-    protected void writeBlob(ByteBufWrapper byteBufWrapper, byte[] arrby) {
-        byteBufWrapper.buf().writeShort(arrby.length);
-        byteBufWrapper.buf().writeBytes(arrby);
+    protected void writeBlob(ByteBufWrapper b, byte[] bytes) {
+        b.getBuf().writeShort(bytes.length);
+        b.getBuf().writeBytes(bytes);
     }
 
-    /*
+    /**
      * Reads incoming data and returns it as bytes.
      */
-    protected byte[] readBlob(ByteBufWrapper byteBufWrapper) {
-        // packetId
-        final short s = byteBufWrapper.buf().readShort();
-        if (s >= 0) {
-            byte[] arrby = new byte[s];
-            byteBufWrapper.buf().readBytes(arrby);
-            return arrby;
+    protected byte[] readBlob(ByteBufWrapper buf) {
+        final short index = buf.getBuf().readShort();
+
+        if (index >= 0) {
+            byte[] data = new byte[index];
+            buf.getBuf().readBytes(data);
+            return data;
         }
+
         System.out.println("Key was smaller than nothing!  Weird key!");
         return null;
-    }
-
-    /*
-     * Sets the Attachment.
-     */
-    public void setAttachment(Object object) {
-        this.attachment = object;
-    }
-
-    /*
-     * Gets the attachment.
-     */
-    public Object getAttachment() {
-        return this.attachment;
     }
 
     /*
@@ -133,27 +131,27 @@ public abstract class CBPacket {
         CBPacket.addPacket(0, PacketClientVoice.class);
         CBPacket.addPacket(1, PacketVoiceMute.class);
         CBPacket.addPacket(2, PacketVoiceChannelSwitch.class);
-        CBPacket.addPacket(3, PacketCooldown.class);
-        CBPacket.addPacket(4, PacketAddHologram.class);
-        CBPacket.addPacket(5, PacketUpdateHologram.class);
-        CBPacket.addPacket(6, PacketRemoveHologram.class);
-        CBPacket.addPacket(7, PacketOverrideNametags.class);
-        CBPacket.addPacket(8, PacketUpdateNametags.class);
-        CBPacket.addPacket(9, PacketNotification.class);
-        CBPacket.addPacket(10, PacketServerRule.class);
-        CBPacket.addPacket(11, PacketServerUpdate.class);
-        CBPacket.addPacket(12, PacketStaffModState.class);
-        CBPacket.addPacket(13, PacketTeammates.class);
-        CBPacket.addPacket(14, PacketTitle.class);
-        CBPacket.addPacket(15, PacketUpdateWorld.class);
-        CBPacket.addPacket(16, PacketVoice.class);
-        CBPacket.addPacket(17, PacketVoiceChannel.class);
-        CBPacket.addPacket(18, PacketDeleteVoiceChannel.class);
-        CBPacket.addPacket(19, PacketVoiceChannelUpdate.class);
-        CBPacket.addPacket(20, PacketWorldBorder.class);
-        CBPacket.addPacket(21, PacketWorldBorderRemove.class);
-        CBPacket.addPacket(22, PacketWorldBorderUpdate.class);
-        CBPacket.addPacket(23, PacketAddWaypoint.class);
-        CBPacket.addPacket(24, PacketRemoveWaypoint.class);
+        CBPacket.addPacket(3, CBPacketCooldown.class);
+        CBPacket.addPacket(4, CBPacketAddHologram.class);
+        CBPacket.addPacket(5, CBPacketUpdateHologram.class);
+        CBPacket.addPacket(6, CBPacketRemoveHologram.class);
+        CBPacket.addPacket(7, CBPacketOverrideNametags.class);
+        CBPacket.addPacket(8, CBPacketUpdateNametags.class);
+        CBPacket.addPacket(9, CBPacketNotification.class);
+        CBPacket.addPacket(10, CBPacketServerRule.class);
+        CBPacket.addPacket(11, CBPacketServerUpdate.class);
+        CBPacket.addPacket(12, CBPacketStaffModState.class);
+        CBPacket.addPacket(13, CBPacketTeammates.class);
+        CBPacket.addPacket(14, CBPacketTitle.class);
+        CBPacket.addPacket(15, CBPacketUpdateWorld.class);
+        CBPacket.addPacket(16, CBPacketVoice.class);
+        CBPacket.addPacket(17, CBPacketVoiceChannel.class);
+        CBPacket.addPacket(18, CBPacketDeleteVoiceChannel.class);
+        CBPacket.addPacket(19, CBPacketVoiceChannelUpdate.class);
+        CBPacket.addPacket(20, CBPacketWorldBorder.class);
+        CBPacket.addPacket(21, CBPacketWorldBorderRemove.class);
+        CBPacket.addPacket(22, CBPacketWorldBorderUpdate.class);
+        CBPacket.addPacket(23, CBPacketAddWaypoint.class);
+        CBPacket.addPacket(24, CBPacketRemoveWaypoint.class);
     }
 }

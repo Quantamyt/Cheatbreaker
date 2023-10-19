@@ -1,5 +1,7 @@
 package com.cheatbreaker.client.module.impl.packmanager.utils;
 
+import net.minecraft.client.Minecraft;
+
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -11,6 +13,7 @@ public class ThreadUtils {
     }
 
     public static void shutdown() {
+        Minecraft.getMinecraft().gameSettings.saveOptions();
         EXECUTOR_SERVICE.shutdown();
     }
 }

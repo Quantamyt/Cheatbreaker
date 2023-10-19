@@ -2,6 +2,7 @@ package com.cheatbreaker.client.ui.element.type.custom;
 
 import com.cheatbreaker.client.CheatBreaker;
 import com.cheatbreaker.client.config.GlobalSettings;
+import com.cheatbreaker.client.module.impl.normal.hud.armorstatus.ModuleArmorStatus;
 import com.cheatbreaker.client.ui.element.AbstractModulesGuiElement;
 import com.cheatbreaker.client.ui.theme.CBTheme;
 import net.minecraft.block.Block;
@@ -9,7 +10,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.PositionedSoundRecord;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.renderer.RenderHelper;
-import net.minecraft.client.renderer.entity.RenderItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
@@ -20,7 +20,6 @@ import java.util.List;
 public class XRayOptionsElement extends AbstractModulesGuiElement {
     private final String label;
     private final List<Integer> blocksList;
-    private final RenderItem renderItem = new RenderItem();
 
     public XRayOptionsElement(List<Integer> list, String label, float scale) {
         super(scale);
@@ -48,13 +47,13 @@ public class XRayOptionsElement extends AbstractModulesGuiElement {
             }
             int n5 = this.x + 12 + n3 * 20;
             int n6 = this.y + 14 + n4 * 20;
-            boolean hovering = (float) mouseX > (float)(n5 - 2) * this.scale && (float) mouseX < (float)(n5 + 18) * this.scale && (float)mouseY > (float)(n6 - 2 + this.yOffset) * this.scale && (float)mouseY < (float)(n6 + 18 + this.yOffset) * this.scale;
+            boolean hovering = (float) mouseX > (float) (n5 - 2) * this.scale && (float) mouseX < (float) (n5 + 18) * this.scale && (float) mouseY > (float) (n6 - 2 + this.yOffset) * this.scale && (float) mouseY < (float) (n6 + 18 + this.yOffset) * this.scale;
             if (blocksList.contains(Item.getIdFromItem(item))) {
                 Gui.drawRect(n5 - 2, n6 - 2, n5 + 18, n6 + 18, 0x7F00FF00);
             } else if (hovering) {
                 Gui.drawRect(n5 - 2, n6 - 2, n5 + 18, n6 + 18, 0x4F0000FF);
             }
-            this.renderItem.renderItemAndEffectIntoGUI(mc.fontRenderer, mc.getTextureManager(), new ItemStack(item), n5, n6);
+            ModuleArmorStatus.renderItem.renderItemAndEffectIntoGUI(new ItemStack(item), n5, n6);
             ++n3;
         }
         RenderHelper.disableStandardItemLighting();
@@ -76,7 +75,7 @@ public class XRayOptionsElement extends AbstractModulesGuiElement {
                 }
                 int n7 = this.x + 12 + n5 * 20;
                 int n8 = this.y + 14 + n6 * 20;
-                boolean bl = (float) mouseX > (float)(n7 - 2) * this.scale && (float) mouseX < (float)(n7 + 18) * this.scale && (float) mouseY > (float)(n8 - 2 + this.yOffset) * this.scale && (float) mouseY < (float)(n8 + 18 + this.yOffset) * this.scale;
+                boolean bl = (float) mouseX > (float) (n7 - 2) * this.scale && (float) mouseX < (float) (n7 + 18) * this.scale && (float) mouseY > (float) (n8 - 2 + this.yOffset) * this.scale && (float) mouseY < (float) (n8 + 18 + this.yOffset) * this.scale;
                 if (bl && button == 0) {
                     int n9 = Item.getIdFromItem(item);
                     if (blocksList.contains(n9)) {
@@ -84,10 +83,10 @@ public class XRayOptionsElement extends AbstractModulesGuiElement {
                     } else {
                         blocksList.add(n9);
                     }
-                    if (CheatBreaker.getInstance().getModuleManager().staffModuleXray.isEnabled()) {
+                    if (CheatBreaker.getInstance().getModuleManager().xray.isEnabled()) {
                         Minecraft.getMinecraft().renderGlobal.loadRenderers();
                     }
-                    Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.func_147674_a(new ResourceLocation("gui.button.press"), 1.0f));
+                    Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("gui.button.press"), 1.0f));
                 }
                 ++n5;
             }

@@ -13,26 +13,21 @@ import net.minecraft.client.gui.GuiSelectWorld;
 import net.minecraft.util.ResourceLocation;
 import org.lwjgl.opengl.GL11;
 
-import javax.swing.*;
 import java.awt.*;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
+import java.io.IOException;
 
 public class MainMenu extends MainMenuBase {
     private final ResourceLocation outerLogo = new ResourceLocation("client/logo_255_outer.png");
     private final ResourceLocation innerLogo = new ResourceLocation("client/logo_108_inner.png");
     private final GradientTextButton singleplayerButton = new GradientTextButton("SINGLEPLAYER");
     private final GradientTextButton multiplayerButton = new GradientTextButton("MULTIPLAYER");
-    private final GradientTextButton unlockTheCodeButton = new GradientTextButton("RETRIEVE SOURCE CODE");
     private final MinMaxFade logoMoveUpTime = new MinMaxFade(750L);
     private final CosineFade outerLogoRotationTime = new CosineFade(4000L);
     private final MinMaxFade backgroundFadeOutTime = new MinMaxFade(400L);
     public static int menuCounter;
 
     @Override
-    public void handleMouseInput() {
+    public void handleMouseInput() throws IOException {
         super.handleMouseInput();
     }
 
@@ -54,7 +49,6 @@ public class MainMenu extends MainMenuBase {
         super.initGui();
         this.singleplayerButton.setElementSize(this.getScaledWidth() / 2.0f - (float) 50, this.getScaledHeight() / 2.0f + 5.0F, 100.0F, 12);
         this.multiplayerButton.setElementSize(this.getScaledWidth() / 2.0f - 50.0F, this.getScaledHeight() / 2.0f + 24.0F, 100.0F, 12);
-//        this.unlockTheCodeButton.setElementSize(this.getScaledWidth() / 2.0f - 50.0F, this.getScaledHeight() / 2.0f + 43.0F, 100.0F, 12);
         ++menuCounter;
     }
 
@@ -64,7 +58,6 @@ public class MainMenu extends MainMenuBase {
         GL11.glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
         this.singleplayerButton.drawElementHover(x, y, true);
         this.multiplayerButton.drawElementHover(x, y, true);
-//        this.unlockTheCodeButton.drawElementHover(x, y, true);
         Gui.drawRect(this.singleplayerButton.getXPosition() - (float) 20, this.getScaledHeight() / 2.0f - (float) 80, this.singleplayerButton.getXPosition() + this.singleplayerButton.getWidth() + (float) 20, this.multiplayerButton.getYPosition() + this.multiplayerButton.getHeight() + (float) 14, 0x2F000000);
         float f3 = this.isFromLoadingScreen() ? this.logoMoveUpTime.getFadeAmount() : 1.0f;
         if (this.isFromLoadingScreen()) {
@@ -81,6 +74,7 @@ public class MainMenu extends MainMenuBase {
         float size = 27;
         double x2 = x / 2.0 - (double) size;
         double y2 = y / 2.0 - (double) size - (double) (35.0F * yPosMover);
+
         GL11.glPushMatrix();
         GL11.glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
         GL11.glTranslatef((float) x2, (float) y2, 1.0f);
@@ -98,38 +92,11 @@ public class MainMenu extends MainMenuBase {
         this.singleplayerButton.handleElementMouseClicked(f, f2, n, true);
         this.multiplayerButton.handleElementMouseClicked(f, f2, n, true);
         if (this.singleplayerButton.isMouseInside(f, f2)) {
-            this.mc.getSoundHandler().playSound(PositionedSoundRecord.func_147674_a(new ResourceLocation("gui.button.press"), 1.0f));
+            this.mc.getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("gui.button.press"), 1.0f));
             this.mc.displayGuiScreen(new GuiSelectWorld(this));
         } else if (this.multiplayerButton.isMouseInside(f, f2)) {
-            this.mc.getSoundHandler().playSound(PositionedSoundRecord.func_147674_a(new ResourceLocation("gui.button.press"), 1.0f));
+            this.mc.getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("gui.button.press"), 1.0f));
             this.mc.displayGuiScreen(new GuiMultiplayer(this));
-        } else if (this.unlockTheCodeButton.isMouseInside(f, f2)) {
-            this.mc.getSoundHandler().playSound(PositionedSoundRecord.func_147674_a(new ResourceLocation("gui.button.press"), 1.0f));
-            new Thread(() -> JOptionPane.showMessageDialog(
-                    null,
-                    "Retreiving CheatBreaker Source Code...." +
-                            "\n\nThis may take a moment."
-                    , "Please wait", 1
-            )).start();
-            new Thread(() -> {
-                try {
-                    Thread.sleep(10000L);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                for (int var4 = 0; var4 < 50; ++var4) {
-                    try {
-                        this.openLink(new URI("https://www.youtube.com/watch?v=dQw4w9WgXcQ"));
-                        try {
-                            Thread.sleep(50L);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                    } catch (URISyntaxException e) {
-                        CheatBreaker.getInstance().getLogger().error("Couldn't open link", e);
-                    }
-                }
-            }).start();
         }
     }
 

@@ -1,25 +1,27 @@
 package com.cheatbreaker.client.network.websocket.shared;
 
 import com.cheatbreaker.client.network.websocket.WSNetHandler;
-import net.minecraft.network.PacketBuffer;
 import com.cheatbreaker.client.network.websocket.WSPacket;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import net.minecraft.network.PacketBuffer;
 
+/**
+ * @WSPacket WSPacketFriendRequest
+ * @see WSPacket
+ *
+ * This packet handles friend request sending and receiving.
+ */
+@Getter @AllArgsConstructor @NoArgsConstructor
 public class WSPacketFriendRequest extends WSPacket {
     private String username;
     private String playerId;
 
-    public WSPacketFriendRequest() {
-    }
-
-    public WSPacketFriendRequest(String string, String string2) {
-        this.username = string;
-        this.playerId = string2;
-    }
-
     @Override
     public void write(PacketBuffer packetBuffer) {
-        packetBuffer.writeStringToBuffer(this.username);
-        packetBuffer.writeStringToBuffer(this.playerId);
+        packetBuffer.writeString(this.username);
+        packetBuffer.writeString(this.playerId);
     }
 
     @Override
@@ -31,13 +33,5 @@ public class WSPacketFriendRequest extends WSPacket {
     @Override
     public void process(WSNetHandler wSNetHandler) {
         wSNetHandler.handleFriendRequest(this, false);
-    }
-
-    public String getMessage() {
-        return this.username;
-    }
-
-    public String getPlayerId() {
-        return this.playerId;
     }
 }

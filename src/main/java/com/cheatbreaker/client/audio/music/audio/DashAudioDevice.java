@@ -1,18 +1,15 @@
 package com.cheatbreaker.client.audio.music.audio;
 
-import javax.sound.sampled.AudioFormat;
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.DataLine;
-import javax.sound.sampled.FloatControl;
-import javax.sound.sampled.Line;
-import javax.sound.sampled.LineUnavailableException;
-import javax.sound.sampled.SourceDataLine;
-
 import com.cheatbreaker.client.CheatBreaker;
 import javazoom.jl.decoder.Decoder;
 import javazoom.jl.decoder.JavaLayerException;
 import javazoom.jl.player.AudioDeviceBase;
 
+import javax.sound.sampled.*;
+
+/**
+ * Defines the Music Player's Audio Device.
+ */
 public class DashAudioDevice extends AudioDeviceBase {
     private SourceDataLine sourceDataLine = null;
     private AudioFormat audioFormat = null;
@@ -52,10 +49,10 @@ public class DashAudioDevice extends AudioDeviceBase {
         try {
             Line line = AudioSystem.getLine(this.getInfo());
             if (line instanceof SourceDataLine) {
-                this.sourceDataLine = (SourceDataLine)line;
+                this.sourceDataLine = (SourceDataLine) line;
                 this.sourceDataLine.open(this.audioFormat);
                 this.sourceDataLine.start();
-                this.setFloatControlValue((float) (Integer) CheatBreaker.getInstance().getGlobalSettings().radioVolume.getValue());
+                this.setFloatControlValue((float) CheatBreaker.getInstance().getGlobalSettings().radioVolume.getValue());
             }
         } catch (RuntimeException | LineUnavailableException | LinkageError var3) {
             throwable = var3;
@@ -63,10 +60,6 @@ public class DashAudioDevice extends AudioDeviceBase {
         if (this.sourceDataLine == null) {
             throw new JavaLayerException("cannot obtain source audio line", throwable);
         }
-    }
-
-    public int millisecondsToBytes(AudioFormat var1, int var2) {
-        return (int)((double)((float)var2 * var1.getSampleRate() * (float)var1.getChannels() * (float)var1.getSampleSizeInBits()) / 8000.0);
     }
 
     @Override
@@ -97,8 +90,8 @@ public class DashAudioDevice extends AudioDeviceBase {
         int var6 = 0;
         while (var3-- > 0) {
             short var5 = var1[var2++];
-            var4[var6++] = (byte)var5;
-            var4[var6++] = (byte)(var5 >>> 8);
+            var4[var6++] = (byte) var5;
+            var4[var6++] = (byte) (var5 >>> 8);
         }
         return var4;
     }
@@ -114,7 +107,7 @@ public class DashAudioDevice extends AudioDeviceBase {
     public int getPosition() {
         int var1 = 0;
         if (this.sourceDataLine != null) {
-            var1 = (int)(this.sourceDataLine.getMicrosecondPosition() / 1000L);
+            var1 = (int) (this.sourceDataLine.getMicrosecondPosition() / 1000L);
         }
         return var1;
     }
@@ -133,9 +126,9 @@ public class DashAudioDevice extends AudioDeviceBase {
 
     public void setFloatControlValue(float value) {
         if (this.sourceDataLine != null) {
-            FloatControl control = (FloatControl)this.sourceDataLine.getControl(FloatControl.Type.MASTER_GAIN);
-            float diff = control.getMaximum() - control.getMinimum();
-            float volume = diff * (value / 100.0f) + control.getMinimum();
+            FloatControl control = (FloatControl) this.sourceDataLine.getControl(FloatControl.Type.MASTER_GAIN);
+            float var3 = control.getMaximum() - control.getMinimum();
+            float volume = var3 * (value / 100.0f) + control.getMinimum();
             control.setValue(volume);
         }
     }

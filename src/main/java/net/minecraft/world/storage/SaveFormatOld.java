@@ -1,9 +1,9 @@
 package net.minecraft.world.storage;
 
+import com.google.common.collect.Lists;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.client.AnvilConverterException;
 import net.minecraft.nbt.CompressedStreamTools;
@@ -12,173 +12,199 @@ import net.minecraft.util.IProgressUpdate;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class SaveFormatOld implements ISaveFormat {
+public class SaveFormatOld implements ISaveFormat
+{
     private static final Logger logger = LogManager.getLogger();
-
-    /**
-     * Reference to the File object representing the directory for the world saves
-     */
     protected final File savesDirectory;
 
-
-    public SaveFormatOld(File p_i2147_1_) {
-        if (!p_i2147_1_.exists()) {
-            p_i2147_1_.mkdirs();
+    public SaveFormatOld(File savesDirectoryIn)
+    {
+        if (!savesDirectoryIn.exists())
+        {
+            savesDirectoryIn.mkdirs();
         }
 
-        this.savesDirectory = p_i2147_1_;
+        this.savesDirectory = savesDirectoryIn;
     }
 
-    public String func_154333_a() {
+    public String getName()
+    {
         return "Old Format";
     }
 
-    public List getSaveList() throws AnvilConverterException {
-        ArrayList var1 = new ArrayList();
+    public List<SaveFormatComparator> getSaveList() throws AnvilConverterException
+    {
+        List<SaveFormatComparator> list = Lists.<SaveFormatComparator>newArrayList();
 
-        for (int var2 = 0; var2 < 5; ++var2) {
-            String var3 = "World" + (var2 + 1);
-            WorldInfo var4 = this.getWorldInfo(var3);
+        for (int i = 0; i < 5; ++i)
+        {
+            String s = "World" + (i + 1);
+            WorldInfo worldinfo = this.getWorldInfo(s);
 
-            if (var4 != null) {
-                var1.add(new SaveFormatComparator(var3, "", var4.getLastTimePlayed(), var4.getSizeOnDisk(), var4.getGameType(), false, var4.isHardcoreModeEnabled(), var4.areCommandsAllowed()));
+            if (worldinfo != null)
+            {
+                list.add(new SaveFormatComparator(s, "", worldinfo.getLastTimePlayed(), worldinfo.getSizeOnDisk(), worldinfo.getGameType(), false, worldinfo.isHardcoreModeEnabled(), worldinfo.areCommandsAllowed()));
             }
         }
 
-        return var1;
+        return list;
     }
 
-    public void flushCache() {}
+    public void flushCache()
+    {
+    }
 
-    /**
-     * gets the world info
-     */
-    public WorldInfo getWorldInfo(String p_75803_1_) {
-        File var2 = new File(this.savesDirectory, p_75803_1_);
+    public WorldInfo getWorldInfo(String saveName)
+    {
+        File file1 = new File(this.savesDirectory, saveName);
 
-        if (!var2.exists()) {
-            return null;
-        } else {
-            File var3 = new File(var2, "level.dat");
-            NBTTagCompound var4;
-            NBTTagCompound var5;
-
-            if (var3.exists()) {
-                try {
-                    var4 = CompressedStreamTools.readCompressed(new FileInputStream(var3));
-                    var5 = var4.getCompoundTag("Data");
-                    return new WorldInfo(var5);
-                } catch (Exception var7) {
-                    logger.error("Exception reading " + var3, var7);
-                }
-            }
-
-            var3 = new File(var2, "level.dat_old");
-
-            if (var3.exists()) {
-                try {
-                    var4 = CompressedStreamTools.readCompressed(new FileInputStream(var3));
-                    var5 = var4.getCompoundTag("Data");
-                    return new WorldInfo(var5);
-                } catch (Exception var6) {
-                    logger.error("Exception reading " + var3, var6);
-                }
-            }
-
+        if (!file1.exists())
+        {
             return null;
         }
+        else
+        {
+            File file2 = new File(file1, "level.dat");
+
+            if (file2.exists())
+            {
+                try
+                {
+                    NBTTagCompound nbttagcompound2 = CompressedStreamTools.readCompressed(new FileInputStream(file2));
+                    NBTTagCompound nbttagcompound3 = nbttagcompound2.getCompoundTag("Data");
+                    return new WorldInfo(nbttagcompound3);
+                }
+                catch (Exception exception1)
+                {
+                    logger.error((String)("Exception reading " + file2), (Throwable)exception1);
+                }
+            }
+
+            file2 = new File(file1, "level.dat_old");
+
+            if (file2.exists())
+            {
+                try
+                {
+                    NBTTagCompound nbttagcompound = CompressedStreamTools.readCompressed(new FileInputStream(file2));
+                    NBTTagCompound nbttagcompound1 = nbttagcompound.getCompoundTag("Data");
+                    return new WorldInfo(nbttagcompound1);
+                }
+                catch (Exception exception)
+                {
+                    logger.error((String)("Exception reading " + file2), (Throwable)exception);
+                }
+            }
+
+            return null;
+        }
     }
 
-    /**
-     * @args: Takes two arguments - first the name of the directory containing the world and second the new name for
-     * that world. @desc: Renames the world by storing the new name in level.dat. It does *not* rename the directory
-     * containing the world data.
-     */
-    public void renameWorld(String p_75806_1_, String p_75806_2_) {
-        File var3 = new File(this.savesDirectory, p_75806_1_);
+    public void renameWorld(String dirName, String newName)
+    {
+        File file1 = new File(this.savesDirectory, dirName);
 
-        if (var3.exists()) {
-            File var4 = new File(var3, "level.dat");
+        if (file1.exists())
+        {
+            File file2 = new File(file1, "level.dat");
 
-            if (var4.exists()) {
-                try {
-                    NBTTagCompound var5 = CompressedStreamTools.readCompressed(new FileInputStream(var4));
-                    NBTTagCompound var6 = var5.getCompoundTag("Data");
-                    var6.setString("LevelName", p_75806_2_);
-                    CompressedStreamTools.writeCompressed(var5, new FileOutputStream(var4));
-                } catch (Exception var7) {
-                    var7.printStackTrace();
+            if (file2.exists())
+            {
+                try
+                {
+                    NBTTagCompound nbttagcompound = CompressedStreamTools.readCompressed(new FileInputStream(file2));
+                    NBTTagCompound nbttagcompound1 = nbttagcompound.getCompoundTag("Data");
+                    nbttagcompound1.setString("LevelName", newName);
+                    CompressedStreamTools.writeCompressed(nbttagcompound, new FileOutputStream(file2));
+                }
+                catch (Exception exception)
+                {
+                    exception.printStackTrace();
                 }
             }
         }
     }
 
-    public boolean func_154335_d(String p_154335_1_) {
-        File var2 = new File(this.savesDirectory, p_154335_1_);
+    public boolean isNewLevelIdAcceptable(String saveName)
+    {
+        File file1 = new File(this.savesDirectory, saveName);
 
-        if (var2.exists()) {
+        if (file1.exists())
+        {
             return false;
-        } else {
-            try {
-                var2.mkdir();
-                var2.delete();
+        }
+        else
+        {
+            try
+            {
+                file1.mkdir();
+                file1.delete();
                 return true;
-            } catch (Throwable var4) {
-                logger.warn("Couldn't make new level", var4);
+            }
+            catch (Throwable throwable)
+            {
+                logger.warn("Couldn\'t make new level", throwable);
                 return false;
             }
         }
     }
 
-    /**
-     * @args: Takes one argument - the name of the directory of the world to delete. @desc: Delete the world by deleting
-     * the associated directory recursively.
-     */
-    public boolean deleteWorldDirectory(String p_75802_1_) {
-        File var2 = new File(this.savesDirectory, p_75802_1_);
+    public boolean deleteWorldDirectory(String saveName)
+    {
+        File file1 = new File(this.savesDirectory, saveName);
 
-        if (!var2.exists()) {
+        if (!file1.exists())
+        {
             return true;
-        } else {
-            logger.info("Deleting level " + p_75802_1_);
+        }
+        else
+        {
+            logger.info("Deleting level " + saveName);
 
-            for (int var3 = 1; var3 <= 5; ++var3) {
-                logger.info("Attempt " + var3 + "...");
+            for (int i = 1; i <= 5; ++i)
+            {
+                logger.info("Attempt " + i + "...");
 
-                if (deleteFiles(var2.listFiles())) {
+                if (deleteFiles(file1.listFiles()))
+                {
                     break;
                 }
 
                 logger.warn("Unsuccessful in deleting contents.");
 
-                if (var3 < 5) {
-                    try {
+                if (i < 5)
+                {
+                    try
+                    {
                         Thread.sleep(500L);
-                    } catch (InterruptedException var5) {
+                    }
+                    catch (InterruptedException var5)
+                    {
+                        ;
                     }
                 }
             }
 
-            return var2.delete();
+            return file1.delete();
         }
     }
 
-    /**
-     * @args: Takes one argument - the list of files and directories to delete. @desc: Deletes the files and directory
-     * listed in the list recursively.
-     */
-    protected static boolean deleteFiles(File[] p_75807_0_) {
-        for (int var1 = 0; var1 < p_75807_0_.length; ++var1) {
-            File var2 = p_75807_0_[var1];
-            logger.debug("Deleting " + var2);
+    protected static boolean deleteFiles(File[] files)
+    {
+        for (int i = 0; i < files.length; ++i)
+        {
+            File file1 = files[i];
+            logger.debug("Deleting " + file1);
 
-            if (var2.isDirectory() && !deleteFiles(var2.listFiles())) {
-                logger.warn("Couldn't delete directory " + var2);
+            if (file1.isDirectory() && !deleteFiles(file1.listFiles()))
+            {
+                logger.warn("Couldn\'t delete directory " + file1);
                 return false;
             }
 
-            if (!var2.delete()) {
-                logger.warn("Couldn't delete file " + var2);
+            if (!file1.delete())
+            {
+                logger.warn("Couldn\'t delete file " + file1);
                 return false;
             }
         }
@@ -186,36 +212,29 @@ public class SaveFormatOld implements ISaveFormat {
         return true;
     }
 
-    /**
-     * Returns back a loader for the specified save directory
-     */
-    public ISaveHandler getSaveLoader(String p_75804_1_, boolean p_75804_2_) {
-        return new SaveHandler(this.savesDirectory, p_75804_1_, p_75804_2_);
+    public ISaveHandler getSaveLoader(String saveName, boolean storePlayerdata)
+    {
+        return new SaveHandler(this.savesDirectory, saveName, storePlayerdata);
     }
 
-    public boolean func_154334_a(String p_154334_1_) {
+    public boolean isConvertible(String saveName)
+    {
         return false;
     }
 
-    /**
-     * Checks if the save directory uses the old map format
-     */
-    public boolean isOldMapFormat(String p_75801_1_) {
+    public boolean isOldMapFormat(String saveName)
+    {
         return false;
     }
 
-    /**
-     * Converts the specified map to the new map format. Args: worldName, loadingScreen
-     */
-    public boolean convertMapFormat(String p_75805_1_, IProgressUpdate p_75805_2_) {
+    public boolean convertMapFormat(String filename, IProgressUpdate progressCallback)
+    {
         return false;
     }
 
-    /**
-     * Return whether the given world can be loaded.
-     */
-    public boolean canLoadWorld(String p_90033_1_) {
-        File var2 = new File(this.savesDirectory, p_90033_1_);
-        return var2.isDirectory();
+    public boolean canLoadWorld(String saveName)
+    {
+        File file1 = new File(this.savesDirectory, saveName);
+        return file1.isDirectory();
     }
 }
