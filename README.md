@@ -4,6 +4,7 @@ A remapped version of June 17th 2018 CheatBreaker
 
 ## Specifications
 **Game Version :** *? [redacted]*
+
 **Minecraft Version :** *1.7.10*
 
 ## How to use
@@ -19,3 +20,15 @@ press on the code button then
 ![enter image description here](https://i.imgur.com/L8tO0MK.png)
 6. you're basically done! just press "Clone".
  ![for you dum dums](https://i.imgur.com/jzoipCq.png)
+
+## Troubleshooting
+```
+no lwjgl in java.library.path
+```
+
+soln.
+
+go to vm options -> 
+``
+-Djava.library.path="path/to/natives"
+``
